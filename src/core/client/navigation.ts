@@ -150,7 +150,7 @@ function writeManifest(text: string) {
   if (!script) {
     script = document.createElement('script');
     script.id = 'nr-manifest';
-    script.type = 'application/json';
+    // script.type = 'application/json';
     document.body.appendChild(script);
   }
 

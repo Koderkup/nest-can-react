@@ -22765,7 +22765,6 @@ function writeManifest(text) {
   if (!script) {
     script = document.createElement("script");
     script.id = "nr-manifest";
-    script.type = "application/json";
     document.body.appendChild(script);
   }
   script.textContent = text;
@@ -22844,4 +22843,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-PW7H5F7X.js.map
+//# sourceMappingURL=runtime-WOEMF2EC.js.map
