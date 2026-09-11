@@ -9,7 +9,7 @@
     "build": "nest build",
     "build:client": "node scripts/build-client.mjs",
     "build:all": "npm run build:client && npm run build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"test/**/*.ts\" \"scripts/**/*.mjs\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

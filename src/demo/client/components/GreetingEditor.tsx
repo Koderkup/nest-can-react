@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CommitRef } from '../runtime';
-import { useCommit, useLoad, usePendingLoad } from '../hooks';
+import { useCommit, useLoad, usePendingLoad } from '../../../core/client/hooks';
+import { CommitRef } from '../../../core/client/runtime';
 
 type GreetingEditorProps = {
   initialMessage: string;
@@ -23,17 +23,18 @@ export function GreetingEditor({
   }, [serverMessage]);
 
   return (
-    <section>
-      <p>Client island with React state</p>
+    <section className="island-card">
+      <span className="pill">useState + useCommit</span>
       <h2>{serverMessage}</h2>
       <form
+        className="form-grid"
         onSubmit={(event) => {
           event.preventDefault();
           void saveGreeting.execute({ message });
         }}
       >
-        <label>
-          New greeting
+        <label className="field">
+          <span>New greeting</span>
           <input
             value={message}
             onChange={(event) => setMessage(event.target.value)}
@@ -43,8 +44,10 @@ export function GreetingEditor({
           {saveGreeting.pending ? 'Saving...' : 'Commit'}
         </button>
       </form>
-      {refreshing ? <small>Refreshing server data...</small> : null}
-      {saveGreeting.error ? <p>{saveGreeting.error.message}</p> : null}
+      {refreshing ? <p className="status">Refreshing server data...</p> : null}
+      {saveGreeting.error ? (
+        <p className="error">{saveGreeting.error.message}</p>
+      ) : null}
     </section>
   );
 }

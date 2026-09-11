@@ -23833,10 +23833,10 @@ var require_jsx_runtime = __commonJS({
   }
 });
 
-// src/frontend/client/entry.tsx
+// src/demo/client/entry.tsx
 var import_client = __toESM(require_client());
 
-// src/frontend/client/runtime.ts
+// src/core/client/runtime.ts
 var manifest = readManifest();
 var loads = manifest.loads;
 var version = 0;
@@ -23925,10 +23925,10 @@ function readManifest() {
   return JSON.parse(script.textContent);
 }
 
-// src/frontend/client/components/DashboardControls.tsx
+// src/demo/client/components/DashboardControls.tsx
 var import_react2 = __toESM(require_react());
 
-// src/frontend/client/hooks.ts
+// src/core/client/hooks.ts
 var import_react = __toESM(require_react());
 function useLoad(key) {
   (0, import_react.useSyncExternalStore)(subscribe, getVersion, getVersion);
@@ -23974,7 +23974,7 @@ function useCommit(ref) {
   };
 }
 
-// src/frontend/client/components/DashboardControls.tsx
+// src/demo/client/components/DashboardControls.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 function DashboardControls({
   initialSummary,
@@ -23994,9 +23994,9 @@ function DashboardControls({
     }, 1e3);
     return () => window.clearInterval(timer);
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { children: [
-      "Client-only filter",
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { className: "stack", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { className: "field", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Client-only filter" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
         "select",
         {
@@ -24010,34 +24010,34 @@ function DashboardControls({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Greeting: ",
-        summary.greeting
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "metric-grid", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Greeting" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: summary.greeting })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Users: ",
-        summary.users
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Users" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: summary.users })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Active projects: ",
-        summary.activeProjects
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Active projects" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: summary.activeProjects })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Manual refreshes: ",
-        summary.manualRefreshes
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Manual refreshes" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: summary.manualRefreshes })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Server generated: ",
-        new Date(summary.generatedAt).toLocaleTimeString()
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Server generated" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: new Date(summary.generatedAt).toLocaleTimeString() })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Client clock: ",
-        clientTime
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Client clock" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: clientTime })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
-        "Selected filter: ",
-        filter
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "metric-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Selected filter" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "muted", children: filter })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
@@ -24052,7 +24052,7 @@ function DashboardControls({
   ] });
 }
 
-// src/frontend/client/components/GreetingEditor.tsx
+// src/demo/client/components/GreetingEditor.tsx
 var import_react3 = __toESM(require_react());
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
 function GreetingEditor({
@@ -24067,19 +24067,20 @@ function GreetingEditor({
   (0, import_react3.useEffect)(() => {
     setMessage(serverMessage);
   }, [serverMessage]);
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("section", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { children: "Client island with React state" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("section", { className: "island-card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "pill", children: "useState + useCommit" }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { children: serverMessage }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
       "form",
       {
+        className: "form-grid",
         onSubmit: (event) => {
           event.preventDefault();
           void saveGreeting.execute({ message });
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { children: [
-            "New greeting",
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { className: "field", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "New greeting" }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
               "input",
               {
@@ -24092,12 +24093,12 @@ function GreetingEditor({
         ]
       }
     ),
-    refreshing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("small", { children: "Refreshing server data..." }) : null,
-    saveGreeting.error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { children: saveGreeting.error.message }) : null
+    refreshing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "status", children: "Refreshing server data..." }) : null,
+    saveGreeting.error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "error", children: saveGreeting.error.message }) : null
   ] });
 }
 
-// src/frontend/client/components/UserCreator.tsx
+// src/demo/client/components/UserCreator.tsx
 var import_react4 = __toESM(require_react());
 var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 function UserCreator({
@@ -24114,10 +24115,11 @@ function UserCreator({
     () => [...users].sort((left, right) => left.name.localeCompare(right.name)),
     [users]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "stack", children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
       "form",
       {
+        className: "island-card form-grid",
         onSubmit: (event) => {
           event.preventDefault();
           void create.execute({ name, role }).then(() => {
@@ -24126,43 +24128,48 @@ function UserCreator({
           });
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            "input",
-            {
-              placeholder: "Name",
-              value: name,
-              onChange: (event) => setName(event.target.value)
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            "input",
-            {
-              placeholder: "Role",
-              value: role,
-              onChange: (event) => setRole(event.target.value)
-            }
-          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("label", { className: "field", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Name" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+              "input",
+              {
+                placeholder: "Ada Developer",
+                value: name,
+                onChange: (event) => setName(event.target.value)
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("label", { className: "field", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Role" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+              "input",
+              {
+                placeholder: "Contributor",
+                value: role,
+                onChange: (event) => setRole(event.target.value)
+              }
+            )
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { disabled: create.pending, type: "submit", children: create.pending ? "Creating..." : "Create user" })
         ]
       }
     ),
-    refreshing ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Refreshing users..." }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("ul", { children: sortedUsers.map((user) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("li", { children: [
-      user.name,
-      " - ",
-      user.role
+    refreshing ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "status", children: "Refreshing users..." }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "user-list", children: sortedUsers.map((user) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("article", { className: "user-item", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: user.name }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: user.role })
     ] }, user.id)) })
   ] });
 }
 
-// src/frontend/client/registry.ts
+// src/demo/client/registry.ts
 var registry = {
   DashboardControls,
   GreetingEditor,
   UserCreator
 };
 
-// src/frontend/client/entry.tsx
+// src/demo/client/entry.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 var manifest2 = getManifest();
 manifest2.islands.forEach((island) => {

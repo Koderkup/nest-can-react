@@ -4,7 +4,7 @@ import { ModuleRef } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'node:path';
 
-import { initializeFrontendDI } from './frontend/inject';
+import { initializeFrontendDI } from './core/inject';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);

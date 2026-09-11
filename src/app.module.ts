@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
-import { DashboardService } from './dashboard.service';
-import { NestReactModule } from './frontend/nest-react.module';
-import { GreetingService } from './greeting.service';
-import { UsersService } from './users.service';
+import { NestReactModule } from './core/nest-react.module';
+import { DashboardService } from './demo/services/dashboard.service';
+import { GreetingService } from './demo/services/greeting.service';
+import { UsersService } from './demo/services/users.service';
 
 @Module({
   imports: [NestReactModule],

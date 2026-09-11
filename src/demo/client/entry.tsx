@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { getManifest } from './runtime';
+import { getManifest } from '../../core/client/runtime';
 import { registry } from './registry';
 
 const manifest = getManifest();

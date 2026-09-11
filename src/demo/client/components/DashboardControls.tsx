@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useCommit, useLoad, usePendingLoad } from '../hooks';
-import { CommitRef } from '../runtime';
+import { useCommit, useLoad, usePendingLoad } from '../../../core/client/hooks';
+import { CommitRef } from '../../../core/client/runtime';
 
 type DashboardSummary = {
   greeting: string;
@@ -38,9 +38,9 @@ export function DashboardControls({
   }, []);
 
   return (
-    <section>
-      <label>
-        Client-only filter
+    <section className="stack">
+      <label className="field">
+        <span>Client-only filter</span>
         <select
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
@@ -51,16 +51,37 @@ export function DashboardControls({
         </select>
       </label>
 
-      <div>
-        <p>Greeting: {summary.greeting}</p>
-        <p>Users: {summary.users}</p>
-        <p>Active projects: {summary.activeProjects}</p>
-        <p>Manual refreshes: {summary.manualRefreshes}</p>
-        <p>
-          Server generated: {new Date(summary.generatedAt).toLocaleTimeString()}
-        </p>
-        <p>Client clock: {clientTime}</p>
-        <p>Selected filter: {filter}</p>
+      <div className="metric-grid">
+        <article className="metric-card">
+          <strong>Greeting</strong>
+          <span className="muted">{summary.greeting}</span>
+        </article>
+        <article className="metric-card">
+          <strong>Users</strong>
+          <span className="muted">{summary.users}</span>
+        </article>
+        <article className="metric-card">
+          <strong>Active projects</strong>
+          <span className="muted">{summary.activeProjects}</span>
+        </article>
+        <article className="metric-card">
+          <strong>Manual refreshes</strong>
+          <span className="muted">{summary.manualRefreshes}</span>
+        </article>
+        <article className="metric-card">
+          <strong>Server generated</strong>
+          <span className="muted">
+            {new Date(summary.generatedAt).toLocaleTimeString()}
+          </span>
+        </article>
+        <article className="metric-card">
+          <strong>Client clock</strong>
+          <span className="muted">{clientTime}</span>
+        </article>
+        <article className="metric-card">
+          <strong>Selected filter</strong>
+          <span className="muted">{filter}</span>
+        </article>
       </div>
 
       <button

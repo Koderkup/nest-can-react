@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { useCommit, useLoad, usePendingLoad } from '../hooks';
-import { CommitRef } from '../runtime';
+import { useCommit, useLoad, usePendingLoad } from '../../../core/client/hooks';
+import { CommitRef } from '../../../core/client/runtime';
 
 type DemoUser = {
   id: number;
@@ -30,8 +30,9 @@ export function UserCreator({
   );
 
   return (
-    <section>
+    <section className="stack">
       <form
+        className="island-card form-grid"
         onSubmit={(event) => {
           event.preventDefault();
           void create.execute({ name, role }).then(() => {
@@ -40,30 +41,37 @@ export function UserCreator({
           });
         }}
       >
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <input
-          placeholder="Role"
-          value={role}
-          onChange={(event) => setRole(event.target.value)}
-        />
+        <label className="field">
+          <span>Name</span>
+          <input
+            placeholder="Ada Developer"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Role</span>
+          <input
+            placeholder="Contributor"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+          />
+        </label>
         <button disabled={create.pending} type="submit">
           {create.pending ? 'Creating...' : 'Create user'}
         </button>
       </form>
 
-      {refreshing ? <small>Refreshing users...</small> : null}
+      {refreshing ? <p className="status">Refreshing users...</p> : null}
 
-      <ul>
+      <div className="user-list">
         {sortedUsers.map((user) => (
-          <li key={user.id}>
-            {user.name} - {user.role}
-          </li>
+          <article className="user-item" key={user.id}>
+            <strong>{user.name}</strong>
+            <span className="muted">{user.role}</span>
+          </article>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

@@ -1,10 +1,10 @@
 import { Controller, Get, Header } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 
-import Dashboard from './frontend/pages/dashboard';
-import Home from './frontend/pages/home';
-import Users from './frontend/pages/users';
-import { renderPage } from './frontend/renderer';
+import Dashboard from './demo/pages/dashboard';
+import Home from './demo/pages/home';
+import Users from './demo/pages/users';
+import { renderPage } from './core/renderer';
 
 @Controller()
 export class AppController {

@@ -9,7 +9,7 @@ const outfile = join(rootDir, 'public/nest-react/client.js');
 await mkdir(dirname(outfile), { recursive: true });
 
 await esbuild.build({
-  entryPoints: [join(rootDir, 'src/frontend/client/entry.tsx')],
+  entryPoints: [join(rootDir, 'src/demo/client/entry.tsx')],
   outfile,
   bundle: true,
   format: 'esm',
