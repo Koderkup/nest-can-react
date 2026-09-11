@@ -2,12 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-5SZ3HSQC.js";
+} from "./chunk-FBTIUTTF.js";
 import {
   __toESM,
   require_jsx_runtime,
-  require_react
-} from "./chunk-6HGV5ZIV.js";
+  require_react,
+  useSession
+} from "./chunk-IGYCFRS2.js";
 
 // src/demo/islands/GreetingEditor.island.tsx
 var import_react = __toESM(require_react());
@@ -21,11 +22,17 @@ function GreetingEditor({
   const refreshing = usePendingLoad(loadKey);
   const [message, setMessage] = (0, import_react.useState)(initialMessage);
   const saveGreeting = useCommit(updateGreeting);
+  const session = useSession();
   (0, import_react.useEffect)(() => {
     setMessage(serverMessage);
   }, [serverMessage]);
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { className: "island-card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pill", children: "useState + useCommit" }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "muted", children: [
+      "Shared runtime visits: ",
+      session.visits
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: session.bump, type: "button", children: "Bump session" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { children: serverMessage }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
       "form",
@@ -57,4 +64,4 @@ function GreetingEditor({
 export {
   GreetingEditor
 };
-//# sourceMappingURL=GreetingEditor.island-7NJFHSXF.js.map
+//# sourceMappingURL=GreetingEditor.island-XKUFD42C.js.map

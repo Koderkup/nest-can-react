@@ -88,7 +88,7 @@ async function renderStreamingPage(
       let didError = false;
       let stream: ReturnType<typeof renderToPipeableStream>;
       const transform = createRuntimeInjectionTransform(() =>
-        createRuntimeHtml(createManifest('streaming', renderState)),
+        createRuntimeParts(createManifest('streaming', renderState)),
       );
 
       transform.on('finish', resolve);
@@ -115,18 +115,43 @@ async function renderStreamingPage(
 }
 
 function injectRuntime(markup: string, manifest: Record<string, unknown>) {
-  return injectRuntimeHtml(markup, createRuntimeHtml(manifest));
+  return injectRuntimeHtml(markup, createRuntimeParts(manifest));
 }
 
-function injectRuntimeHtml(markup: string, runtime: string) {
-  if (markup.includes('</body>')) {
-    return markup.replace('</body>', `${runtime}</body>`);
+function injectRuntimeHtml(
+  markup: string,
+  parts: { documentAssets: string; moduleScript: string },
+) {
+  const slotted = ensureDocumentSlots(markup);
+  const bodyClose = slotted.lastIndexOf('</body>');
+
+  if (bodyClose === -1) {
+    return `${slotted}${parts.documentAssets}</div>${parts.moduleScript}`;
   }
 
-  return markup + runtime;
+  const beforeBodyClose = slotted.slice(0, bodyClose);
+  const afterBodyClose = slotted.slice(bodyClose);
+  const documentClose = beforeBodyClose.lastIndexOf('</div>');
+
+  if (documentClose === -1) {
+    return `${beforeBodyClose}${parts.documentAssets}</div>${parts.moduleScript}${afterBodyClose}`;
+  }
+
+  return `${beforeBodyClose.slice(0, documentClose)}${parts.documentAssets}${beforeBodyClose.slice(documentClose)}${parts.moduleScript}${afterBodyClose}`;
 }
 
-function createRuntimeHtml(manifest: Record<string, unknown>) {
+function ensureDocumentSlots(markup: string) {
+  if (markup.includes('id="nr-document"')) {
+    return markup;
+  }
+
+  return markup.replace(
+    /<body([^>]*)>/i,
+    '<body$1><div id="nr-runtime"></div><div id="nr-document">',
+  );
+}
+
+function createRuntimeParts(manifest: Record<string, unknown>) {
   const clientAssets = getClientAssetManifest();
   const islandNames = getManifestIslandNames(manifest);
   const preloadAssets = [
@@ -134,14 +159,16 @@ function createRuntimeHtml(manifest: Record<string, unknown>) {
     ...getIslandAssetHints(islandNames),
   ];
 
-  return [
-    ...preloadAssets.map(
-      (asset) =>
-        `<link rel="modulepreload" href="${escapeHtmlAttribute(asset)}">`,
-    ),
-    `<script id="nr-manifest" type="application/json">${serializeJson(manifest)}</script>`,
-    `<script type="module" src="${escapeHtmlAttribute(clientAssets.runtime)}"></script>`,
-  ].join('');
+  return {
+    documentAssets: [
+      ...preloadAssets.map(
+        (asset) =>
+          `<link rel="modulepreload" href="${escapeHtmlAttribute(asset)}">`,
+      ),
+      `<script id="nr-manifest" type="application/json">${serializeJson(manifest)}</script>`,
+    ].join(''),
+    moduleScript: `<script type="module" src="${escapeHtmlAttribute(clientAssets.runtime)}"></script>`,
+  };
 }
 
 function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
@@ -153,7 +180,9 @@ function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
   };
 }
 
-function createRuntimeInjectionTransform(runtimeFactory: () => string) {
+function createRuntimeInjectionTransform(
+  runtimeFactory: () => { documentAssets: string; moduleScript: string },
+) {
   let tail = '';
   const tailSize = 1024;
 

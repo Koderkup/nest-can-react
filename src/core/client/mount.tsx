@@ -1,52 +1,90 @@
-import React from 'react';
-import { ComponentType } from 'react';
-import { createRoot, hydrateRoot, Root } from 'react-dom/client';
-import { getManifest } from './runtime';
+import React, {
+  ComponentType,
+  ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { createRoot, Root } from 'react-dom/client';
+import { getManifest, getVersion, subscribe } from './runtime';
 
 export type IslandComponentLoader = () => Promise<ComponentType<any>>;
 export type IslandClientRegistry = Record<string, IslandComponentLoader>;
 
-const mountedRoots = new Map<string, Root>();
+type ClientRuntimeComponent = ComponentType<{ children: ReactNode }>;
+
 const componentCache = new Map<string, Promise<ComponentType<any>>>();
-let mountGeneration = 0;
+const loadedComponents = new Map<string, ComponentType<any>>();
+let runtimeRoot: Root | undefined;
 
-export async function mountIslands(registry: IslandClientRegistry) {
-  const manifest = getManifest();
-  const generation = ++mountGeneration;
+export function installClientRuntime(
+  registry: IslandClientRegistry,
+  Runtime: ClientRuntimeComponent,
+) {
+  const host = document.getElementById('nr-runtime');
 
-  await Promise.all(
-    manifest.islands.map(async (island) => {
-      const rootElement = document.getElementById(island.id);
-      const loadComponent = registry[island.name];
+  if (!host) {
+    throw new Error(
+      'Missing #nr-runtime host for the Nest React client runtime.',
+    );
+  }
 
-      if (!rootElement || !loadComponent || mountedRoots.has(island.id)) {
-        return;
-      }
-
-      try {
-        const Component = await getComponent(island.name, loadComponent);
-
-        if (generation !== mountGeneration || mountedRoots.has(island.id)) {
-          return;
-        }
-
-        const root =
-          island.mode === 'hydrate'
-            ? hydrateRoot(rootElement, <Component {...island.props} />)
-            : createMountRoot(rootElement, Component, island.props);
-
-        mountedRoots.set(island.id, root);
-      } catch (error) {
-        console.error(`Failed to load island "${island.name}".`, error);
-      }
-    }),
+  runtimeRoot ??= createRoot(host);
+  runtimeRoot.render(
+    <Runtime>
+      <IslandOutlet registry={registry} />
+    </Runtime>,
   );
 }
 
-export function unmountIslands() {
-  mountGeneration++;
-  mountedRoots.forEach((root) => root.unmount());
-  mountedRoots.clear();
+function IslandOutlet({ registry }: { registry: IslandClientRegistry }) {
+  const version = useSyncExternalStore(subscribe, getVersion, getVersion);
+  const manifest = getManifest();
+  const [, setLoaded] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all(
+      manifest.islands.map(async (island) => {
+        const loadComponent = registry[island.name];
+
+        if (!loadComponent) {
+          return;
+        }
+
+        await getComponent(island.name, loadComponent);
+      }),
+    ).then(() => {
+      if (!cancelled) {
+        setLoaded((value) => value + 1);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [manifest, registry, version]);
+
+  return (
+    <>
+      {manifest.islands.map((island) => {
+        const rootElement = document.getElementById(island.id);
+        const Component = loadedComponents.get(island.name);
+
+        if (!rootElement || !Component) {
+          return null;
+        }
+
+        return createPortal(
+          <Component {...island.props} />,
+          rootElement,
+          `${version}:${island.id}`,
+        );
+      })}
+    </>
+  );
 }
 
 function getComponent(name: string, loadComponent: IslandComponentLoader) {
@@ -56,17 +94,10 @@ function getComponent(name: string, loadComponent: IslandComponentLoader) {
     return cachedComponent;
   }
 
-  const component = loadComponent();
+  const component = loadComponent().then((loaded) => {
+    loadedComponents.set(name, loaded);
+    return loaded;
+  });
   componentCache.set(name, component);
   return component;
-}
-
-function createMountRoot(
-  rootElement: HTMLElement,
-  Component: ComponentType<any>,
-  props: Record<string, unknown>,
-) {
-  const root = createRoot(rootElement);
-  root.render(<Component {...props} />);
-  return root;
 }

@@ -2,12 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-5SZ3HSQC.js";
+} from "./chunk-FBTIUTTF.js";
 import {
   __toESM,
   require_jsx_runtime,
-  require_react
-} from "./chunk-6HGV5ZIV.js";
+  require_react,
+  useSession
+} from "./chunk-IGYCFRS2.js";
 
 // src/demo/islands/DashboardControls.island.tsx
 var import_react = __toESM(require_react());
@@ -24,6 +25,7 @@ function DashboardControls({
   const [clientTime, setClientTime] = (0, import_react.useState)(
     () => (/* @__PURE__ */ new Date()).toLocaleTimeString()
   );
+  const session = useSession();
   (0, import_react.useEffect)(() => {
     const timer = window.setInterval(() => {
       setClientTime((/* @__PURE__ */ new Date()).toLocaleTimeString());
@@ -31,6 +33,10 @@ function DashboardControls({
     return () => window.clearInterval(timer);
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { className: "stack", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "muted", children: [
+      "Shared runtime visits: ",
+      session.visits
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { className: "field", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Client-only filter" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
@@ -90,4 +96,4 @@ function DashboardControls({
 export {
   DashboardControls
 };
-//# sourceMappingURL=DashboardControls.island-QQ3X672J.js.map
+//# sourceMappingURL=DashboardControls.island-4LAGCA3E.js.map

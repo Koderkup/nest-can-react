@@ -31,38 +31,41 @@ export function DemoShell({
       </head>
 
       <body>
-        <div className="app-shell">
-          <header className="topbar">
-            <NestLink className="brand" to="/">
-              <span className="brand-mark">NR</span>
-              <span>
-                <strong>Nest React</strong>
-                <small>Server-first UI framework</small>
-              </span>
-            </NestLink>
+        <div id="nr-runtime"></div>
+        <div id="nr-document">
+          <div className="app-shell">
+            <header className="topbar">
+              <NestLink className="brand" to="/">
+                <span className="brand-mark">NR</span>
+                <span>
+                  <strong>Nest React</strong>
+                  <small>Server-first UI framework</small>
+                </span>
+              </NestLink>
 
-            <nav className="nav">
-              {navItems.map((item) => (
-                <NestLink
-                  className={
-                    item.id === active ? 'nav-link active' : 'nav-link'
-                  }
-                  key={item.id}
-                  to={item.to}
-                >
-                  {item.label}
-                </NestLink>
-              ))}
-            </nav>
-          </header>
+              <nav className="nav">
+                {navItems.map((item) => (
+                  <NestLink
+                    className={
+                      item.id === active ? 'nav-link active' : 'nav-link'
+                    }
+                    key={item.id}
+                    to={item.to}
+                  >
+                    {item.label}
+                  </NestLink>
+                ))}
+              </nav>
+            </header>
 
-          <section className="hero">
-            <p className="eyebrow">{eyebrow}</p>
-            <h1>{title}</h1>
-            <p>{description}</p>
-          </section>
+            <section className="hero">
+              <p className="eyebrow">{eyebrow}</p>
+              <h1>{title}</h1>
+              <p>{description}</p>
+            </section>
 
-          <main className="page-grid">{children}</main>
+            <main className="page-grid">{children}</main>
+          </div>
         </div>
       </body>
     </html>

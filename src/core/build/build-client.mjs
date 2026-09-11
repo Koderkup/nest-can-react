@@ -22,6 +22,7 @@ const defaultConfig = {
     exclude: ['src/**/*.test.tsx', 'src/**/*.spec.tsx'],
   },
   generatedDir: '.nest-react/generated',
+  runtimeEntry: 'src/app.runtime.tsx',
 };
 
 export async function buildNestReactClient(overrides = {}) {
@@ -33,7 +34,12 @@ export async function buildNestReactClient(overrides = {}) {
   const generatedDir = resolve(rootDir, config.generatedDir);
   const islands = await discoverIslands(rootDir, config.islands);
 
-  await generateIslandRegistries({ generatedDir, islands, rootDir });
+  await generateIslandRegistries({
+    generatedDir,
+    islands,
+    rootDir,
+    runtimeEntry: config.runtimeEntry,
+  });
 
   await rm(outdir, { recursive: true, force: true });
   await mkdir(outdir, { recursive: true });
@@ -110,6 +116,10 @@ function normalizeConfig(config) {
       client.codeSplitting ?? config.codeSplitting ?? defaultConfig.codeSplitting,
     islands,
     generatedDir: config.generatedDir ?? defaultConfig.generatedDir,
+    runtimeEntry:
+      config.runtime?.entry ??
+      config.runtimeEntry ??
+      defaultConfig.runtimeEntry,
   };
 }
 
@@ -244,7 +254,12 @@ function assertUniqueIslandNames(islands) {
   }
 }
 
-async function generateIslandRegistries({ generatedDir, islands, rootDir }) {
+async function generateIslandRegistries({
+  generatedDir,
+  islands,
+  rootDir,
+  runtimeEntry,
+}) {
   await mkdir(generatedDir, { recursive: true });
 
   await Promise.all([
@@ -256,7 +271,37 @@ async function generateIslandRegistries({ generatedDir, islands, rootDir }) {
       join(generatedDir, 'server-registry.ts'),
       createServerRegistry({ generatedDir, islands, rootDir }),
     ),
+    writeFile(
+      join(generatedDir, 'client-runtime.ts'),
+      createClientRuntimeModule({
+        generatedDir,
+        rootDir,
+        runtimeEntry,
+      }),
+    ),
   ]);
+}
+
+function createClientRuntimeModule({ generatedDir, rootDir, runtimeEntry }) {
+  const runtimePath = resolve(rootDir, runtimeEntry);
+
+  if (!existsSync(runtimePath)) {
+    return [
+      'import type { ReactNode } from "react";',
+      '',
+      'export function ClientRuntime({ children }: { children: ReactNode }) {',
+      '  return children;',
+      '}',
+      '',
+    ].join('\n');
+  }
+
+  const runtimeImport = toImportSpecifier(generatedDir, runtimePath);
+
+  return [
+    `export { ClientRuntime } from ${JSON.stringify(runtimeImport)};`,
+    '',
+  ].join('\n');
 }
 
 function createClientRegistry({ generatedDir, islands, rootDir }) {

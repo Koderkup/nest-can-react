@@ -1,11 +1,10 @@
 type NavigationOptions = {
-  onBeforePageChange?: () => void;
   onPageChanged: () => void;
 };
 
 type PageSnapshot = {
   title: string;
-  body: string;
+  document: string;
   scrollX: number;
   scrollY: number;
 };
@@ -97,28 +96,39 @@ async function fetchSnapshot(href: string): Promise<PageSnapshot> {
 
   const html = await response.text();
   const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+  const nextSlot = nextDocument.getElementById('nr-document');
+
+  if (!nextSlot) {
+    throw new Error('Navigation response is missing #nr-document.');
+  }
 
   return {
     title: nextDocument.title,
-    body: nextDocument.body.innerHTML,
+    document: nextSlot.innerHTML,
     scrollX: 0,
     scrollY: 0,
   };
 }
 
 function applySnapshot(snapshot: PageSnapshot, options: NavigationOptions) {
-  options.onBeforePageChange?.();
+  const slot = getDocumentSlot();
+
+  if (!slot) {
+    window.location.reload();
+    return;
+  }
 
   document.title = snapshot.title;
-  document.body.innerHTML = snapshot.body;
-
+  slot.innerHTML = snapshot.document;
   options.onPageChanged();
 }
 
 function takeSnapshot(): PageSnapshot {
+  const slot = getDocumentSlot();
+
   return {
     title: document.title,
-    body: document.body.innerHTML,
+    document: slot?.innerHTML ?? '',
     scrollX: window.scrollX,
     scrollY: window.scrollY,
   };
@@ -127,6 +137,10 @@ function takeSnapshot(): PageSnapshot {
 function invalidateSnapshots() {
   pageCache.clear();
   pageCache.set(currentUrl, takeSnapshot());
+}
+
+function getDocumentSlot() {
+  return document.getElementById('nr-document');
 }
 
 function getAnchor(target: EventTarget | null) {

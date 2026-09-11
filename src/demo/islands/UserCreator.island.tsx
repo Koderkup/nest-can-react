@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
+import { useSession } from '../app.runtime';
 
 type DemoUser = {
   id: number;
@@ -28,9 +29,11 @@ export function UserCreator({
     () => [...users].sort((left, right) => left.name.localeCompare(right.name)),
     [users],
   );
+  const session = useSession();
 
   return (
     <section className="stack">
+      <p className="muted">Shared runtime visits: {session.visits}</p>
       <form
         className="island-card form-grid"
         onSubmit={(event) => {

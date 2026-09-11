@@ -6,6 +6,9 @@
     "publicPath": "/assets/nest-react",
     "codeSplitting": true
   },
+  "runtime": {
+    "entry": "src/demo/app.runtime.tsx"
+  },
   "islands": {
     "include": ["src/**/*.island.tsx"],
     "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]

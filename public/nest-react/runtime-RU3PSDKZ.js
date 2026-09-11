@@ -1,11 +1,282 @@
 import {
+  ClientRuntime,
   __commonJS,
   __toESM,
   getManifest,
+  getVersion,
   reloadManifest,
   require_jsx_runtime,
-  require_react
-} from "./chunks/chunk-6HGV5ZIV.js";
+  require_react,
+  subscribe
+} from "./chunks/chunk-IGYCFRS2.js";
+
+// node_modules/react-dom/cjs/react-dom.development.js
+var require_react_dom_development = __commonJS({
+  "node_modules/react-dom/cjs/react-dom.development.js"(exports) {
+    "use strict";
+    (function() {
+      function noop() {
+      }
+      function testStringCoercion(value) {
+        return "" + value;
+      }
+      function createPortal$1(children, containerInfo, implementation) {
+        var key = 3 < arguments.length && void 0 !== arguments[3] ? arguments[3] : null;
+        if (null == key) key = null;
+        else if (key === REACT_OPTIMISTIC_KEY) key = REACT_OPTIMISTIC_KEY;
+        else {
+          try {
+            testStringCoercion(key);
+            var JSCompiler_inline_result = false;
+          } catch (e) {
+            JSCompiler_inline_result = true;
+          }
+          JSCompiler_inline_result && (console.error(
+            "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
+            "function" === typeof Symbol && Symbol.toStringTag && key[Symbol.toStringTag] || key.constructor.name || "Object"
+          ), testStringCoercion(key));
+          key = "" + key;
+        }
+        return {
+          $$typeof: REACT_PORTAL_TYPE,
+          key,
+          children,
+          containerInfo,
+          implementation
+        };
+      }
+      function getCrossOriginStringAs(as, input) {
+        if ("font" === as) return "";
+        if ("string" === typeof input)
+          return "use-credentials" === input ? input : "";
+      }
+      function getValueDescriptorExpectingObjectForWarning(thing) {
+        return null === thing ? "`null`" : void 0 === thing ? "`undefined`" : "" === thing ? "an empty string" : 'something with type "' + typeof thing + '"';
+      }
+      function getValueDescriptorExpectingEnumForWarning(thing) {
+        return null === thing ? "`null`" : void 0 === thing ? "`undefined`" : "" === thing ? "an empty string" : "string" === typeof thing ? JSON.stringify(thing) : "number" === typeof thing ? "`" + thing + "`" : 'something with type "' + typeof thing + '"';
+      }
+      function resolveDispatcher() {
+        var dispatcher = ReactSharedInternals.H;
+        null === dispatcher && console.error(
+          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
+        );
+        return dispatcher;
+      }
+      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+      var React2 = require_react(), Internals = {
+        d: {
+          f: noop,
+          r: function() {
+            throw Error(
+              "Invalid form element. requestFormReset must be passed a form that was rendered by React."
+            );
+          },
+          D: noop,
+          C: noop,
+          L: noop,
+          m: noop,
+          X: noop,
+          S: noop,
+          M: noop
+        },
+        p: 0,
+        findDOMNode: null
+      }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+      "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
+        "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
+      );
+      exports.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = Internals;
+      exports.browser = function(reason) {
+        return { $$typeof: REACT_RECOVERABLE_TYPE, _reason: reason };
+      };
+      exports.createPortal = function(children, container) {
+        var key = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null;
+        if (!container || 1 !== container.nodeType && 9 !== container.nodeType && 11 !== container.nodeType)
+          throw Error("Target container is not a DOM element.");
+        return createPortal$1(children, container, null, key);
+      };
+      exports.flushSync = function(fn) {
+        var previousTransition = ReactSharedInternals.T, previousUpdatePriority = Internals.p;
+        try {
+          if (ReactSharedInternals.T = null, Internals.p = 2, fn)
+            return fn();
+        } finally {
+          ReactSharedInternals.T = previousTransition, Internals.p = previousUpdatePriority, Internals.d.f() && console.error(
+            "flushSync was called from inside a lifecycle method. React cannot flush when React is already rendering. Consider moving this call to a scheduler task or micro task."
+          );
+        }
+      };
+      exports.preconnect = function(href, options) {
+        "string" === typeof href && href ? null != options && "object" !== typeof options ? console.error(
+          "ReactDOM.preconnect(): Expected the `options` argument (second) to be an object but encountered %s instead. The only supported option at this time is `crossOrigin` which accepts a string.",
+          getValueDescriptorExpectingEnumForWarning(options)
+        ) : null != options && "string" !== typeof options.crossOrigin && console.error(
+          "ReactDOM.preconnect(): Expected the `crossOrigin` option (second argument) to be a string but encountered %s instead. Try removing this option or passing a string value instead.",
+          getValueDescriptorExpectingObjectForWarning(options.crossOrigin)
+        ) : console.error(
+          "ReactDOM.preconnect(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
+          getValueDescriptorExpectingObjectForWarning(href)
+        );
+        "string" === typeof href && (options ? (options = options.crossOrigin, options = "string" === typeof options ? "use-credentials" === options ? options : "" : void 0) : options = null, Internals.d.C(href, options));
+      };
+      exports.prefetchDNS = function(href) {
+        if ("string" !== typeof href || !href)
+          console.error(
+            "ReactDOM.prefetchDNS(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
+            getValueDescriptorExpectingObjectForWarning(href)
+          );
+        else if (1 < arguments.length) {
+          var options = arguments[1];
+          "object" === typeof options && options.hasOwnProperty("crossOrigin") ? console.error(
+            "ReactDOM.prefetchDNS(): Expected only one argument, `href`, but encountered %s as a second argument instead. This argument is reserved for future options and is currently disallowed. It looks like the you are attempting to set a crossOrigin property for this DNS lookup hint. Browsers do not perform DNS queries using CORS and setting this attribute on the resource hint has no effect. Try calling ReactDOM.prefetchDNS() with just a single string argument, `href`.",
+            getValueDescriptorExpectingEnumForWarning(options)
+          ) : console.error(
+            "ReactDOM.prefetchDNS(): Expected only one argument, `href`, but encountered %s as a second argument instead. This argument is reserved for future options and is currently disallowed. Try calling ReactDOM.prefetchDNS() with just a single string argument, `href`.",
+            getValueDescriptorExpectingEnumForWarning(options)
+          );
+        }
+        "string" === typeof href && Internals.d.D(href);
+      };
+      exports.preinit = function(href, options) {
+        "string" === typeof href && href ? null == options || "object" !== typeof options ? console.error(
+          "ReactDOM.preinit(): Expected the `options` argument (second) to be an object with an `as` property describing the type of resource to be preinitialized but encountered %s instead.",
+          getValueDescriptorExpectingEnumForWarning(options)
+        ) : "style" !== options.as && "script" !== options.as && console.error(
+          'ReactDOM.preinit(): Expected the `as` property in the `options` argument (second) to contain a valid value describing the type of resource to be preinitialized but encountered %s instead. Valid values for `as` are "style" and "script".',
+          getValueDescriptorExpectingEnumForWarning(options.as)
+        ) : console.error(
+          "ReactDOM.preinit(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
+          getValueDescriptorExpectingObjectForWarning(href)
+        );
+        if ("string" === typeof href && options && "string" === typeof options.as) {
+          var as = options.as, crossOrigin = getCrossOriginStringAs(as, options.crossOrigin), integrity = "string" === typeof options.integrity ? options.integrity : void 0, fetchPriority = "string" === typeof options.fetchPriority ? options.fetchPriority : void 0;
+          "style" === as ? Internals.d.S(
+            href,
+            "string" === typeof options.precedence ? options.precedence : void 0,
+            {
+              crossOrigin,
+              integrity,
+              fetchPriority
+            }
+          ) : "script" === as && Internals.d.X(href, {
+            crossOrigin,
+            integrity,
+            fetchPriority,
+            nonce: "string" === typeof options.nonce ? options.nonce : void 0
+          });
+        }
+      };
+      exports.preinitModule = function(href, options) {
+        var encountered = "";
+        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
+        void 0 !== options && "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : options && "as" in options && "script" !== options.as && (encountered += " The `as` option encountered was " + getValueDescriptorExpectingEnumForWarning(options.as) + ".");
+        if (encountered)
+          console.error(
+            "ReactDOM.preinitModule(): Expected up to two arguments, a non-empty `href` string and, optionally, an `options` object with a valid `as` property.%s",
+            encountered
+          );
+        else
+          switch (encountered = options && "string" === typeof options.as ? options.as : "script", encountered) {
+            case "script":
+              break;
+            default:
+              encountered = getValueDescriptorExpectingEnumForWarning(encountered), console.error(
+                'ReactDOM.preinitModule(): Currently the only supported "as" type for this function is "script" but received "%s" instead. This warning was generated for `href` "%s". In the future other module types will be supported, aligning with the import-attributes proposal. Learn more here: (https://github.com/tc39/proposal-import-attributes)',
+                encountered,
+                href
+              );
+          }
+        if ("string" === typeof href)
+          if ("object" === typeof options && null !== options) {
+            if (null == options.as || "script" === options.as)
+              encountered = getCrossOriginStringAs(
+                options.as,
+                options.crossOrigin
+              ), Internals.d.M(href, {
+                crossOrigin: encountered,
+                integrity: "string" === typeof options.integrity ? options.integrity : void 0,
+                nonce: "string" === typeof options.nonce ? options.nonce : void 0,
+                fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0
+              });
+          } else null == options && Internals.d.M(href);
+      };
+      exports.preload = function(href, options) {
+        var encountered = "";
+        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
+        null == options || "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : "string" === typeof options.as && options.as || (encountered += " The `as` option encountered was " + getValueDescriptorExpectingObjectForWarning(options.as) + ".");
+        encountered && console.error(
+          'ReactDOM.preload(): Expected two arguments, a non-empty `href` string and an `options` object with an `as` property valid for a `<link rel="preload" as="..." />` tag.%s',
+          encountered
+        );
+        if ("string" === typeof href && "object" === typeof options && null !== options && "string" === typeof options.as) {
+          encountered = options.as;
+          var crossOrigin = getCrossOriginStringAs(
+            encountered,
+            options.crossOrigin
+          );
+          Internals.d.L(href, encountered, {
+            crossOrigin,
+            integrity: "string" === typeof options.integrity ? options.integrity : void 0,
+            nonce: "string" === typeof options.nonce ? options.nonce : void 0,
+            type: "string" === typeof options.type ? options.type : void 0,
+            fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0,
+            referrerPolicy: "string" === typeof options.referrerPolicy ? options.referrerPolicy : void 0,
+            imageSrcSet: "string" === typeof options.imageSrcSet ? options.imageSrcSet : void 0,
+            imageSizes: "string" === typeof options.imageSizes ? options.imageSizes : void 0,
+            media: "string" === typeof options.media ? options.media : void 0
+          });
+        }
+      };
+      exports.preloadModule = function(href, options) {
+        var encountered = "";
+        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
+        void 0 !== options && "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : options && "as" in options && "string" !== typeof options.as && (encountered += " The `as` option encountered was " + getValueDescriptorExpectingObjectForWarning(options.as) + ".");
+        encountered && console.error(
+          'ReactDOM.preloadModule(): Expected two arguments, a non-empty `href` string and, optionally, an `options` object with an `as` property valid for a `<link rel="modulepreload" as="..." />` tag.%s',
+          encountered
+        );
+        "string" === typeof href && (options ? (encountered = getCrossOriginStringAs(
+          options.as,
+          options.crossOrigin
+        ), Internals.d.m(href, {
+          as: "string" === typeof options.as && "script" !== options.as ? options.as : void 0,
+          crossOrigin: encountered,
+          integrity: "string" === typeof options.integrity ? options.integrity : void 0,
+          nonce: "string" === typeof options.nonce ? options.nonce : void 0,
+          fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0
+        })) : Internals.d.m(href));
+      };
+      exports.requestFormReset = function(form) {
+        Internals.d.r(form);
+      };
+      exports.unstable_batchedUpdates = function(fn, a) {
+        return fn(a);
+      };
+      exports.useFormState = function(action, initialState, permalink) {
+        return resolveDispatcher().useFormState(action, initialState, permalink);
+      };
+      exports.useFormStatus = function() {
+        return resolveDispatcher().useHostTransitionStatus();
+      };
+      exports.version = "19.3.0";
+      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+    })();
+  }
+});
+
+// node_modules/react-dom/index.js
+var require_react_dom = __commonJS({
+  "node_modules/react-dom/index.js"(exports, module) {
+    "use strict";
+    if (false) {
+      checkDCE();
+      module.exports = null;
+    } else {
+      module.exports = require_react_dom_development();
+    }
+  }
+});
 
 // node_modules/scheduler/cjs/scheduler.development.js
 var require_scheduler_development = __commonJS({
@@ -274,274 +545,6 @@ var require_scheduler = __commonJS({
       module.exports = null;
     } else {
       module.exports = require_scheduler_development();
-    }
-  }
-});
-
-// node_modules/react-dom/cjs/react-dom.development.js
-var require_react_dom_development = __commonJS({
-  "node_modules/react-dom/cjs/react-dom.development.js"(exports) {
-    "use strict";
-    (function() {
-      function noop() {
-      }
-      function testStringCoercion(value) {
-        return "" + value;
-      }
-      function createPortal$1(children, containerInfo, implementation) {
-        var key = 3 < arguments.length && void 0 !== arguments[3] ? arguments[3] : null;
-        if (null == key) key = null;
-        else if (key === REACT_OPTIMISTIC_KEY) key = REACT_OPTIMISTIC_KEY;
-        else {
-          try {
-            testStringCoercion(key);
-            var JSCompiler_inline_result = false;
-          } catch (e) {
-            JSCompiler_inline_result = true;
-          }
-          JSCompiler_inline_result && (console.error(
-            "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
-            "function" === typeof Symbol && Symbol.toStringTag && key[Symbol.toStringTag] || key.constructor.name || "Object"
-          ), testStringCoercion(key));
-          key = "" + key;
-        }
-        return {
-          $$typeof: REACT_PORTAL_TYPE,
-          key,
-          children,
-          containerInfo,
-          implementation
-        };
-      }
-      function getCrossOriginStringAs(as, input) {
-        if ("font" === as) return "";
-        if ("string" === typeof input)
-          return "use-credentials" === input ? input : "";
-      }
-      function getValueDescriptorExpectingObjectForWarning(thing) {
-        return null === thing ? "`null`" : void 0 === thing ? "`undefined`" : "" === thing ? "an empty string" : 'something with type "' + typeof thing + '"';
-      }
-      function getValueDescriptorExpectingEnumForWarning(thing) {
-        return null === thing ? "`null`" : void 0 === thing ? "`undefined`" : "" === thing ? "an empty string" : "string" === typeof thing ? JSON.stringify(thing) : "number" === typeof thing ? "`" + thing + "`" : 'something with type "' + typeof thing + '"';
-      }
-      function resolveDispatcher() {
-        var dispatcher = ReactSharedInternals.H;
-        null === dispatcher && console.error(
-          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
-        );
-        return dispatcher;
-      }
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React = require_react(), Internals = {
-        d: {
-          f: noop,
-          r: function() {
-            throw Error(
-              "Invalid form element. requestFormReset must be passed a form that was rendered by React."
-            );
-          },
-          D: noop,
-          C: noop,
-          L: noop,
-          m: noop,
-          X: noop,
-          S: noop,
-          M: noop
-        },
-        p: 0,
-        findDOMNode: null
-      }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
-      "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
-        "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
-      );
-      exports.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = Internals;
-      exports.browser = function(reason) {
-        return { $$typeof: REACT_RECOVERABLE_TYPE, _reason: reason };
-      };
-      exports.createPortal = function(children, container) {
-        var key = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null;
-        if (!container || 1 !== container.nodeType && 9 !== container.nodeType && 11 !== container.nodeType)
-          throw Error("Target container is not a DOM element.");
-        return createPortal$1(children, container, null, key);
-      };
-      exports.flushSync = function(fn) {
-        var previousTransition = ReactSharedInternals.T, previousUpdatePriority = Internals.p;
-        try {
-          if (ReactSharedInternals.T = null, Internals.p = 2, fn)
-            return fn();
-        } finally {
-          ReactSharedInternals.T = previousTransition, Internals.p = previousUpdatePriority, Internals.d.f() && console.error(
-            "flushSync was called from inside a lifecycle method. React cannot flush when React is already rendering. Consider moving this call to a scheduler task or micro task."
-          );
-        }
-      };
-      exports.preconnect = function(href, options) {
-        "string" === typeof href && href ? null != options && "object" !== typeof options ? console.error(
-          "ReactDOM.preconnect(): Expected the `options` argument (second) to be an object but encountered %s instead. The only supported option at this time is `crossOrigin` which accepts a string.",
-          getValueDescriptorExpectingEnumForWarning(options)
-        ) : null != options && "string" !== typeof options.crossOrigin && console.error(
-          "ReactDOM.preconnect(): Expected the `crossOrigin` option (second argument) to be a string but encountered %s instead. Try removing this option or passing a string value instead.",
-          getValueDescriptorExpectingObjectForWarning(options.crossOrigin)
-        ) : console.error(
-          "ReactDOM.preconnect(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
-          getValueDescriptorExpectingObjectForWarning(href)
-        );
-        "string" === typeof href && (options ? (options = options.crossOrigin, options = "string" === typeof options ? "use-credentials" === options ? options : "" : void 0) : options = null, Internals.d.C(href, options));
-      };
-      exports.prefetchDNS = function(href) {
-        if ("string" !== typeof href || !href)
-          console.error(
-            "ReactDOM.prefetchDNS(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
-            getValueDescriptorExpectingObjectForWarning(href)
-          );
-        else if (1 < arguments.length) {
-          var options = arguments[1];
-          "object" === typeof options && options.hasOwnProperty("crossOrigin") ? console.error(
-            "ReactDOM.prefetchDNS(): Expected only one argument, `href`, but encountered %s as a second argument instead. This argument is reserved for future options and is currently disallowed. It looks like the you are attempting to set a crossOrigin property for this DNS lookup hint. Browsers do not perform DNS queries using CORS and setting this attribute on the resource hint has no effect. Try calling ReactDOM.prefetchDNS() with just a single string argument, `href`.",
-            getValueDescriptorExpectingEnumForWarning(options)
-          ) : console.error(
-            "ReactDOM.prefetchDNS(): Expected only one argument, `href`, but encountered %s as a second argument instead. This argument is reserved for future options and is currently disallowed. Try calling ReactDOM.prefetchDNS() with just a single string argument, `href`.",
-            getValueDescriptorExpectingEnumForWarning(options)
-          );
-        }
-        "string" === typeof href && Internals.d.D(href);
-      };
-      exports.preinit = function(href, options) {
-        "string" === typeof href && href ? null == options || "object" !== typeof options ? console.error(
-          "ReactDOM.preinit(): Expected the `options` argument (second) to be an object with an `as` property describing the type of resource to be preinitialized but encountered %s instead.",
-          getValueDescriptorExpectingEnumForWarning(options)
-        ) : "style" !== options.as && "script" !== options.as && console.error(
-          'ReactDOM.preinit(): Expected the `as` property in the `options` argument (second) to contain a valid value describing the type of resource to be preinitialized but encountered %s instead. Valid values for `as` are "style" and "script".',
-          getValueDescriptorExpectingEnumForWarning(options.as)
-        ) : console.error(
-          "ReactDOM.preinit(): Expected the `href` argument (first) to be a non-empty string but encountered %s instead.",
-          getValueDescriptorExpectingObjectForWarning(href)
-        );
-        if ("string" === typeof href && options && "string" === typeof options.as) {
-          var as = options.as, crossOrigin = getCrossOriginStringAs(as, options.crossOrigin), integrity = "string" === typeof options.integrity ? options.integrity : void 0, fetchPriority = "string" === typeof options.fetchPriority ? options.fetchPriority : void 0;
-          "style" === as ? Internals.d.S(
-            href,
-            "string" === typeof options.precedence ? options.precedence : void 0,
-            {
-              crossOrigin,
-              integrity,
-              fetchPriority
-            }
-          ) : "script" === as && Internals.d.X(href, {
-            crossOrigin,
-            integrity,
-            fetchPriority,
-            nonce: "string" === typeof options.nonce ? options.nonce : void 0
-          });
-        }
-      };
-      exports.preinitModule = function(href, options) {
-        var encountered = "";
-        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
-        void 0 !== options && "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : options && "as" in options && "script" !== options.as && (encountered += " The `as` option encountered was " + getValueDescriptorExpectingEnumForWarning(options.as) + ".");
-        if (encountered)
-          console.error(
-            "ReactDOM.preinitModule(): Expected up to two arguments, a non-empty `href` string and, optionally, an `options` object with a valid `as` property.%s",
-            encountered
-          );
-        else
-          switch (encountered = options && "string" === typeof options.as ? options.as : "script", encountered) {
-            case "script":
-              break;
-            default:
-              encountered = getValueDescriptorExpectingEnumForWarning(encountered), console.error(
-                'ReactDOM.preinitModule(): Currently the only supported "as" type for this function is "script" but received "%s" instead. This warning was generated for `href` "%s". In the future other module types will be supported, aligning with the import-attributes proposal. Learn more here: (https://github.com/tc39/proposal-import-attributes)',
-                encountered,
-                href
-              );
-          }
-        if ("string" === typeof href)
-          if ("object" === typeof options && null !== options) {
-            if (null == options.as || "script" === options.as)
-              encountered = getCrossOriginStringAs(
-                options.as,
-                options.crossOrigin
-              ), Internals.d.M(href, {
-                crossOrigin: encountered,
-                integrity: "string" === typeof options.integrity ? options.integrity : void 0,
-                nonce: "string" === typeof options.nonce ? options.nonce : void 0,
-                fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0
-              });
-          } else null == options && Internals.d.M(href);
-      };
-      exports.preload = function(href, options) {
-        var encountered = "";
-        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
-        null == options || "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : "string" === typeof options.as && options.as || (encountered += " The `as` option encountered was " + getValueDescriptorExpectingObjectForWarning(options.as) + ".");
-        encountered && console.error(
-          'ReactDOM.preload(): Expected two arguments, a non-empty `href` string and an `options` object with an `as` property valid for a `<link rel="preload" as="..." />` tag.%s',
-          encountered
-        );
-        if ("string" === typeof href && "object" === typeof options && null !== options && "string" === typeof options.as) {
-          encountered = options.as;
-          var crossOrigin = getCrossOriginStringAs(
-            encountered,
-            options.crossOrigin
-          );
-          Internals.d.L(href, encountered, {
-            crossOrigin,
-            integrity: "string" === typeof options.integrity ? options.integrity : void 0,
-            nonce: "string" === typeof options.nonce ? options.nonce : void 0,
-            type: "string" === typeof options.type ? options.type : void 0,
-            fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0,
-            referrerPolicy: "string" === typeof options.referrerPolicy ? options.referrerPolicy : void 0,
-            imageSrcSet: "string" === typeof options.imageSrcSet ? options.imageSrcSet : void 0,
-            imageSizes: "string" === typeof options.imageSizes ? options.imageSizes : void 0,
-            media: "string" === typeof options.media ? options.media : void 0
-          });
-        }
-      };
-      exports.preloadModule = function(href, options) {
-        var encountered = "";
-        "string" === typeof href && href || (encountered += " The `href` argument encountered was " + getValueDescriptorExpectingObjectForWarning(href) + ".");
-        void 0 !== options && "object" !== typeof options ? encountered += " The `options` argument encountered was " + getValueDescriptorExpectingObjectForWarning(options) + "." : options && "as" in options && "string" !== typeof options.as && (encountered += " The `as` option encountered was " + getValueDescriptorExpectingObjectForWarning(options.as) + ".");
-        encountered && console.error(
-          'ReactDOM.preloadModule(): Expected two arguments, a non-empty `href` string and, optionally, an `options` object with an `as` property valid for a `<link rel="modulepreload" as="..." />` tag.%s',
-          encountered
-        );
-        "string" === typeof href && (options ? (encountered = getCrossOriginStringAs(
-          options.as,
-          options.crossOrigin
-        ), Internals.d.m(href, {
-          as: "string" === typeof options.as && "script" !== options.as ? options.as : void 0,
-          crossOrigin: encountered,
-          integrity: "string" === typeof options.integrity ? options.integrity : void 0,
-          nonce: "string" === typeof options.nonce ? options.nonce : void 0,
-          fetchPriority: "string" === typeof options.fetchPriority ? options.fetchPriority : void 0
-        })) : Internals.d.m(href));
-      };
-      exports.requestFormReset = function(form) {
-        Internals.d.r(form);
-      };
-      exports.unstable_batchedUpdates = function(fn, a) {
-        return fn(a);
-      };
-      exports.useFormState = function(action, initialState, permalink) {
-        return resolveDispatcher().useFormState(action, initialState, permalink);
-      };
-      exports.useFormStatus = function() {
-        return resolveDispatcher().useHostTransitionStatus();
-      };
-      exports.version = "19.3.0";
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-    })();
-  }
-});
-
-// node_modules/react-dom/index.js
-var require_react_dom = __commonJS({
-  "node_modules/react-dom/index.js"(exports, module) {
-    "use strict";
-    if (false) {
-      checkDCE();
-      module.exports = null;
-    } else {
-      module.exports = require_react_dom_development();
     }
   }
 });
@@ -2036,7 +2039,7 @@ var require_react_dom_client_development = __commonJS({
         node.defaultValue !== "" + value && (node.defaultValue = "" + value);
       }
       function validateOptionProps(element, props) {
-        null == props.value && ("object" === typeof props.children && null !== props.children ? React.Children.forEach(props.children, function(child) {
+        null == props.value && ("object" === typeof props.children && null !== props.children ? React2.Children.forEach(props.children, function(child) {
           null == child || "string" === typeof child || "number" === typeof child || "bigint" === typeof child || didWarnInvalidChild || (didWarnInvalidChild = true, console.error(
             "Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."
           ));
@@ -6525,7 +6528,7 @@ var require_react_dom_client_development = __commonJS({
         }
         return [newState, dispatch];
       }
-      function mountSyncExternalStore(subscribe, getSnapshot, getServerSnapshot) {
+      function mountSyncExternalStore(subscribe2, getSnapshot, getServerSnapshot) {
         var fiber = currentlyRenderingFiber, hook = mountWorkInProgressHook();
         if (isHydrating) {
           if (void 0 === getServerSnapshot)
@@ -6551,8 +6554,8 @@ var require_react_dom_client_development = __commonJS({
         getServerSnapshot = { value: nextSnapshot, getSnapshot };
         hook.queue = getServerSnapshot;
         mountEffect(
-          subscribeToStore.bind(null, fiber, getServerSnapshot, subscribe),
-          [subscribe]
+          subscribeToStore.bind(null, fiber, getServerSnapshot, subscribe2),
+          [subscribe2]
         );
         fiber.flags |= 2048;
         pushSimpleEffect(
@@ -6569,7 +6572,7 @@ var require_react_dom_client_development = __commonJS({
         );
         return nextSnapshot;
       }
-      function updateSyncExternalStore(subscribe, getSnapshot, getServerSnapshot) {
+      function updateSyncExternalStore(subscribe2, getSnapshot, getServerSnapshot) {
         var fiber = currentlyRenderingFiber, hook = updateWorkInProgressHook(), isHydrating$jscomp$0 = isHydrating;
         if (isHydrating$jscomp$0) {
           if (void 0 === getServerSnapshot)
@@ -6589,11 +6592,11 @@ var require_react_dom_client_development = __commonJS({
         ))
           hook.memoizedState = getServerSnapshot, didReceiveUpdate = true;
         hook = hook.queue;
-        var create = subscribeToStore.bind(null, fiber, hook, subscribe);
-        updateEffectImpl(2048, Passive, create, [subscribe]);
-        subscribe = hook.getSnapshot !== getSnapshot || cachedSnapshot || null !== workInProgressHook && (workInProgressHook.memoizedState.tag & HasEffect) !== NoFlags;
+        var create = subscribeToStore.bind(null, fiber, hook, subscribe2);
+        updateEffectImpl(2048, Passive, create, [subscribe2]);
+        subscribe2 = hook.getSnapshot !== getSnapshot || cachedSnapshot || null !== workInProgressHook && (workInProgressHook.memoizedState.tag & HasEffect) !== NoFlags;
         pushSimpleEffect(
-          subscribe ? HasEffect | Passive : Passive,
+          subscribe2 ? HasEffect | Passive : Passive,
           { destroy: void 0 },
           updateStoreInstance.bind(
             null,
@@ -6604,7 +6607,7 @@ var require_react_dom_client_development = __commonJS({
           ),
           null
         );
-        if (subscribe) {
+        if (subscribe2) {
           fiber.flags |= 2048;
           if (null === workInProgressRoot)
             throw Error(
@@ -6625,8 +6628,8 @@ var require_react_dom_client_development = __commonJS({
         inst.getSnapshot = getSnapshot;
         checkIfSnapshotChanged(inst) && forceStoreRerender(fiber);
       }
-      function subscribeToStore(fiber, inst, subscribe) {
-        return subscribe(function() {
+      function subscribeToStore(fiber, inst, subscribe2) {
+        return subscribe2(function() {
           checkIfSnapshotChanged(inst) && (startUpdateTimerByLane(2, "updateSyncExternalStore()", fiber), forceStoreRerender(fiber));
         });
       }
@@ -19184,11 +19187,11 @@ var require_react_dom_client_development = __commonJS({
         ));
       }
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var Scheduler = require_scheduler(), React = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
+      var Scheduler = require_scheduler(), React2 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
       /* @__PURE__ */ Symbol.for("react.scope");
       var REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden");
       /* @__PURE__ */ Symbol.for("react.tracing_marker");
-      var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+      var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
         pending: false,
         data: null,
         method: null,
@@ -20768,11 +20771,11 @@ var require_react_dom_client_development = __commonJS({
           mountHookTypesDev();
           return mountTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           mountHookTypesDev();
           return mountSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -20898,11 +20901,11 @@ var require_react_dom_client_development = __commonJS({
           updateHookTypesDev();
           return mountTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           updateHookTypesDev();
           return mountSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -21028,11 +21031,11 @@ var require_react_dom_client_development = __commonJS({
           updateHookTypesDev();
           return updateTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           updateHookTypesDev();
           return updateSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -21158,11 +21161,11 @@ var require_react_dom_client_development = __commonJS({
           updateHookTypesDev();
           return rerenderTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           updateHookTypesDev();
           return updateSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -21305,12 +21308,12 @@ var require_react_dom_client_development = __commonJS({
           mountHookTypesDev();
           return mountTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           warnInvalidHookAccess();
           mountHookTypesDev();
           return mountSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -21460,12 +21463,12 @@ var require_react_dom_client_development = __commonJS({
           updateHookTypesDev();
           return updateTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           warnInvalidHookAccess();
           updateHookTypesDev();
           return updateSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -21615,12 +21618,12 @@ var require_react_dom_client_development = __commonJS({
           updateHookTypesDev();
           return rerenderTransition();
         },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+        useSyncExternalStore: function(subscribe2, getSnapshot, getServerSnapshot) {
           currentHookNameInDev = "useSyncExternalStore";
           warnInvalidHookAccess();
           updateHookTypesDev();
           return updateSyncExternalStore(
-            subscribe,
+            subscribe2,
             getSnapshot,
             getServerSnapshot
           );
@@ -22380,7 +22383,7 @@ var require_react_dom_client_development = __commonJS({
         }
       };
       (function() {
-        var isomorphicReactPackageVersion = React.version;
+        var isomorphicReactPackageVersion = React2.version;
         if ("19.3.0" !== isomorphicReactPackageVersion)
           throw Error(
             'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.3.0\nLearn more: https://react.dev/warnings/version-mismatch")
@@ -22521,52 +22524,72 @@ var require_client = __commonJS({
 });
 
 // src/core/client/mount.tsx
+var import_react = __toESM(require_react());
+var import_react_dom = __toESM(require_react_dom());
 var import_client = __toESM(require_client());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
-var mountedRoots = /* @__PURE__ */ new Map();
 var componentCache = /* @__PURE__ */ new Map();
-var mountGeneration = 0;
-async function mountIslands(registry2) {
-  const manifest = getManifest();
-  const generation = ++mountGeneration;
-  await Promise.all(
-    manifest.islands.map(async (island) => {
-      const rootElement = document.getElementById(island.id);
-      const loadComponent = registry2[island.name];
-      if (!rootElement || !loadComponent || mountedRoots.has(island.id)) {
-        return;
-      }
-      try {
-        const Component = await getComponent(island.name, loadComponent);
-        if (generation !== mountGeneration || mountedRoots.has(island.id)) {
-          return;
-        }
-        const root = island.mode === "hydrate" ? (0, import_client.hydrateRoot)(rootElement, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { ...island.props })) : createMountRoot(rootElement, Component, island.props);
-        mountedRoots.set(island.id, root);
-      } catch (error) {
-        console.error(`Failed to load island "${island.name}".`, error);
-      }
-    })
+var loadedComponents = /* @__PURE__ */ new Map();
+var runtimeRoot;
+function installClientRuntime(registry2, Runtime) {
+  const host = document.getElementById("nr-runtime");
+  if (!host) {
+    throw new Error(
+      "Missing #nr-runtime host for the Nest React client runtime."
+    );
+  }
+  runtimeRoot ??= (0, import_client.createRoot)(host);
+  runtimeRoot.render(
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Runtime, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IslandOutlet, { registry: registry2 }) })
   );
 }
-function unmountIslands() {
-  mountGeneration++;
-  mountedRoots.forEach((root) => root.unmount());
-  mountedRoots.clear();
+function IslandOutlet({ registry: registry2 }) {
+  const version = (0, import_react.useSyncExternalStore)(subscribe, getVersion, getVersion);
+  const manifest = getManifest();
+  const [, setLoaded] = (0, import_react.useState)(0);
+  (0, import_react.useEffect)(() => {
+    let cancelled = false;
+    void Promise.all(
+      manifest.islands.map(async (island) => {
+        const loadComponent = registry2[island.name];
+        if (!loadComponent) {
+          return;
+        }
+        await getComponent(island.name, loadComponent);
+      })
+    ).then(() => {
+      if (!cancelled) {
+        setLoaded((value) => value + 1);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [manifest, registry2, version]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: manifest.islands.map((island) => {
+    const rootElement = document.getElementById(island.id);
+    const Component = loadedComponents.get(island.name);
+    if (!rootElement || !Component) {
+      return null;
+    }
+    return (0, import_react_dom.createPortal)(
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { ...island.props }),
+      rootElement,
+      `${version}:${island.id}`
+    );
+  }) });
 }
 function getComponent(name, loadComponent) {
   const cachedComponent = componentCache.get(name);
   if (cachedComponent) {
     return cachedComponent;
   }
-  const component = loadComponent();
+  const component = loadComponent().then((loaded) => {
+    loadedComponents.set(name, loaded);
+    return loaded;
+  });
   componentCache.set(name, component);
   return component;
-}
-function createMountRoot(rootElement, Component, props) {
-  const root = (0, import_client.createRoot)(rootElement);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { ...props }));
-  return root;
 }
 
 // src/core/client/navigation.ts
@@ -22632,23 +22655,32 @@ async function fetchSnapshot(href) {
   }
   const html = await response.text();
   const nextDocument = new DOMParser().parseFromString(html, "text/html");
+  const nextSlot = nextDocument.getElementById("nr-document");
+  if (!nextSlot) {
+    throw new Error("Navigation response is missing #nr-document.");
+  }
   return {
     title: nextDocument.title,
-    body: nextDocument.body.innerHTML,
+    document: nextSlot.innerHTML,
     scrollX: 0,
     scrollY: 0
   };
 }
 function applySnapshot(snapshot, options) {
-  options.onBeforePageChange?.();
+  const slot = getDocumentSlot();
+  if (!slot) {
+    window.location.reload();
+    return;
+  }
   document.title = snapshot.title;
-  document.body.innerHTML = snapshot.body;
+  slot.innerHTML = snapshot.document;
   options.onPageChanged();
 }
 function takeSnapshot() {
+  const slot = getDocumentSlot();
   return {
     title: document.title,
-    body: document.body.innerHTML,
+    document: slot?.innerHTML ?? "",
     scrollX: window.scrollX,
     scrollY: window.scrollY
   };
@@ -22656,6 +22688,9 @@ function takeSnapshot() {
 function invalidateSnapshots() {
   pageCache.clear();
   pageCache.set(currentUrl, takeSnapshot());
+}
+function getDocumentSlot() {
+  return document.getElementById("nr-document");
 }
 function getAnchor(target) {
   if (!(target instanceof Element)) {
@@ -22672,27 +22707,26 @@ function shouldUseBrowserNavigation(link, event) {
 
 // .nest-react/generated/client-registry.ts
 var registry = {
-  "DashboardControls": () => import("./chunks/DashboardControls.island-QQ3X672J.js").then((module) => module.DashboardControls),
-  "GreetingEditor": () => import("./chunks/GreetingEditor.island-7NJFHSXF.js").then((module) => module.GreetingEditor),
-  "UserCreator": () => import("./chunks/UserCreator.island-C36DGUBT.js").then((module) => module.UserCreator)
+  "DashboardControls": () => import("./chunks/DashboardControls.island-4LAGCA3E.js").then((module) => module.DashboardControls),
+  "GreetingEditor": () => import("./chunks/GreetingEditor.island-XKUFD42C.js").then((module) => module.GreetingEditor),
+  "UserCreator": () => import("./chunks/UserCreator.island-U36JCC4K.js").then((module) => module.UserCreator)
 };
 
 // src/demo/client/entry.tsx
 function bootPage() {
   reloadManifest();
-  void mountIslands(registry);
 }
-void mountIslands(registry);
+reloadManifest();
+installClientRuntime(registry, ClientRuntime);
 installNavigation({
-  onBeforePageChange: unmountIslands,
   onPageChanged: bootPage
 });
 /*! Bundled license information:
 
-scheduler/cjs/scheduler.development.js:
+react-dom/cjs/react-dom.development.js:
   (**
    * @license React
-   * scheduler.development.js
+   * react-dom.development.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
@@ -22700,10 +22734,10 @@ scheduler/cjs/scheduler.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 
-react-dom/cjs/react-dom.development.js:
+scheduler/cjs/scheduler.development.js:
   (**
    * @license React
-   * react-dom.development.js
+   * scheduler.development.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
@@ -22722,4 +22756,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-AEK2BZQY.js.map
+//# sourceMappingURL=runtime-RU3PSDKZ.js.map

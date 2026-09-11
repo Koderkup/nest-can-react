@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
+import { useSession } from '../app.runtime';
 
 type GreetingEditorProps = {
   initialMessage: string;
@@ -17,6 +18,7 @@ export function GreetingEditor({
   const refreshing = usePendingLoad(loadKey);
   const [message, setMessage] = useState(initialMessage);
   const saveGreeting = useCommit<{ message: string }>(updateGreeting);
+  const session = useSession();
 
   useEffect(() => {
     setMessage(serverMessage);
@@ -25,6 +27,10 @@ export function GreetingEditor({
   return (
     <section className="island-card">
       <span className="pill">useState + useCommit</span>
+      <p className="muted">Shared runtime visits: {session.visits}</p>
+      <button onClick={session.bump} type="button">
+        Bump session
+      </button>
       <h2>{serverMessage}</h2>
       <form
         className="form-grid"

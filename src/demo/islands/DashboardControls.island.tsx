@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
+import { useSession } from '../app.runtime';
 
 type DashboardSummary = {
   greeting: string;
@@ -28,6 +29,7 @@ export function DashboardControls({
   const [clientTime, setClientTime] = useState(() =>
     new Date().toLocaleTimeString(),
   );
+  const session = useSession();
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -39,6 +41,7 @@ export function DashboardControls({
 
   return (
     <section className="stack">
+      <p className="muted">Shared runtime visits: {session.visits}</p>
       <label className="field">
         <span>Client-only filter</span>
         <select

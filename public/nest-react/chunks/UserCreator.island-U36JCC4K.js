@@ -2,12 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-5SZ3HSQC.js";
+} from "./chunk-FBTIUTTF.js";
 import {
   __toESM,
   require_jsx_runtime,
-  require_react
-} from "./chunk-6HGV5ZIV.js";
+  require_react,
+  useSession
+} from "./chunk-IGYCFRS2.js";
 
 // src/demo/islands/UserCreator.island.tsx
 var import_react = __toESM(require_react());
@@ -26,7 +27,12 @@ function UserCreator({
     () => [...users].sort((left, right) => left.name.localeCompare(right.name)),
     [users]
   );
+  const session = useSession();
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { className: "stack", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "muted", children: [
+      "Shared runtime visits: ",
+      session.visits
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
       "form",
       {
@@ -75,4 +81,4 @@ function UserCreator({
 export {
   UserCreator
 };
-//# sourceMappingURL=UserCreator.island-C36DGUBT.js.map
+//# sourceMappingURL=UserCreator.island-U36JCC4K.js.map
