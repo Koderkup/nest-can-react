@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-
 export type DemoUser = {
   id: number;
   name: string;
@@ -17,12 +16,10 @@ export class UsersService {
   ];
 
   async findAll() {
-
     return [...this.users];
   }
 
   async create(input: { name?: string; role?: string }) {
-
     const user = {
       id: this.nextId++,
       name: input.name?.trim() || 'New teammate',

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "codeSplitting": true,
+  "publicPath": "/assets/nest-react",
+  "runtime": "/assets/nest-react/runtime-WQAYW3XU.js",
+  "chunks": [
+    "/assets/nest-react/chunks/DashboardControls-VO7KCV3F.js",
+    "/assets/nest-react/chunks/GreetingEditor-GXQNEZ5B.js",
+    "/assets/nest-react/chunks/UserCreator-JGWINHDU.js",
+    "/assets/nest-react/chunks/chunk-5SZ3HSQC.js",
+    "/assets/nest-react/chunks/chunk-6HGV5ZIV.js"
+  ],
+  "islands": {
+    "DashboardControls": [
+      "/assets/nest-react/chunks/DashboardControls-VO7KCV3F.js",
+      "/assets/nest-react/chunks/chunk-5SZ3HSQC.js",
+      "/assets/nest-react/chunks/chunk-6HGV5ZIV.js"
+    ],
+    "GreetingEditor": [
+      "/assets/nest-react/chunks/GreetingEditor-GXQNEZ5B.js",
+      "/assets/nest-react/chunks/chunk-5SZ3HSQC.js",
+      "/assets/nest-react/chunks/chunk-6HGV5ZIV.js"
+    ],
+    "UserCreator": [
+      "/assets/nest-react/chunks/UserCreator-JGWINHDU.js",
+      "/assets/nest-react/chunks/chunk-5SZ3HSQC.js",
+      "/assets/nest-react/chunks/chunk-6HGV5ZIV.js"
+    ]
+  }
+}

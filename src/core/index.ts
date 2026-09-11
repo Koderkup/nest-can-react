@@ -1,3 +1,9 @@
+export {
+  configureNestReact,
+  getClientAssetManifest,
+  getIslandAssetHints,
+} from './client-assets';
+export type { ClientAssetsManifest, NestReactOptions } from './client-assets';
 export { commit, revalidate } from './commit';
 export { initializeFrontendDI, inject } from './inject';
 export { Island } from './island';

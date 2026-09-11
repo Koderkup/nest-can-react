@@ -7,7 +7,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:client": "node scripts/build-client.mjs",
+    "build:client": "node src/core/build/build-client.mjs",
+    "build:client:single": "node src/core/build/build-client.mjs --no-code-splitting",
     "build:all": "npm run build:client && npm run build",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"test/**/*.ts\" \"scripts/**/*.mjs\"",
     "start": "nest start",

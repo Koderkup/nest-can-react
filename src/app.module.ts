@@ -7,7 +7,7 @@ import { GreetingService } from './demo/services/greeting.service';
 import { UsersService } from './demo/services/users.service';
 
 @Module({
-  imports: [NestReactModule],
+  imports: [NestReactModule.forRoot()],
   controllers: [AppController],
   providers: [AppService, DashboardService, GreetingService, UsersService],
 })

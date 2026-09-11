@@ -12,6 +12,7 @@ import {
   createRenderState,
   runWithFrontendContext,
 } from './context';
+import { getClientAssetManifest, getIslandAssetHints } from './client-assets';
 
 type ServerPage = () => React.ReactNode | Promise<React.ReactNode>;
 
@@ -126,9 +127,20 @@ function injectRuntimeHtml(markup: string, runtime: string) {
 }
 
 function createRuntimeHtml(manifest: Record<string, unknown>) {
+  const clientAssets = getClientAssetManifest();
+  const islandNames = getManifestIslandNames(manifest);
+  const preloadAssets = [
+    clientAssets.runtime,
+    ...getIslandAssetHints(islandNames),
+  ];
+
   return [
+    ...preloadAssets.map(
+      (asset) =>
+        `<link rel="modulepreload" href="${escapeHtmlAttribute(asset)}">`,
+    ),
     `<script id="nr-manifest" type="application/json">${serializeJson(manifest)}</script>`,
-    '<script type="module" src="/assets/nest-react/client.js"></script>',
+    `<script type="module" src="${escapeHtmlAttribute(clientAssets.runtime)}"></script>`,
   ].join('');
 }
 
@@ -171,6 +183,37 @@ function serializeJson(value: unknown) {
       '&': '\\u0026',
       '\u2028': '\\u2028',
       '\u2029': '\\u2029',
+    };
+
+    return escaped[char];
+  });
+}
+
+function getManifestIslandNames(manifest: Record<string, unknown>) {
+  const islands = manifest.islands;
+
+  if (!Array.isArray(islands)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      islands
+        .map((island) =>
+          typeof island === 'object' && island !== null && 'name' in island
+            ? island.name
+            : undefined,
+        )
+        .filter((name): name is string => typeof name === 'string'),
+    ),
+  ];
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value.replace(/[&"]/g, (char) => {
+    const escaped: Record<string, string> = {
+      '&': '&amp;',
+      '"': '&quot;',
     };
 
     return escaped[char];

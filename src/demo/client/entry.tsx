@@ -5,10 +5,10 @@ import { registry } from './registry';
 
 function bootPage() {
   reloadManifest();
-  mountIslands(registry);
+  void mountIslands(registry);
 }
 
-mountIslands(registry);
+void mountIslands(registry);
 
 installNavigation({
   onBeforePageChange: unmountIslands,
