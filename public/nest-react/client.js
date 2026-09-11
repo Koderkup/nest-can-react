@@ -23954,11 +23954,15 @@ function unmountIslands() {
 
 // src/core/client/navigation.ts
 var installed = false;
+var currentUrl = window.location.href;
+var pageCache = /* @__PURE__ */ new Map();
 function installNavigation(options) {
   if (installed) {
     return;
   }
   installed = true;
+  pageCache.set(currentUrl, takeSnapshot());
+  window.history.replaceState({ nr: true }, "", currentUrl);
   document.addEventListener("click", async (event) => {
     const link = getAnchor(event.target);
     if (!link || shouldUseBrowserNavigation(link, event)) {
@@ -23966,16 +23970,37 @@ function installNavigation(options) {
     }
     event.preventDefault();
     try {
-      await navigate(link.href, options);
+      await navigate(link.href, options, "push");
     } catch {
       window.location.href = link.href;
     }
   });
   window.addEventListener("popstate", () => {
-    window.location.reload();
+    void restoreHistoryEntry(window.location.href, options);
   });
 }
-async function navigate(href, options) {
+async function navigate(href, options, historyMode) {
+  pageCache.set(currentUrl, takeSnapshot());
+  const snapshot = pageCache.get(href) ?? await fetchSnapshot(href);
+  pageCache.set(href, snapshot);
+  applySnapshot(snapshot, options);
+  if (historyMode === "push") {
+    window.history.pushState({ nr: true }, "", href);
+  }
+  if (historyMode === "replace") {
+    window.history.replaceState({ nr: true }, "", href);
+  }
+  currentUrl = href;
+  window.scrollTo(snapshot.scrollX, snapshot.scrollY);
+}
+async function restoreHistoryEntry(href, options) {
+  try {
+    await navigate(href, options, "none");
+  } catch {
+    window.location.reload();
+  }
+}
+async function fetchSnapshot(href) {
   const response = await fetch(href, {
     headers: {
       accept: "text/html",
@@ -23987,11 +24012,26 @@ async function navigate(href, options) {
   }
   const html = await response.text();
   const nextDocument = new DOMParser().parseFromString(html, "text/html");
+  return {
+    title: nextDocument.title,
+    body: nextDocument.body.innerHTML,
+    scrollX: 0,
+    scrollY: 0
+  };
+}
+function applySnapshot(snapshot, options) {
   options.onBeforePageChange?.();
-  document.title = nextDocument.title;
-  document.body.innerHTML = nextDocument.body.innerHTML;
-  window.history.pushState(null, "", href);
+  document.title = snapshot.title;
+  document.body.innerHTML = snapshot.body;
   options.onPageChanged();
+}
+function takeSnapshot() {
+  return {
+    title: document.title,
+    body: document.body.innerHTML,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY
+  };
 }
 function getAnchor(target) {
   if (!(target instanceof Element)) {
@@ -24001,8 +24041,8 @@ function getAnchor(target) {
 }
 function shouldUseBrowserNavigation(link, event) {
   const nextUrl = new URL(link.href);
-  const currentUrl = new URL(window.location.href);
-  const isHashOnlyNavigation = nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search && nextUrl.hash.length > 0;
+  const currentUrl2 = new URL(window.location.href);
+  const isHashOnlyNavigation = nextUrl.pathname === currentUrl2.pathname && nextUrl.search === currentUrl2.search && nextUrl.hash.length > 0;
   return event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target.length > 0 && link.target !== "_self" || link.hasAttribute("download") || nextUrl.origin !== window.location.origin || isHashOnlyNavigation;
 }
 
