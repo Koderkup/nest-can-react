@@ -2,13 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-FBTIUTTF.js";
+} from "./chunk-TNB3XDEL.js";
 import {
   __toESM,
   require_jsx_runtime,
   require_react,
   useSession
-} from "./chunk-IGYCFRS2.js";
+} from "./chunk-QAKKRXL7.js";
 
 // src/demo/islands/GreetingEditor.island.tsx
 var import_react = __toESM(require_react());
@@ -64,4 +64,4 @@ function GreetingEditor({
 export {
   GreetingEditor
 };
-//# sourceMappingURL=GreetingEditor.island-XKUFD42C.js.map
+//# sourceMappingURL=GreetingEditor.island-BNSYZOB2.js.map

@@ -8,7 +8,7 @@ import {
   require_jsx_runtime,
   require_react,
   subscribe
-} from "./chunks/chunk-IGYCFRS2.js";
+} from "./chunks/chunk-QAKKRXL7.js";
 
 // node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS({
@@ -22530,23 +22530,36 @@ var import_client = __toESM(require_client());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var componentCache = /* @__PURE__ */ new Map();
 var loadedComponents = /* @__PURE__ */ new Map();
+var hydrateRoots = /* @__PURE__ */ new Map();
 var runtimeRoot;
-function installClientRuntime(registry2, Runtime) {
+var didInitialHydrate = false;
+async function installClientRuntime(registry2, Runtime) {
   const host = document.getElementById("nr-runtime");
   if (!host) {
     throw new Error(
       "Missing #nr-runtime host for the Nest React client runtime."
     );
   }
-  runtimeRoot ??= (0, import_client.createRoot)(host);
-  runtimeRoot.render(
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Runtime, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IslandOutlet, { registry: registry2 }) })
-  );
+  await preloadIslands(registry2);
+  const tree = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Runtime, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IslandOutlet, { Runtime, registry: registry2 }) });
+  if (!runtimeRoot) {
+    runtimeRoot = (0, import_client.createRoot)(host);
+  }
+  runtimeRoot.render(tree);
 }
-function IslandOutlet({ registry: registry2 }) {
+function unmountHydrateIslands() {
+  hydrateRoots.forEach((entry) => {
+    entry.root.unmount();
+  });
+  hydrateRoots.clear();
+}
+function IslandOutlet({
+  Runtime,
+  registry: registry2
+}) {
   const version = (0, import_react.useSyncExternalStore)(subscribe, getVersion, getVersion);
   const manifest = getManifest();
-  const [, setLoaded] = (0, import_react.useState)(0);
+  const [loaded, setLoaded] = (0, import_react.useState)(0);
   (0, import_react.useEffect)(() => {
     let cancelled = false;
     void Promise.all(
@@ -22566,7 +22579,13 @@ function IslandOutlet({ registry: registry2 }) {
       cancelled = true;
     };
   }, [manifest, registry2, version]);
+  (0, import_react.useLayoutEffect)(() => {
+    syncHydrateIslands(Runtime, manifest.islands);
+  }, [Runtime, manifest, version, loaded]);
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: manifest.islands.map((island) => {
+    if (island.mode === "hydrate") {
+      return null;
+    }
     const rootElement = document.getElementById(island.id);
     const Component = loadedComponents.get(island.name);
     if (!rootElement || !Component) {
@@ -22575,9 +22594,58 @@ function IslandOutlet({ registry: registry2 }) {
     return (0, import_react_dom.createPortal)(
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { ...island.props }),
       rootElement,
-      `${version}:${island.id}`
+      island.id
     );
   }) });
+}
+function syncHydrateIslands(Runtime, islands) {
+  const activeIds = /* @__PURE__ */ new Set();
+  islands.forEach((island) => {
+    if (island.mode !== "hydrate") {
+      return;
+    }
+    const element = document.getElementById(island.id);
+    const Component = loadedComponents.get(island.name);
+    if (!element || !Component) {
+      return;
+    }
+    activeIds.add(island.id);
+    const tree = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Runtime, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { ...island.props }) });
+    const current = hydrateRoots.get(island.id);
+    if (current && current.element === element) {
+      current.root.render(tree);
+      return;
+    }
+    current?.root.unmount();
+    const root = didInitialHydrate ? (0, import_client.createRoot)(element) : (0, import_client.hydrateRoot)(element, tree);
+    if (didInitialHydrate) {
+      root.render(tree);
+    }
+    hydrateRoots.set(island.id, {
+      element,
+      root
+    });
+  });
+  hydrateRoots.forEach((entry, id) => {
+    if (activeIds.has(id)) {
+      return;
+    }
+    entry.root.unmount();
+    hydrateRoots.delete(id);
+  });
+  didInitialHydrate = true;
+}
+async function preloadIslands(registry2) {
+  const manifest = getManifest();
+  await Promise.all(
+    manifest.islands.map((island) => {
+      const loadComponent = registry2[island.name];
+      if (!loadComponent) {
+        return;
+      }
+      return getComponent(island.name, loadComponent);
+    })
+  );
 }
 function getComponent(name, loadComponent) {
   const cachedComponent = componentCache.get(name);
@@ -22656,12 +22724,16 @@ async function fetchSnapshot(href) {
   const html = await response.text();
   const nextDocument = new DOMParser().parseFromString(html, "text/html");
   const nextSlot = nextDocument.getElementById("nr-document");
-  if (!nextSlot) {
-    throw new Error("Navigation response is missing #nr-document.");
+  const nextManifest = nextDocument.getElementById("nr-manifest");
+  if (!nextSlot || !nextManifest?.textContent) {
+    throw new Error(
+      "Navigation response is missing #nr-document or #nr-manifest."
+    );
   }
   return {
     title: nextDocument.title,
     document: nextSlot.innerHTML,
+    manifest: nextManifest.textContent,
     scrollX: 0,
     scrollY: 0
   };
@@ -22673,7 +22745,9 @@ function applySnapshot(snapshot, options) {
     return;
   }
   document.title = snapshot.title;
+  unmountHydrateIslands();
   slot.innerHTML = snapshot.document;
+  writeManifest(snapshot.manifest);
   options.onPageChanged();
 }
 function takeSnapshot() {
@@ -22681,9 +22755,20 @@ function takeSnapshot() {
   return {
     title: document.title,
     document: slot?.innerHTML ?? "",
+    manifest: document.getElementById("nr-manifest")?.textContent ?? "",
     scrollX: window.scrollX,
     scrollY: window.scrollY
   };
+}
+function writeManifest(text) {
+  let script = document.getElementById("nr-manifest");
+  if (!script) {
+    script = document.createElement("script");
+    script.id = "nr-manifest";
+    script.type = "application/json";
+    document.body.appendChild(script);
+  }
+  script.textContent = text;
 }
 function invalidateSnapshots() {
   pageCache.clear();
@@ -22707,20 +22792,23 @@ function shouldUseBrowserNavigation(link, event) {
 
 // .nest-react/generated/client-registry.ts
 var registry = {
-  "DashboardControls": () => import("./chunks/DashboardControls.island-4LAGCA3E.js").then((module) => module.DashboardControls),
-  "GreetingEditor": () => import("./chunks/GreetingEditor.island-XKUFD42C.js").then((module) => module.GreetingEditor),
-  "UserCreator": () => import("./chunks/UserCreator.island-U36JCC4K.js").then((module) => module.UserCreator)
+  "DashboardControls": () => import("./chunks/DashboardControls.island-COUDFP2F.js").then((module) => module.DashboardControls),
+  "GreetingEditor": () => import("./chunks/GreetingEditor.island-BNSYZOB2.js").then((module) => module.GreetingEditor),
+  "UserCreator": () => import("./chunks/UserCreator.island-FYYDPGRB.js").then((module) => module.UserCreator)
 };
 
 // src/demo/client/entry.tsx
 function bootPage() {
   reloadManifest();
 }
-reloadManifest();
-installClientRuntime(registry, ClientRuntime);
-installNavigation({
-  onPageChanged: bootPage
-});
+async function boot() {
+  reloadManifest();
+  await installClientRuntime(registry, ClientRuntime);
+  installNavigation({
+    onPageChanged: bootPage
+  });
+}
+void boot();
 /*! Bundled license information:
 
 react-dom/cjs/react-dom.development.js:
@@ -22756,4 +22844,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-RU3PSDKZ.js.map
+//# sourceMappingURL=runtime-PW7H5F7X.js.map

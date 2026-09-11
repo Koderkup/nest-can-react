@@ -2,29 +2,29 @@
   "version": 1,
   "codeSplitting": true,
   "publicPath": "/assets/nest-react",
-  "runtime": "/assets/nest-react/runtime-RU3PSDKZ.js",
+  "runtime": "/assets/nest-react/runtime-PW7H5F7X.js",
   "chunks": [
-    "/assets/nest-react/chunks/DashboardControls.island-4LAGCA3E.js",
-    "/assets/nest-react/chunks/GreetingEditor.island-XKUFD42C.js",
-    "/assets/nest-react/chunks/UserCreator.island-U36JCC4K.js",
-    "/assets/nest-react/chunks/chunk-FBTIUTTF.js",
-    "/assets/nest-react/chunks/chunk-IGYCFRS2.js"
+    "/assets/nest-react/chunks/DashboardControls.island-COUDFP2F.js",
+    "/assets/nest-react/chunks/GreetingEditor.island-BNSYZOB2.js",
+    "/assets/nest-react/chunks/UserCreator.island-FYYDPGRB.js",
+    "/assets/nest-react/chunks/chunk-TNB3XDEL.js",
+    "/assets/nest-react/chunks/chunk-QAKKRXL7.js"
   ],
   "islands": {
     "DashboardControls": [
-      "/assets/nest-react/chunks/DashboardControls.island-4LAGCA3E.js",
-      "/assets/nest-react/chunks/chunk-FBTIUTTF.js",
-      "/assets/nest-react/chunks/chunk-IGYCFRS2.js"
+      "/assets/nest-react/chunks/DashboardControls.island-COUDFP2F.js",
+      "/assets/nest-react/chunks/chunk-TNB3XDEL.js",
+      "/assets/nest-react/chunks/chunk-QAKKRXL7.js"
     ],
     "GreetingEditor": [
-      "/assets/nest-react/chunks/GreetingEditor.island-XKUFD42C.js",
-      "/assets/nest-react/chunks/chunk-FBTIUTTF.js",
-      "/assets/nest-react/chunks/chunk-IGYCFRS2.js"
+      "/assets/nest-react/chunks/GreetingEditor.island-BNSYZOB2.js",
+      "/assets/nest-react/chunks/chunk-TNB3XDEL.js",
+      "/assets/nest-react/chunks/chunk-QAKKRXL7.js"
     ],
     "UserCreator": [
-      "/assets/nest-react/chunks/UserCreator.island-U36JCC4K.js",
-      "/assets/nest-react/chunks/chunk-FBTIUTTF.js",
-      "/assets/nest-react/chunks/chunk-IGYCFRS2.js"
+      "/assets/nest-react/chunks/UserCreator.island-FYYDPGRB.js",
+      "/assets/nest-react/chunks/chunk-TNB3XDEL.js",
+      "/assets/nest-react/chunks/chunk-QAKKRXL7.js"
     ]
   }
 }

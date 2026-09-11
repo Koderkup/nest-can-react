@@ -2,13 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-FBTIUTTF.js";
+} from "./chunk-TNB3XDEL.js";
 import {
   __toESM,
   require_jsx_runtime,
   require_react,
   useSession
-} from "./chunk-IGYCFRS2.js";
+} from "./chunk-QAKKRXL7.js";
 
 // src/demo/islands/DashboardControls.island.tsx
 var import_react = __toESM(require_react());
@@ -96,4 +96,4 @@ function DashboardControls({
 export {
   DashboardControls
 };
-//# sourceMappingURL=DashboardControls.island-4LAGCA3E.js.map
+//# sourceMappingURL=DashboardControls.island-COUDFP2F.js.map

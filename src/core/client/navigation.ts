@@ -1,3 +1,5 @@
+import { unmountHydrateIslands } from './mount';
+
 type NavigationOptions = {
   onPageChanged: () => void;
 };
@@ -5,6 +7,7 @@ type NavigationOptions = {
 type PageSnapshot = {
   title: string;
   document: string;
+  manifest: string;
   scrollX: number;
   scrollY: number;
 };
@@ -97,14 +100,18 @@ async function fetchSnapshot(href: string): Promise<PageSnapshot> {
   const html = await response.text();
   const nextDocument = new DOMParser().parseFromString(html, 'text/html');
   const nextSlot = nextDocument.getElementById('nr-document');
+  const nextManifest = nextDocument.getElementById('nr-manifest');
 
-  if (!nextSlot) {
-    throw new Error('Navigation response is missing #nr-document.');
+  if (!nextSlot || !nextManifest?.textContent) {
+    throw new Error(
+      'Navigation response is missing #nr-document or #nr-manifest.',
+    );
   }
 
   return {
     title: nextDocument.title,
     document: nextSlot.innerHTML,
+    manifest: nextManifest.textContent,
     scrollX: 0,
     scrollY: 0,
   };
@@ -119,7 +126,9 @@ function applySnapshot(snapshot: PageSnapshot, options: NavigationOptions) {
   }
 
   document.title = snapshot.title;
+  unmountHydrateIslands();
   slot.innerHTML = snapshot.document;
+  writeManifest(snapshot.manifest);
   options.onPageChanged();
 }
 
@@ -129,9 +138,23 @@ function takeSnapshot(): PageSnapshot {
   return {
     title: document.title,
     document: slot?.innerHTML ?? '',
+    manifest: document.getElementById('nr-manifest')?.textContent ?? '',
     scrollX: window.scrollX,
     scrollY: window.scrollY,
   };
+}
+
+function writeManifest(text: string) {
+  let script = document.getElementById('nr-manifest');
+
+  if (!script) {
+    script = document.createElement('script');
+    script.id = 'nr-manifest';
+    script.type = 'application/json';
+    document.body.appendChild(script);
+  }
+
+  script.textContent = text;
 }
 
 function invalidateSnapshots() {

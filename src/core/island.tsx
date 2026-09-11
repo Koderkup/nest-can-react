@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { IslandRenderMode, registerIsland } from './context';
-import { getIslandComponent } from './island-registry';
+import { getClientRuntime, getIslandComponent } from './island-registry';
 
 type IslandProps = {
   mode?: IslandRenderMode;
@@ -26,10 +26,15 @@ export function Island({
       throw new Error(`No island component registered for "${name}".`);
     }
 
+    const Runtime = getClientRuntime();
+    const island = <Component {...serializedProps} />;
+
     return (
       <div
         dangerouslySetInnerHTML={{
-          __html: renderToString(<Component {...serializedProps} />),
+          __html: renderToString(
+            Runtime ? <Runtime>{island}</Runtime> : island,
+          ),
         }}
         id={id}
       />

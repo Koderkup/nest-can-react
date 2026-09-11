@@ -1461,14 +1461,33 @@ function readManifest() {
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var SessionContext = (0, import_react.createContext)(null);
+var visits = 1;
+var sessionListeners = /* @__PURE__ */ new Set();
+function subscribeSession(listener) {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+}
+function getVisits() {
+  return visits;
+}
+function bumpVisits() {
+  visits += 1;
+  sessionListeners.forEach((listener) => listener());
+}
 function ClientRuntime({ children }) {
-  const [visits, setVisits] = (0, import_react.useState)(1);
+  const currentVisits = (0, import_react.useSyncExternalStore)(
+    subscribeSession,
+    getVisits,
+    getVisits
+  );
   const value = (0, import_react.useMemo)(
     () => ({
-      visits,
-      bump: () => setVisits((current) => current + 1)
+      visits: currentVisits,
+      bump: bumpVisits
     }),
-    [visits]
+    [currentVisits]
   );
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SessionContext.Provider, { value, children });
 }
@@ -1518,4 +1537,4 @@ react/cjs/react-jsx-runtime.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=chunk-IGYCFRS2.js.map
+//# sourceMappingURL=chunk-QAKKRXL7.js.map

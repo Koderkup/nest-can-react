@@ -6,7 +6,7 @@ import {
   isLoadPending,
   require_react,
   subscribe
-} from "./chunk-IGYCFRS2.js";
+} from "./chunk-QAKKRXL7.js";
 
 // src/core/client/hooks.ts
 var import_react = __toESM(require_react());
@@ -59,4 +59,4 @@ export {
   usePendingLoad,
   useCommit
 };
-//# sourceMappingURL=chunk-FBTIUTTF.js.map
+//# sourceMappingURL=chunk-TNB3XDEL.js.map

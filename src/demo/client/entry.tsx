@@ -8,9 +8,12 @@ function bootPage() {
   reloadManifest();
 }
 
-reloadManifest();
-installClientRuntime(registry, ClientRuntime);
+async function boot() {
+  reloadManifest();
+  await installClientRuntime(registry, ClientRuntime);
+  installNavigation({
+    onPageChanged: bootPage,
+  });
+}
 
-installNavigation({
-  onPageChanged: bootPage,
-});
+void boot();

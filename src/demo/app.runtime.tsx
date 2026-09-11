@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useSyncExternalStore } from 'react';
 
 type SessionState = {
   visits: number;
@@ -7,14 +7,37 @@ type SessionState = {
 
 const SessionContext = createContext<SessionState | null>(null);
 
+let visits = 1;
+const sessionListeners = new Set<() => void>();
+
+function subscribeSession(listener: () => void) {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+}
+
+function getVisits() {
+  return visits;
+}
+
+function bumpVisits() {
+  visits += 1;
+  sessionListeners.forEach((listener) => listener());
+}
+
 export function ClientRuntime({ children }: { children: React.ReactNode }) {
-  const [visits, setVisits] = useState(1);
+  const currentVisits = useSyncExternalStore(
+    subscribeSession,
+    getVisits,
+    getVisits,
+  );
   const value = useMemo(
     () => ({
-      visits,
-      bump: () => setVisits((current) => current + 1),
+      visits: currentVisits,
+      bump: bumpVisits,
     }),
-    [visits],
+    [currentVisits],
   );
 
   return (

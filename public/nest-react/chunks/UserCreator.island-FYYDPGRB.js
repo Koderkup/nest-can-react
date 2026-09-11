@@ -2,13 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-FBTIUTTF.js";
+} from "./chunk-TNB3XDEL.js";
 import {
   __toESM,
   require_jsx_runtime,
   require_react,
   useSession
-} from "./chunk-IGYCFRS2.js";
+} from "./chunk-QAKKRXL7.js";
 
 // src/demo/islands/UserCreator.island.tsx
 var import_react = __toESM(require_react());
@@ -81,4 +81,4 @@ function UserCreator({
 export {
   UserCreator
 };
-//# sourceMappingURL=UserCreator.island-U36JCC4K.js.map
+//# sourceMappingURL=UserCreator.island-FYYDPGRB.js.map
