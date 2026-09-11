@@ -1,98 +1,348 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Nest React Prototype
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-native React rendering prototype.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The goal is not to bolt a separate frontend framework onto Nest. The goal is to let **NestJS own the application runtime** while **React becomes a first-class UI/rendering layer** inside that runtime.
 
-## Description
+Current status: this is a working architecture demo, not a production-ready npm package yet.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## What It Provides
 
-## Project setup
+- Server-rendered React pages handled by Nest controllers.
+- Nest dependency injection from server React through `inject()`.
+- Server-side data reads with `load()`.
+- Server-side mutations with `commit()`.
+- Key-based refresh with `revalidate()`.
+- Client React islands mounted with `createRoot()`.
+- React client hooks: `useLoad()`, `useCommit()`, and `usePendingLoad()`.
+- A package-owned internal transport through `NestReactModule`.
+- Manifest-based island mounting with no user-authored `data-nest-*` attributes.
+- esbuild-based client bundling with no Vite and no webpack.
+- A polished demo with Home, Users, and Dashboard pages.
 
-```bash
-$ npm install
+## Core Idea
+
+Nest handles the application.
+
+React handles the UI.
+
+Server React can access Nest providers:
+
+```tsx
+export const usersLoad = load('users:list', async () => {
+  return inject<UsersService>(UsersService).findAll();
+});
+
+export default async function UsersPage() {
+  const users = await usersLoad();
+
+  return <Island name="UserCreator" props={{ initialUsers: users }} />;
+}
 ```
 
-## Compile and run the project
+Client React islands handle browser interactivity:
 
-```bash
-# development
-$ npm run start
+```tsx
+function UserCreator({ createUser }: Props) {
+  const commit = useCommit(createUser);
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+  return (
+    <form onSubmit={(event) => commit.fromSubmitEvent(event)}>
+      <input name="name" />
+      <button>Create user</button>
+    </form>
+  );
+}
 ```
 
-## Run tests
+## Project Structure
 
-```bash
-# unit tests
-$ npm run test
+```txt
+src/
+  core/
+    client/
+      hooks.ts
+      runtime.ts
+    commit.ts
+    context.ts
+    index.ts
+    inject.ts
+    island.tsx
+    load.ts
+    nest-react.controller.ts
+    nest-react.module.ts
+    renderer.tsx
 
-# e2e tests
-$ npm run test:e2e
+  demo/
+    client/
+      components/
+      entry.tsx
+      registry.ts
+    components/
+      layout.tsx
+    pages/
+      dashboard.tsx
+      home.tsx
+      users.tsx
+    services/
+      dashboard.service.ts
+      greeting.service.ts
+      users.service.ts
+    load-keys.ts
 
-# test coverage
-$ npm run test:cov
+  app.controller.ts
+  app.module.ts
+  main.ts
+
+scripts/
+  build-client.mjs
+
+public/
+  nest-react/
+    client.js
+    client.js.map
 ```
 
-## Deployment
+`src/core` is the package/framework layer.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+`src/demo` is the demo application that consumes the core layer.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Core APIs
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+### `renderPage(Page, moduleRef)`
+
+Renders a server React page inside a Nest-aware context.
+
+It collects:
+
+- load results
+- island descriptors
+- internal transport path
+
+Then it injects:
+
+- `<script id="nr-manifest" type="application/json">...</script>`
+- `<script type="module" src="/assets/nest-react/client.js"></script>`
+
+### `inject(token)`
+
+Resolves a Nest provider from the current frontend render/commit context.
+
+Example:
+
+```ts
+const users = inject<UsersService>(UsersService);
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Current limitation: this is not fully request-scoped yet. Production support should use Nest context IDs for request-scoped providers.
 
-## Resources
+### `load(key, handler)`
 
-Check out a few resources that may come in handy when working with NestJS:
+Declares a server-side read operation.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```ts
+export const greetingLoad = load('home:greeting', async () => {
+  return inject<GreetingService>(GreetingService).sayHello();
+});
+```
 
-## Support
+Calling the returned function runs the handler and records the result in the current render manifest.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### `commit(id, handler)`
 
-## Stay in touch
+Declares a server-side mutation.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```ts
+export const updateGreetingCommit = commit(
+  'greeting.update',
+  async (input: { message?: string }) => {
+    inject<GreetingService>(GreetingService).setGreeting(input.message ?? '');
+    return revalidate('home:greeting');
+  },
+);
+```
 
-## License
+Every commit gets an opaque client reference:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```ts
+updateGreetingCommit.ref
+```
+
+Client islands receive this ref instead of raw URLs.
+
+### `revalidate(...keys)`
+
+Marks load keys as stale after a commit.
+
+```ts
+return revalidate('users:list', 'dashboard:summary');
+```
+
+The browser runtime refreshes these load keys without reloading the page.
+
+### `Island`
+
+Registers a client island during server render.
+
+```tsx
+<Island
+  name="GreetingEditor"
+  props={{
+    initialMessage: greeting,
+    loadKey: greetingLoad.key,
+    updateGreeting: updateGreetingCommit.ref,
+  }}
+/>
+```
+
+The rendered HTML gets a generated root ID like `nr-i0`. Island metadata is stored in the manifest, not in public `data-nest-*` attributes.
+
+### `NestReactModule`
+
+Adds the package-owned internal transport.
+
+Current internal routes:
+
+```txt
+POST /_nr/commit
+POST /_nr/loads
+GET  /_nr/loads/:key
+```
+
+Application controllers do not need to expose framework refresh or commit URLs.
+
+## Client APIs
+
+### `useLoad(key)`
+
+Reads initial server-loaded data from the manifest and updates when the key is refreshed.
+
+```tsx
+const users = useLoad<User[]>('users:list');
+```
+
+### `useCommit(commitRef)`
+
+Calls a server commit through the internal transport.
+
+```tsx
+const create = useCommit<{ name: string; role: string }>(createUser);
+
+await create.execute({
+  name: 'Ada',
+  role: 'Engineer',
+});
+```
+
+If the commit returns revalidation keys, the client runtime refreshes those loads automatically.
+
+### `usePendingLoad(key)`
+
+Returns whether a load key is currently refreshing.
+
+```tsx
+const refreshing = usePendingLoad('users:list');
+```
+
+This helps keep old data visible while fresh server data is fetched.
+
+## Demo Routes
+
+### `/`
+
+Home page.
+
+Shows server-rendered greeting data and a client island that edits it with React state and `useCommit()`.
+
+### `/users`
+
+Users page.
+
+Loads users on the server, then mounts a client island for creating users. After a user is created, the users load refreshes without a full page reload.
+
+### `/dashboard`
+
+Dashboard page.
+
+Renders summary cards on the server and mounts a client island with local UI state, a live client clock, and a dashboard refresh commit.
+
+## Build Scripts
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build the client island bundle:
+
+```bash
+npm run build:client
+```
+
+Build the Nest server:
+
+```bash
+npm run build
+```
+
+Build both:
+
+```bash
+npm run build:all
+```
+
+Run in development:
+
+```bash
+npm run start:dev
+```
+
+Run production build:
+
+```bash
+npm run build:all
+npm run start:prod
+```
+
+## How The Request Flow Works
+
+1. Browser requests a page such as `/users`.
+2. Nest routes the request to `AppController`.
+3. The controller calls `renderPage(Users, moduleRef)`.
+4. The server React page calls `load()`.
+5. `load()` reads data through Nest DI.
+6. `Island` registers client island metadata.
+7. The renderer returns HTML plus the `nr-manifest`.
+8. Browser loads `/assets/nest-react/client.js`.
+9. Client runtime reads the manifest and mounts islands with `createRoot()`.
+10. A client island calls `useCommit()`.
+11. The runtime posts to `/_nr/commit`.
+12. The server commit mutates Nest state and returns revalidation keys.
+13. The runtime refreshes affected load keys through `/_nr/loads`.
+14. `useLoad()` subscribers update without a full page reload.
+
+## Current Limitations
+
+This prototype is not production ready yet.
+
+Known gaps:
+
+- No full request-scoped provider support yet.
+- Internal transport has no CSRF protection yet.
+- Commit refs are opaque but not signed.
+- Input validation is minimal.
+- Error serialization is minimal.
+- No first-class CSS imports yet.
+- No first-class image/font/SVG asset imports yet.
+- No per-island code splitting yet.
+- One client bundle currently contains all demo islands.
+- Islands are mounted with `createRoot()`; SSR hydration is not fully implemented yet.
+- No true React Server Components Flight protocol yet.
+- Package exports are not prepared for npm publishing yet.
+- Test coverage is still missing for core behavior.
+
+## More Docs
+
+- [Creating Your First App](docs/first-app.md)
+- [Core Concepts](docs/core-concepts.md)
