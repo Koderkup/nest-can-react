@@ -37,6 +37,7 @@ export default async function Home() {
       <section className="card span-5">
         <span className="pill">Client island</span>
         <Island
+          mode="hydrate"
           name="GreetingEditor"
           props={{
             initialMessage: greeting,

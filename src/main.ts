@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'node:path';
 
 import { initializeFrontendDI } from './core/inject';
+import './demo/islands';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -16,9 +17,11 @@ async function bootstrap() {
     prefix: '/assets/',
   });
 
-  await app.listen(3000);
+  const port = Number(process.env.PORT ?? 3000);
 
-  console.log('http://localhost:3000');
+  await app.listen(port);
+
+  console.log(`http://localhost:${port}`);
 }
 
 bootstrap();

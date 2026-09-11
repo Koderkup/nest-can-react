@@ -1,6 +1,6 @@
 import React from 'react';
 import { ComponentType } from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot, hydrateRoot, Root } from 'react-dom/client';
 import { getManifest } from './runtime';
 
 const mountedRoots = new Map<string, Root>();
@@ -16,8 +16,11 @@ export function mountIslands(registry: Record<string, ComponentType<any>>) {
       return;
     }
 
-    const root = createRoot(rootElement);
-    root.render(<Component {...island.props} />);
+    const root =
+      island.mode === 'hydrate'
+        ? hydrateRoot(rootElement, <Component {...island.props} />)
+        : createMountRoot(rootElement, Component, island.props);
+
     mountedRoots.set(island.id, root);
   });
 }
@@ -25,4 +28,14 @@ export function mountIslands(registry: Record<string, ComponentType<any>>) {
 export function unmountIslands() {
   mountedRoots.forEach((root) => root.unmount());
   mountedRoots.clear();
+}
+
+function createMountRoot(
+  rootElement: HTMLElement,
+  Component: ComponentType<any>,
+  props: Record<string, unknown>,
+) {
+  const root = createRoot(rootElement);
+  root.render(<Component {...props} />);
+  return root;
 }

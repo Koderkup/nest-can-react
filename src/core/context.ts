@@ -9,8 +9,11 @@ type FrontendContext = {
 export type IslandManifestEntry = {
   id: string;
   name: string;
+  mode: IslandRenderMode;
   props: Record<string, unknown>;
 };
+
+export type IslandRenderMode = 'mount' | 'hydrate';
 
 export type FrontendRenderState = {
   loadResults: Map<string, unknown>;
@@ -59,7 +62,11 @@ export function getLoadResults() {
   return storage.getStore()?.renderState?.loadResults;
 }
 
-export function registerIsland(name: string, props: Record<string, unknown>) {
+export function registerIsland(
+  name: string,
+  mode: IslandRenderMode,
+  props: Record<string, unknown>,
+) {
   const renderState = storage.getStore()?.renderState;
 
   if (!renderState) {
@@ -67,7 +74,7 @@ export function registerIsland(name: string, props: Record<string, unknown>) {
   }
 
   const id = `nr-i${renderState.nextIslandId++}`;
-  renderState.islands.push({ id, name, props });
+  renderState.islands.push({ id, name, mode, props });
 
   return id;
 }

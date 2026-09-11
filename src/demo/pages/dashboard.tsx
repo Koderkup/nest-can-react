@@ -48,6 +48,7 @@ export default async function Dashboard() {
 
       <section className="card span-12">
         <Island
+          mode="mount"
           name="DashboardControls"
           props={{
             initialSummary: summary,

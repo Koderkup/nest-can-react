@@ -36,6 +36,7 @@ export default async function Users() {
 
       <section className="card span-8">
         <Island
+          mode="hydrate"
           name="UserCreator"
           props={{
             initialUsers: users,

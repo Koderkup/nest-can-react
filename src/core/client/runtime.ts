@@ -5,6 +5,7 @@ export type CommitRef = {
 type IslandManifestEntry = {
   id: string;
   name: string;
+  mode: 'mount' | 'hydrate';
   props: Record<string, unknown>;
 };
 
@@ -19,19 +20,26 @@ type LoadResult = {
   data: unknown;
 };
 
-let manifest = readManifest();
+let manifest = createEmptyManifest();
 let loads = manifest.loads;
 let version = 0;
+let initialized = false;
 const pendingLoads = new Set<string>();
 const listeners = new Set<() => void>();
 
 export function getManifest() {
+  ensureRuntime();
   return manifest;
 }
 
 export function reloadManifest() {
+  if (!canUseDOM()) {
+    return;
+  }
+
   manifest = readManifest();
   loads = manifest.loads;
+  initialized = true;
   pendingLoads.clear();
   notify();
 }
@@ -46,14 +54,20 @@ export function getVersion() {
 }
 
 export function getLoad<T>(key: string) {
+  ensureRuntime();
   return loads[key] as T | undefined;
 }
 
 export function isLoadPending(key: string) {
+  if (!canUseDOM()) {
+    return false;
+  }
+
   return pendingLoads.has(key);
 }
 
 export async function refresh(keys: string[]) {
+  ensureBrowserRuntime();
   const uniqueKeys = [...new Set(keys)].filter(Boolean);
 
   if (uniqueKeys.length === 0) {
@@ -97,6 +111,8 @@ export async function refresh(keys: string[]) {
 }
 
 export async function commit(ref: CommitRef, payload: unknown) {
+  ensureBrowserRuntime();
+
   const response = await fetch(`${manifest.transportPath}/commit`, {
     method: 'POST',
     headers: {
@@ -130,15 +146,47 @@ function notify() {
   listeners.forEach((listener) => listener());
 }
 
+function ensureRuntime() {
+  if (initialized || !canUseDOM()) {
+    return;
+  }
+
+  manifest = readManifest();
+  loads = manifest.loads;
+  initialized = true;
+}
+
+function ensureBrowserRuntime() {
+  ensureRuntime();
+
+  if (!canUseDOM()) {
+    throw new Error(
+      'Nest React client runtime is only available in a browser.',
+    );
+  }
+}
+
+function canUseDOM() {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
+
+function createEmptyManifest(): PageManifest {
+  return {
+    transportPath: '/_nr',
+    loads: {},
+    islands: [],
+  };
+}
+
 function readManifest(): PageManifest {
+  if (!canUseDOM()) {
+    return createEmptyManifest();
+  }
+
   const script = document.getElementById('nr-manifest');
 
   if (!script?.textContent) {
-    return {
-      transportPath: '/_nr',
-      loads: {},
-      islands: [],
-    };
+    return createEmptyManifest();
   }
 
   return JSON.parse(script.textContent) as PageManifest;
