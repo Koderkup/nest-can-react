@@ -3,7 +3,19 @@ import { ModuleRef } from '@nestjs/core';
 
 type FrontendContext = {
   moduleRef: ModuleRef;
-  loadResults?: Map<string, unknown>;
+  renderState?: FrontendRenderState;
+};
+
+export type IslandManifestEntry = {
+  id: string;
+  name: string;
+  props: Record<string, unknown>;
+};
+
+export type FrontendRenderState = {
+  loadResults: Map<string, unknown>;
+  islands: IslandManifestEntry[];
+  nextIslandId: number;
 };
 
 const storage = new AsyncLocalStorage<FrontendContext>();
@@ -25,16 +37,37 @@ export function getFrontendModuleRef() {
 
 export function runWithFrontendContext<T>(
   moduleRef: ModuleRef,
-  loadResults: Map<string, unknown> | undefined,
+  renderState: FrontendRenderState | undefined,
   callback: () => T,
 ) {
-  return storage.run({ moduleRef, loadResults }, callback);
+  return storage.run({ moduleRef, renderState }, callback);
+}
+
+export function createRenderState(): FrontendRenderState {
+  return {
+    loadResults: new Map<string, unknown>(),
+    islands: [],
+    nextIslandId: 0,
+  };
 }
 
 export function recordLoadResult(key: string, value: unknown) {
-  storage.getStore()?.loadResults?.set(key, value);
+  storage.getStore()?.renderState?.loadResults.set(key, value);
 }
 
 export function getLoadResults() {
-  return storage.getStore()?.loadResults;
+  return storage.getStore()?.renderState?.loadResults;
+}
+
+export function registerIsland(name: string, props: Record<string, unknown>) {
+  const renderState = storage.getStore()?.renderState;
+
+  if (!renderState) {
+    throw new Error('Islands can only be registered during a React render.');
+  }
+
+  const id = `nr-i${renderState.nextIslandId++}`;
+  renderState.islands.push({ id, name, props });
+
+  return id;
 }

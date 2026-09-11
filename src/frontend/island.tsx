@@ -1,4 +1,5 @@
 import React from 'react';
+import { registerIsland } from './context';
 
 type IslandProps = {
   name: string;
@@ -7,12 +8,11 @@ type IslandProps = {
 };
 
 export function Island({ name, props = {}, children }: IslandProps) {
-  return (
-    <div
-      data-nest-react-island={name}
-      data-nest-react-props={JSON.stringify(props)}
-    >
-      {children}
-    </div>
-  );
+  const id = registerIsland(name, serializeProps(props));
+
+  return <div id={id}>{children}</div>;
+}
+
+function serializeProps(value: Record<string, unknown>) {
+  return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
 }

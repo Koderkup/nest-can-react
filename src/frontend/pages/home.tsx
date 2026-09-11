@@ -1,12 +1,22 @@
 import React from 'react';
+import { commit, revalidate } from '../commit';
 import { inject } from '../inject';
 import { Island } from '../island';
 import { load } from '../load';
+import { loadKeys } from '../load-keys';
 import { GreetingService } from '../../greeting.service';
 
-export const greetingLoad = load('home:greeting', async () => {
+export const greetingLoad = load(loadKeys.greeting, async () => {
   return inject<GreetingService>(GreetingService).sayHello();
 });
+
+export const updateGreetingCommit = commit(
+  'greeting.update',
+  async (input: { message?: string }) => {
+    inject<GreetingService>(GreetingService).setGreeting(input.message ?? '');
+    return revalidate(loadKeys.greeting, loadKeys.dashboard);
+  },
+);
 
 export default async function Home() {
   const greeting = await greetingLoad();
@@ -18,20 +28,24 @@ export default async function Home() {
       </head>
 
       <body>
-        <h1 data-nest-react-load-text={greetingLoad.key}>{greeting}</h1>
+        <nav>
+          <a href="/">Home</a> | <a href="/users">Users</a> |{' '}
+          <a href="/dashboard">Dashboard</a>
+        </nav>
 
-        <Island
-          name="GreetingEditor"
-          props={{ commitUrl: '/greeting', loadKey: greetingLoad.key }}
-        >
-          <form method="post" data-nest-react-commit="/greeting">
-            <label>
-              New greeting
-              <input name="message" defaultValue={greeting} />
-            </label>
-            <button type="submit">Commit</button>
-          </form>
-        </Island>
+        <main>
+          <p>Server-rendered greeting</p>
+          <h1>{greeting}</h1>
+
+          <Island
+            name="GreetingEditor"
+            props={{
+              initialMessage: greeting,
+              loadKey: greetingLoad.key,
+              updateGreeting: updateGreetingCommit.ref,
+            }}
+          />
+        </main>
       </body>
     </html>
   );
