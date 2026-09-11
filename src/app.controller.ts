@@ -1,5 +1,6 @@
-import { Controller, Get, Header } from '@nestjs/common';
+import { Controller, Get, Header, Res } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
+import type { Response } from 'express';
 
 import Dashboard from './demo/pages/dashboard';
 import Home from './demo/pages/home';
@@ -13,18 +14,20 @@ export class AppController {
   @Get()
   @Header('content-type', 'text/html')
   home() {
-    return renderPage(Home, this.moduleRef);
+    return renderPage(Home, this.moduleRef, { mode: 'static' });
   }
 
   @Get('users')
   @Header('content-type', 'text/html')
   users() {
-    return renderPage(Users, this.moduleRef);
+    return renderPage(Users, this.moduleRef, { mode: 'hydrated' });
   }
 
   @Get('dashboard')
-  @Header('content-type', 'text/html')
-  dashboard() {
-    return renderPage(Dashboard, this.moduleRef);
+  dashboard(@Res() response: Response) {
+    return renderPage(Dashboard, this.moduleRef, {
+      mode: 'streaming',
+      response,
+    });
   }
 }
