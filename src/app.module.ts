@@ -6,6 +6,6 @@ import { GreetingService } from './greeting.service';
 @Module({
   imports: [],
   controllers: [AppController],
-  providers: [GreetingService],
+  providers: [GreetingService, AppService],
 })
 export class AppModule {}

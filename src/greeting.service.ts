@@ -2,7 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class GreetingService {
+  private greeting = 'Hello from Nest DI';
+
   sayHello() {
-    return 'Hello from Nest DI 👋';
+    return this.greeting;
+  }
+
+  setGreeting(greeting: string) {
+    this.greeting = greeting;
+    return this.greeting;
   }
 }

@@ -1,15 +1,7 @@
-import { ModuleRef } from '@nestjs/core';
+import { getFrontendModuleRef, initializeFrontendDI } from './context';
 
-let moduleRef: ModuleRef;
-
-export function initializeFrontendDI(ref: ModuleRef) {
-  moduleRef = ref;
-}
+export { initializeFrontendDI };
 
 export function inject<T>(token: any): T {
-  if (!moduleRef) {
-    throw new Error('Frontend DI has not been initialized.');
-  }
-
-  return moduleRef.get<T>(token, { strict: false });
+  return getFrontendModuleRef().get<T>(token, { strict: false });
 }
