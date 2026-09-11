@@ -22796,7 +22796,7 @@ var registry = {
   "UserCreator": () => import("./chunks/UserCreator.island-FYYDPGRB.js").then((module) => module.UserCreator)
 };
 
-// src/demo/client/entry.tsx
+// .nest-react/generated/client-entry.tsx
 function bootPage() {
   reloadManifest();
 }
@@ -22843,4 +22843,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-WOEMF2EC.js.map
+//# sourceMappingURL=runtime-VTZWA5IF.js.map

@@ -13,7 +13,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as esbuild from 'esbuild';
 
 const defaultConfig = {
-  clientEntry: 'src/demo/client/entry.tsx',
   outDir: 'public/nest-react',
   publicPath: '/assets/nest-react',
   codeSplitting: true,
@@ -23,13 +22,13 @@ const defaultConfig = {
   },
   generatedDir: '.nest-react/generated',
   runtimeEntry: 'src/app.runtime.tsx',
+  layoutEntry: undefined,
 };
 
 export async function buildNestReactClient(overrides = {}) {
   const rootDir = resolve(overrides.rootDir ?? process.cwd());
   const config = await loadConfig(rootDir, overrides);
   const codeSplitting = shouldSplit(config);
-  const entryPoint = resolve(rootDir, config.clientEntry);
   const outdir = resolve(rootDir, config.outDir);
   const generatedDir = resolve(rootDir, config.generatedDir);
   const islands = await discoverIslands(rootDir, config.islands);
@@ -39,7 +38,13 @@ export async function buildNestReactClient(overrides = {}) {
     islands,
     rootDir,
     runtimeEntry: config.runtimeEntry,
+    layoutEntry: config.layoutEntry,
   });
+
+  const entryPoint = resolve(
+    rootDir,
+    config.clientEntry ?? join(config.generatedDir, 'client-entry.tsx'),
+  );
 
   await rm(outdir, { recursive: true, force: true });
   await mkdir(outdir, { recursive: true });
@@ -108,7 +113,7 @@ function normalizeConfig(config) {
 
   return {
     ...defaultConfig,
-    clientEntry: client.entry ?? config.clientEntry ?? defaultConfig.clientEntry,
+    clientEntry: client.entry ?? config.clientEntry,
     outDir: client.outDir ?? config.outDir ?? defaultConfig.outDir,
     publicPath:
       client.publicPath ?? config.publicPath ?? defaultConfig.publicPath,
@@ -120,6 +125,7 @@ function normalizeConfig(config) {
       config.runtime?.entry ??
       config.runtimeEntry ??
       defaultConfig.runtimeEntry,
+    layoutEntry: config.layout ?? config.layoutEntry ?? defaultConfig.layoutEntry,
   };
 }
 
@@ -259,6 +265,7 @@ async function generateIslandRegistries({
   islands,
   rootDir,
   runtimeEntry,
+  layoutEntry,
 }) {
   await mkdir(generatedDir, { recursive: true });
 
@@ -269,7 +276,7 @@ async function generateIslandRegistries({
     ),
     writeFile(
       join(generatedDir, 'server-registry.ts'),
-      createServerRegistry({ generatedDir, islands, rootDir }),
+      createServerRegistry({ generatedDir, islands }),
     ),
     writeFile(
       join(generatedDir, 'client-runtime.ts'),
@@ -279,7 +286,97 @@ async function generateIslandRegistries({
         runtimeEntry,
       }),
     ),
+    writeFile(
+      join(generatedDir, 'server-layout.ts'),
+      createServerLayoutModule({ generatedDir, rootDir, layoutEntry }),
+    ),
+    writeFile(
+      join(generatedDir, 'client-entry.tsx'),
+      createClientEntry({ generatedDir, rootDir }),
+    ),
+    writeFile(
+      join(generatedDir, 'server-boot.ts'),
+      createServerBoot({ generatedDir, rootDir }),
+    ),
   ]);
+}
+
+function createClientEntry({ generatedDir, rootDir }) {
+  const mountImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/mount.tsx'),
+  );
+  const navigationImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/navigation.ts'),
+  );
+  const runtimeImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/runtime.ts'),
+  );
+
+  return [
+    `import { installClientRuntime } from ${JSON.stringify(mountImport)};`,
+    `import { installNavigation } from ${JSON.stringify(navigationImport)};`,
+    `import { reloadManifest } from ${JSON.stringify(runtimeImport)};`,
+    'import { registry } from "./client-registry.js";',
+    'import { ClientRuntime } from "./client-runtime.js";',
+    '',
+    'function bootPage() {',
+    '  reloadManifest();',
+    '}',
+    '',
+    'async function boot() {',
+    '  reloadManifest();',
+    '  await installClientRuntime(registry, ClientRuntime);',
+    '  installNavigation({',
+    '    onPageChanged: bootPage,',
+    '  });',
+    '}',
+    '',
+    'void boot();',
+    '',
+  ].join('\n');
+}
+
+function createServerBoot({ generatedDir, rootDir }) {
+  const registryImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/island-registry.ts'),
+  );
+  const layoutImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/layout-registry.ts'),
+  );
+
+  return [
+    `import { registerClientRuntime, registerIslandComponents } from ${JSON.stringify(registryImport)};`,
+    `import { registerLayout } from ${JSON.stringify(layoutImport)};`,
+    'import { ClientRuntime } from "./client-runtime.js";',
+    'import { registry } from "./server-registry.js";',
+    'import Layout from "./server-layout.js";',
+    '',
+    'registerIslandComponents(registry);',
+    'registerClientRuntime(ClientRuntime);',
+    'registerLayout(Layout);',
+    '',
+  ].join('\n');
+}
+
+function createServerLayoutModule({ generatedDir, rootDir, layoutEntry }) {
+  const layoutPath = layoutEntry
+    ? resolve(rootDir, layoutEntry)
+    : resolve(rootDir, 'src/core/default-layout.tsx');
+
+  if (!existsSync(layoutPath)) {
+    throw new Error(`Nest React layout entry "${layoutEntry}" was not found.`);
+  }
+
+  const layoutImport = toImportSpecifier(generatedDir, layoutPath);
+
+  return [`export { default } from ${JSON.stringify(layoutImport)};`, ''].join(
+    '\n',
+  );
 }
 
 function createClientRuntimeModule({ generatedDir, rootDir, runtimeEntry }) {

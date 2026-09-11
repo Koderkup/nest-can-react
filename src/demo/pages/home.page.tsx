@@ -1,6 +1,5 @@
 import React from 'react';
-import { commit, inject, Island, load, revalidate } from '../../core';
-import { DemoShell } from '../components/layout';
+import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
 import { loadKeys } from '../load-keys';
 import { GreetingService } from '../services/greeting.service';
 
@@ -21,13 +20,16 @@ export const updateGreetingCommit = commit(
 export default async function Home() {
   const greeting = await greetingLoad();
 
+  setLayoutMeta({
+    active: 'home',
+    description:
+      'A NestJS-native rendering experiment where server React reads from Nest DI and client islands bring focused interactivity.',
+    eyebrow: 'SSR plus client islands',
+    title: 'React as a first-class NestJS rendering layer',
+  });
+
   return (
-    <DemoShell
-      active="home"
-      description="A NestJS-native rendering experiment where server React reads from Nest DI and client islands bring focused interactivity."
-      eyebrow="SSR plus client islands"
-      title="React as a first-class NestJS rendering layer"
-    >
+    <>
       <section className="card span-7">
         <span className="pill">Server rendered</span>
         <p className="muted">
@@ -57,6 +59,6 @@ export default async function Home() {
           refreshes stale load keys without a full page reload.
         </p>
       </section>
-    </DemoShell>
+    </>
   );
 }

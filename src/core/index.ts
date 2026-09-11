@@ -11,7 +11,10 @@ export {
   registerClientRuntime,
   registerIslandComponents,
 } from './island-registry';
+export { getLayout, registerLayout } from './layout-registry';
 export { listLoadKeys, load, refreshLoad } from './load';
 export { NestReactModule } from './nest-react.module';
 export { renderPage } from './renderer';
 export { NestLink } from './link';
+export { getLayoutMeta, setLayoutMeta, useLayoutMeta } from './context';
+export type { LayoutMeta } from './context';

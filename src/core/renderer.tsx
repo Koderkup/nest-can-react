@@ -13,6 +13,8 @@ import {
   runWithFrontendContext,
 } from './context';
 import { getClientAssetManifest, getIslandAssetHints } from './client-assets';
+import DefaultLayout from './default-layout';
+import { getLayout } from './layout-registry';
 
 type ServerPage = () => React.ReactNode | Promise<React.ReactNode>;
 
@@ -67,7 +69,8 @@ async function renderBufferedPage(
     renderState,
     async () => {
       const page = await Page();
-      return '<!DOCTYPE html>' + render(page);
+      const Layout = getLayout() ?? DefaultLayout;
+      return '<!DOCTYPE html>' + render(<Layout>{page}</Layout>);
     },
   );
 
@@ -83,6 +86,8 @@ async function renderStreamingPage(
 
   await runWithFrontendContext(moduleRef, renderState, async () => {
     const page = await Page();
+    const Layout = getLayout() ?? DefaultLayout;
+    const documentTree = <Layout>{page}</Layout>;
 
     await new Promise<void>((resolve, reject) => {
       let didError = false;
@@ -95,7 +100,7 @@ async function renderStreamingPage(
       transform.on('error', reject);
       transform.pipe(options.response);
 
-      stream = renderToPipeableStream(page, {
+      stream = renderToPipeableStream(documentTree, {
         onShellReady() {
           options.response.status(didError ? 500 : (options.statusCode ?? 200));
           options.response.setHeader('content-type', 'text/html');
@@ -146,8 +151,8 @@ function ensureDocumentSlots(markup: string) {
   }
 
   return markup.replace(
-    /<body([^>]*)>/i,
-    '<body$1><div id="nr-runtime"></div><div id="nr-document">',
+    /<body([^>]*)>([\s\S]*)<\/body>/i,
+    '<body$1><div id="nr-runtime"></div><div id="nr-document">$2</div></body>',
   );
 }
 

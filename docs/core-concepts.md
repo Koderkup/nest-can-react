@@ -20,7 +20,7 @@ That means:
 - Client islands mutate by calling server `commit()` refs.
 - Shared client UI state uses React context via `ClientRuntime` (see islands below).
 
-Application folder layout is **not** part of this contract. `src/demo/` is a sample. Required wiring is config + `*.island.tsx` + document slots + Nest module/DI. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-demo).
+Application folder layout is **not** part of this contract. `src/demo/` is a sample. Required wiring is `nest.react.json`, `layout.tsx`, `*.island.tsx`, and `NestReactModule.forRoot()`. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-demo).
 
 ## `src/core`
 
@@ -39,6 +39,8 @@ src/core/
   inject.ts
   island.tsx
   island-registry.ts
+  layout-registry.ts
+  default-layout.tsx
   load.ts
   nest-react.controller.ts
   nest-react.module.ts
@@ -69,7 +71,7 @@ Options:
 - `{ mode: 'hydrated' }` — `renderToString`
 - `{ mode: 'streaming', response }` — pipeable stream
 
-The HTML includes:
+`renderPage` wraps the page in the configured layout, then injects:
 
 - `#nr-runtime` — empty host for the shared client runtime root
 - `#nr-document` — page body that client navigation replaces
@@ -154,22 +156,24 @@ Built by `src/core/build/build-client.mjs` (`npm run build:client`).
 
 Config (`nest.react.json`):
 
-- `client.entry` — browser boot
+- `layout` — server layout module (default layout if omitted)
 - `client.outDir` / `client.publicPath`
 - `client.codeSplitting` — per-island chunks when true
-- `runtime.entry` — `ClientRuntime`
+- `client.entry` — optional override of generated client boot
+- `runtime.entry` — optional `ClientRuntime`
 - `islands.include` / `islands.exclude`
 
 Output:
 
+- `.nest-react/generated/client-entry.tsx`
 - `.nest-react/generated/client-registry.ts`
 - `.nest-react/generated/server-registry.ts`
 - `.nest-react/generated/client-runtime.ts`
+- `.nest-react/generated/server-layout.ts`
+- `.nest-react/generated/server-boot.ts`
 - `public/nest-react/runtime-[hash].js`
 - `public/nest-react/chunks/*`
 - `public/nest-react/manifest.json`
-
-There is no hand-maintained `src/demo/client/registry.ts`.
 
 ## Demo App
 

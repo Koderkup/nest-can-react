@@ -1,16 +1,16 @@
 {
   "$schema": "./node_modules/@nestjs/react/schema.json",
-  "client": {
-    "entry": "src/demo/client/entry.tsx",
-    "outDir": "public/nest-react",
-    "publicPath": "/assets/nest-react",
-    "codeSplitting": true
-  },
   "runtime": {
     "entry": "src/demo/app.runtime.tsx"
   },
+  "layout": "src/demo/layout.tsx",
   "islands": {
     "include": ["src/**/*.island.tsx"],
     "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
+  },
+  "client": {
+    "outDir": "public/nest-react",
+    "publicPath": "/assets/nest-react",
+    "codeSplitting": true
   }
 }

@@ -21,57 +21,48 @@ Copy the **roles** below, not the demo folder names.
 
 | Role | What it is | How you point at it |
 | --- | --- | --- |
-| Config | Client entry, runtime entry, island globs, output dir | `nest.react.json` at the repo root (or `nest-react.config.mjs`) |
-| Client entry | Browser boot: manifest + `installClientRuntime` + navigation | `client.entry` |
-| Runtime module | Must export `ClientRuntime` | `runtime.entry` |
-| Island files | Browser components | Files matching `islands.include`, named `*.island.tsx` |
-| Server island register | `registerIslandComponents` + `registerClientRuntime` | Import that module from `main.ts` (any path) |
-| Document slots | Empty runtime host + page slot | `#nr-runtime` and `#nr-document` in the HTML you render |
-| Nest wiring | Transport + DI + static files | `NestReactModule.forRoot()`, `initializeFrontendDI`, `useStaticAssets` |
+| Config | Island globs, output dir, optional runtime, layout | `nest.react.json` |
+| Layout | Document chrome (`<html>` / nav / `{children}`) | `layout` |
+| Island files | Browser components | `*.island.tsx` matching `islands.include` |
+| Nest wiring | Transport, DI, `/assets`, generated boot | `NestReactModule.forRoot()` |
 
-Island **file name** matters: `GreetingEditor.island.tsx` must export `GreetingEditor`, and `<Island name="GreetingEditor" />` must use that same name. The **directory** does not (`src/islands/`, `src/ui/`, `app/client/` are all fine if the glob matches).
+Island **file name** matters: `GreetingEditor.island.tsx` must export `GreetingEditor`, and `<Island name="GreetingEditor" />` must use that same name. The **directory** does not.
 
-### Optional (demo convenience only)
+The package generates client entry, registries, and `server-boot.ts`. It injects `#nr-runtime` and `#nr-document`. Do not author those files or slot ids.
 
-These are *not* required:
+### Optional
 
-- A `src/demo/` folder
+- `src/demo/` folder names
 - `*.page.tsx` filenames
-- A `load-keys.ts` module (string keys inline are fine)
-- A shared `layout.tsx` (you can inline `<html>` on one page)
-- Splitting `services/` vs `pages/` vs `islands/`
-- Home / Users / Dashboard routes
+- `load-keys.ts`
+- `runtime.entry` / `app.runtime.tsx` (pass-through `ClientRuntime` if omitted)
+- `client.entry` (override generated boot)
 
-A first app can be as flat as:
+A first app can be:
 
 ```txt
 nest.react.json
 src/
-  core/                      # already in this prototype
+  core/
   main.ts
   app.module.ts
   app.controller.ts
   greeting.service.ts
-  home.tsx                   # server page
-  greeting-editor.island.tsx
-  app.runtime.tsx            # export function ClientRuntime
-  client-entry.tsx           # browser boot
-  register-ui.ts             # registerIslandComponents + registerClientRuntime
-public/nest-react/           # created by build:client
+  layout.tsx
+  home.tsx
+  GreetingEditor.island.tsx
+public/nest-react/
 ```
 
-Example `nest.react.json` for that layout:
+Example `nest.react.json`:
 
 ```json
 {
+  "layout": "src/layout.tsx",
   "client": {
-    "entry": "src/client-entry.tsx",
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
     "codeSplitting": true
-  },
-  "runtime": {
-    "entry": "src/app.runtime.tsx"
   },
   "islands": {
     "include": ["src/**/*.island.tsx"],
@@ -98,32 +89,25 @@ import { GreetingService } from './greeting.service';
 export class AppModule {}
 ```
 
-This registers the internal transport (`/_nr/commit`, `/_nr/loads`). Do not call those URLs from app code; islands use `useCommit()` and `useLoad()`.
+This registers the internal transport (`/_nr/commit`, `/_nr/loads`), frontend DI, static files at `/assets/`, and generated island/layout registration.
 
-## 2. Initialize Frontend DI And Serve Assets
+## 2. Nest Bootstrap
 
 ```ts
 import { NestFactory } from '@nestjs/core';
-import { ModuleRef } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'node:path';
 import { AppModule } from './app.module';
-import { initializeFrontendDI } from './core';
-import './register-ui';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  initializeFrontendDI(app.get(ModuleRef));
-  app.useStaticAssets(join(process.cwd(), 'public'), {
-    prefix: '/assets/',
-  });
+  const app = await NestFactory.create(AppModule);
   await app.listen(3000);
 }
 
 bootstrap();
 ```
 
-`./register-ui` is whatever file calls `registerIslandComponents` and `registerClientRuntime`. The demo names it `src/demo/islands.ts`.
+You do not import island registries or call `initializeFrontendDI` / `useStaticAssets`. `NestReactModule.forRoot()` owns that.
+
+Run `npm run build:client` before the first server start so `.nest-react/generated` exists.
 
 ## 3. Create A Nest Service
 
@@ -147,13 +131,36 @@ export class GreetingService {
 }
 ```
 
-## 4. Create A Server Page
+## 4. Create A Layout And A Server Page
 
-Include **both** document slots. If they are missing, the renderer will try to insert them, but client navigation and the runtime host depend on them being stable.
+`layout.tsx` owns `<html>` chrome. Do not add `#nr-runtime` or `#nr-document`.
+
+```tsx
+import React, { ReactNode } from 'react';
+import { useLayoutMeta } from './core';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  const meta = useLayoutMeta();
+
+  return (
+    <html>
+      <head>
+        <title>{meta.title ?? 'Home'}</title>
+      </head>
+      <body>
+        <h1>{meta.title}</h1>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+Pages set chrome via `setLayoutMeta` and return only the page body:
 
 ```tsx
 import React from 'react';
-import { commit, inject, Island, load, revalidate } from './core';
+import { commit, inject, Island, load, revalidate, setLayoutMeta } from './core';
 import { GreetingService } from './greeting.service';
 
 export const greetingLoad = load('home:greeting', async () => {
@@ -171,33 +178,27 @@ export const updateGreetingCommit = commit(
 export default async function HomePage() {
   const greeting = await greetingLoad();
 
+  setLayoutMeta({ title: 'Home' });
+
   return (
-    <html>
-      <head>
-        <title>Home</title>
-      </head>
-      <body>
-        <div id="nr-runtime"></div>
-        <div id="nr-document">
-          <h1>{greeting}</h1>
-          <Island
-            mode="hydrate"
-            name="GreetingEditor"
-            props={{
-              initialMessage: greeting,
-              loadKey: greetingLoad.key,
-              updateGreeting: updateGreetingCommit.ref,
-            }}
-          />
-        </div>
-      </body>
-    </html>
+    <>
+      <p>{greeting}</p>
+      <Island
+        mode="hydrate"
+        name="GreetingEditor"
+        props={{
+          initialMessage: greeting,
+          loadKey: greetingLoad.key,
+          updateGreeting: updateGreetingCommit.ref,
+        }}
+      />
+    </>
   );
 }
 ```
 
-- `mode="hydrate"`: HTML for the island is rendered on the server, then hydrated (interactive without a second copy of the UI).
-- `mode="mount"`: empty host; the client renders into it (use this when SSR of the island is unnecessary).
+- `mode="hydrate"`: HTML for the island is rendered on the server, then hydrated.
+- `mode="mount"`: empty host; the client renders into it.
 
 `name` must match the island component export.
 
@@ -270,52 +271,11 @@ export function GreetingEditor({
 
 Always `preventDefault` on island forms. Without it, the browser does a full submit and you lose the no-reload `commit()` path.
 
-## 7. Runtime, Registry, And Client Entry
+## 7. Optional Client Runtime
 
-`build:client` writes `.nest-react/generated/{client-registry,server-registry,client-runtime}.ts` from your island glob and `runtime.entry`.
+`build:client` writes `.nest-react/generated/` (client entry, registries, `server-boot.ts`, layout re-export). `NestReactModule` loads `server-boot.ts`. You do not write `islands.ts` or `client/entry.tsx`.
 
-Server register (any filename):
-
-```ts
-import { registerClientRuntime, registerIslandComponents } from './core';
-import { registry } from '../.nest-react/generated/server-registry.js';
-import { ClientRuntime } from './app.runtime';
-
-registerIslandComponents(registry);
-registerClientRuntime(ClientRuntime);
-```
-
-`ClientRuntime` can be a pass-through at first:
-
-```tsx
-import React, { ReactNode } from 'react';
-
-export function ClientRuntime({ children }: { children: ReactNode }) {
-  return children;
-}
-```
-
-When you need shared client state across islands (the demo session counter), put a React context provider here. If hydrate-mode islands each get their own root, keep that state in a module store and subscribe with `useSyncExternalStore` inside the provider so every root sees the same values.
-
-Client entry (`client.entry`):
-
-```tsx
-import { installClientRuntime } from './core/client/mount';
-import { installNavigation } from './core/client/navigation';
-import { reloadManifest } from './core/client/runtime';
-import { registry } from '../.nest-react/generated/client-registry.js';
-import { ClientRuntime } from '../.nest-react/generated/client-runtime.js';
-
-async function boot() {
-  reloadManifest();
-  await installClientRuntime(registry, ClientRuntime);
-  installNavigation({ onPageChanged: () => reloadManifest() });
-}
-
-void boot();
-```
-
-You do not hand-write a component registry anymore. Do not recreate `src/demo/client/registry.ts`.
+Shared client context is optional. Point `runtime.entry` at a module that exports `ClientRuntime`. If omitted, the bundler emits a pass-through. The demo `useSession()` counter lives in `src/demo/app.runtime.tsx`.
 
 ## 8. Build And Run
 
@@ -324,12 +284,12 @@ npm run build:client
 npm run start:dev
 ```
 
-Open `http://localhost:3000`. After changing islands, runtime, or the client entry, run `build:client` again (`start:dev` does not bundle the browser graph).
+Open `http://localhost:3000`. After changing islands or `runtime.entry`, run `build:client` again.
 
 Output:
 
 ```txt
-.nest-react/generated/     # registries
+.nest-react/generated/     # boot, registries, layout
 public/nest-react/         # runtime-[hash].js, chunks/, manifest.json
 ```
 
@@ -347,7 +307,8 @@ The large server-rendered heading **outside** the island will not change until t
 
 - Keep framework code in `src/core`; keep *your* app anywhere else.
 - Do not treat `src/demo` as a required skeleton.
-- Keep `#nr-runtime` empty; put page content in `#nr-document`.
+- Put chrome in `layout.tsx`; put page body in the page module.
+- Do not author `#nr-runtime` / `#nr-document`.
 - Use `hydrate` when the island should be visible before JS; use `mount` for controls that can appear after JS.
 - Pass `commit.ref` to islands, not transport URLs.
 - Keep business logic in Nest providers.

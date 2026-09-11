@@ -1,6 +1,5 @@
 import React from 'react';
-import { commit, inject, Island, load, revalidate } from '../../core';
-import { DemoShell } from '../components/layout';
+import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
 import { loadKeys } from '../load-keys';
 import { DashboardService } from '../services/dashboard.service';
 import { delay } from '../services/delay';
@@ -32,13 +31,16 @@ export default async function Dashboard() {
   const summary = await dashboardSummaryLoad();
   const slowInsight = createSlowInsightResource();
 
+  setLayoutMeta({
+    active: 'dashboard',
+    description:
+      'A production-style dashboard shell rendered by Nest and React on the server, with focused client React islands for live controls.',
+    eyebrow: 'SSR dashboard with CSR controls',
+    title: 'Dashboard',
+  });
+
   return (
-    <DemoShell
-      active="dashboard"
-      description="A production-style dashboard shell rendered by Nest and React on the server, with focused client React islands for live controls."
-      eyebrow="SSR dashboard with CSR controls"
-      title="Dashboard"
-    >
+    <>
       <section className="card span-4">
         <span className="pill">Server summary</span>
         <p className="metric">{summary.users}</p>
@@ -83,7 +85,7 @@ export default async function Dashboard() {
       >
         <SlowServerInsight resource={slowInsight} />
       </React.Suspense>
-    </DemoShell>
+    </>
   );
 }
 

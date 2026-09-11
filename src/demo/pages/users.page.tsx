@@ -1,6 +1,5 @@
 import React from 'react';
-import { commit, inject, Island, load, revalidate } from '../../core';
-import { DemoShell } from '../components/layout';
+import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
 import { loadKeys } from '../load-keys';
 import { UsersService } from '../services/users.service';
 
@@ -19,13 +18,16 @@ export const createUserCommit = commit(
 export default async function Users() {
   const users = await usersLoad();
 
+  setLayoutMeta({
+    active: 'users',
+    description:
+      'Initial data comes from Nest during SSR. Creating a user is a client React interaction that commits to the server and refreshes the users load.',
+    eyebrow: 'Server data, client interaction',
+    title: 'Users',
+  });
+
   return (
-    <DemoShell
-      active="users"
-      description="Initial data comes from Nest during SSR. Creating a user is a client React interaction that commits to the server and refreshes the users load."
-      eyebrow="Server data, client interaction"
-      title="Users"
-    >
+    <>
       <section className="card span-4">
         <span className="pill">Loaded on server</span>
         <p className="metric">{users.length}</p>
@@ -45,6 +47,6 @@ export default async function Users() {
           }}
         />
       </section>
-    </DemoShell>
+    </>
   );
 }

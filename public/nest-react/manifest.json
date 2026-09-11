@@ -2,7 +2,7 @@
   "version": 1,
   "codeSplitting": true,
   "publicPath": "/assets/nest-react",
-  "runtime": "/assets/nest-react/runtime-WOEMF2EC.js",
+  "runtime": "/assets/nest-react/runtime-VTZWA5IF.js",
   "chunks": [
     "/assets/nest-react/chunks/DashboardControls.island-COUDFP2F.js",
     "/assets/nest-react/chunks/GreetingEditor.island-BNSYZOB2.js",

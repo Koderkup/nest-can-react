@@ -1,13 +1,6 @@
-import React from 'react';
-import { NestLink } from '../../core';
-
-type DemoShellProps = {
-  active: 'home' | 'users' | 'dashboard';
-  title: string;
-  eyebrow: string;
-  description: string;
-  children: React.ReactNode;
-};
+import React, { ReactNode } from 'react';
+import { useLayoutMeta } from '../core/context';
+import { NestLink } from '../core/link';
 
 const navItems = [
   { id: 'home', to: '/', label: 'Home' },
@@ -15,13 +8,13 @@ const navItems = [
   { id: 'dashboard', to: '/dashboard', label: 'Dashboard' },
 ] as const;
 
-export function DemoShell({
-  active,
-  title,
-  eyebrow,
-  description,
-  children,
-}: DemoShellProps) {
+export default function Layout({ children }: { children: ReactNode }) {
+  const meta = useLayoutMeta();
+  const title = typeof meta.title === 'string' ? meta.title : 'Nest React';
+  const eyebrow = typeof meta.eyebrow === 'string' ? meta.eyebrow : '';
+  const description = typeof meta.description === 'string' ? meta.description : '';
+  const active = typeof meta.active === 'string' ? meta.active : '';
+
   return (
     <html>
       <head>
@@ -31,41 +24,38 @@ export function DemoShell({
       </head>
 
       <body>
-        <div id="nr-runtime"></div>
-        <div id="nr-document">
-          <div className="app-shell">
-            <header className="topbar">
-              <NestLink className="brand" to="/">
-                <span className="brand-mark">NR</span>
-                <span>
-                  <strong>Nest React</strong>
-                  <small>Server-first UI framework</small>
-                </span>
-              </NestLink>
+        <div className="app-shell">
+          <header className="topbar">
+            <NestLink className="brand" to="/">
+              <span className="brand-mark">NR</span>
+              <span>
+                <strong>Nest React</strong>
+                <small>Server-first UI framework</small>
+              </span>
+            </NestLink>
 
-              <nav className="nav">
-                {navItems.map((item) => (
-                  <NestLink
-                    className={
-                      item.id === active ? 'nav-link active' : 'nav-link'
-                    }
-                    key={item.id}
-                    to={item.to}
-                  >
-                    {item.label}
-                  </NestLink>
-                ))}
-              </nav>
-            </header>
+            <nav className="nav">
+              {navItems.map((item) => (
+                <NestLink
+                  className={
+                    item.id === active ? 'nav-link active' : 'nav-link'
+                  }
+                  key={item.id}
+                  to={item.to}
+                >
+                  {item.label}
+                </NestLink>
+              ))}
+            </nav>
+          </header>
 
-            <section className="hero">
-              <p className="eyebrow">{eyebrow}</p>
-              <h1>{title}</h1>
-              <p>{description}</p>
-            </section>
+          <section className="hero">
+            <p className="eyebrow">{eyebrow}</p>
+            <h1>{title}</h1>
+            <p>{description}</p>
+          </section>
 
-            <main className="page-grid">{children}</main>
-          </div>
+          <main className="page-grid">{children}</main>
         </div>
       </body>
     </html>

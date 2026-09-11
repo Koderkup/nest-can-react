@@ -19,6 +19,15 @@ export type FrontendRenderState = {
   loadResults: Map<string, unknown>;
   islands: IslandManifestEntry[];
   nextIslandId: number;
+  layoutMeta: LayoutMeta;
+};
+
+export type LayoutMeta = {
+  title?: string;
+  eyebrow?: string;
+  description?: string;
+  active?: string;
+  [key: string]: unknown;
 };
 
 const storage = new AsyncLocalStorage<FrontendContext>();
@@ -51,7 +60,29 @@ export function createRenderState(): FrontendRenderState {
     loadResults: new Map<string, unknown>(),
     islands: [],
     nextIslandId: 0,
+    layoutMeta: {},
   };
+}
+
+export function setLayoutMeta(meta: LayoutMeta) {
+  const renderState = storage.getStore()?.renderState;
+
+  if (!renderState) {
+    throw new Error('Layout meta can only be set during a React render.');
+  }
+
+  renderState.layoutMeta = {
+    ...renderState.layoutMeta,
+    ...meta,
+  };
+}
+
+export function getLayoutMeta() {
+  return storage.getStore()?.renderState?.layoutMeta ?? {};
+}
+
+export function useLayoutMeta() {
+  return getLayoutMeta();
 }
 
 export function recordLoadResult(key: string, value: unknown) {

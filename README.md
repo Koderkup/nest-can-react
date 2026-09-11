@@ -65,30 +65,37 @@ function UserCreator({ createUser }: Props) {
 
 ## Folder Structure: What Matters
 
-**You do not need to copy `src/demo/` to build a first app.** That folder is this repository’s sample application. The framework does not require `pages/`, `services/`, or `load-keys.ts` to live in those paths.
+**You do not need to copy `src/demo/`.** The package owns client boot, island registration, static `/assets`, DI init, and `#nr-runtime` / `#nr-document`.
 
-What *is* required is a small set of **roles**, not a specific tree. Point `nest.react.json` at your files, name island modules `*.island.tsx`, and include `#nr-runtime` plus `#nr-document` in the HTML document.
+Required app files:
 
-See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-demo) for the required vs optional layout.
+- `main.ts` / `AppModule` / providers / HTML controllers
+- `layout.tsx` (named in `nest.react.json` → `layout`)
+- page modules rendered via `renderPage`
+- `*.island.tsx` files
+
+Optional: `app.runtime.tsx` (`runtime.entry`) for shared client context.
+
+Not required: `islands.ts`, `client/entry.tsx`, hand-written registries, document slot ids.
+
+See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-demo).
 
 This repo looks like:
 
 ```txt
-nest.react.json                 # client entry, runtime entry, island globs
+nest.react.json                 # layout, optional runtime, island globs
 src/
   core/                         # framework (treat as the future package)
-  demo/                         # sample app only — not a required layout
-    app.runtime.tsx             # ClientRuntime (shared client context)
-    client/entry.tsx            # browser boot
-    islands.ts                  # server registerIslandComponents + runtime
+  demo/                         # sample app only
+    layout.tsx
+    app.runtime.tsx             # optional ClientRuntime
     islands/*.island.tsx
     pages/*.page.tsx
     services/
-    components/layout.tsx       # must include #nr-runtime and #nr-document
-  app.controller.ts
+  app.controller.ts             # still owns HTML routes
   app.module.ts
-  main.ts                       # initializeFrontendDI + import islands.ts
-.nest-react/generated/          # written by build:client
+  main.ts                       # NestFactory + listen
+.nest-react/generated/          # entry, registries, server-boot (build:client)
 public/nest-react/              # hashed runtime + island chunks
 ```
 
@@ -161,13 +168,17 @@ The `name` must match a discovered `*.island.tsx` export (for example `GreetingE
 
 ### `NestReactModule.forRoot()`
 
-Adds the package-owned internal transport:
+Registers the internal transport, initializes frontend DI, serves `public/` at `/assets/`, and loads generated island/runtime/layout registration.
 
 ```txt
 POST /_nr/commit
 POST /_nr/loads
 GET  /_nr/loads/:key
 ```
+
+### `setLayoutMeta` / `useLayoutMeta`
+
+Pages call `setLayoutMeta({ title, eyebrow, description, active })`. The shared layout reads it with `useLayoutMeta()`. Do not put `#nr-runtime` or `#nr-document` in the layout; `renderPage` injects those slots.
 
 ## Client APIs
 
@@ -177,7 +188,7 @@ Read refreshed server data, pending state, and mutations through `/_nr`.
 
 ### Shared runtime context
 
-Export `ClientRuntime` from the file named in `nest.react.json` → `runtime.entry`. Register it on the server with `registerClientRuntime`. Islands can use context from that tree (the demo’s `useSession()`).
+Export `ClientRuntime` from the optional file named in `nest.react.json` → `runtime.entry`. `NestReactModule` registers it from generated code. A first app can omit `runtime.entry`; the bundler emits a pass-through wrapper.
 
 Hydrate-mode islands get their own React root on the host node (so SSR HTML can be hydrated). Context still matches because the same `ClientRuntime` wraps each island; session-like state that must survive multiple roots should live in a module store behind that provider, as the demo does.
 
@@ -199,15 +210,15 @@ npm run build:all
 npm run start:dev
 ```
 
-`start:dev` watches the Nest server only. After changing client islands, runtime, or `entry.tsx`, run `npm run build:client` again.
+`start:dev` watches the Nest server only. After changing client islands, runtime, or layout used by the client bundle, run `npm run build:client` again.
 
 ## How The Request Flow Works
 
 1. Browser requests a page such as `/users`.
 2. Nest routes the request to `AppController`.
 3. The controller calls `renderPage(...)`.
-4. The server page calls `load()` and `Island`.
-5. HTML is returned with `#nr-runtime`, `#nr-document`, and `nr-manifest`.
+4. The server page calls `setLayoutMeta`, `load()`, and `Island`.
+5. `renderPage` wraps the page in `layout.tsx` and injects `#nr-runtime`, `#nr-document`, and `nr-manifest`.
 6. The browser loads the hashed runtime module.
 7. `installClientRuntime` preloads this page’s island chunks.
 8. `hydrate` islands hydrate their SSR markup; `mount` islands portal into empty hosts.
