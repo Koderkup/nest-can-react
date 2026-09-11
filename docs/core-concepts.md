@@ -416,3 +416,14 @@ Before this becomes a production package, add:
 - tests for core APIs
 - npm package exports
 - documentation for public/private APIs
+
+
+So the current behavior is intentional:
+
+Server-rendered greeting outside island: static until full page reload
+Greeting inside client island: updates without reload
+If you want the top server-rendered greeting to update too, there are three options:
+
+Put that displayed greeting inside the island.
+Add a framework-level “server slot refresh” system later.
+Add true partial server-rendered fragment refresh later.
