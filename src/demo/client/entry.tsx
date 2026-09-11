@@ -1,20 +1,16 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { getManifest } from '../../core/client/runtime';
+import { mountIslands, unmountIslands } from '../../core/client/mount';
+import { installNavigation } from '../../core/client/navigation';
+import { reloadManifest } from '../../core/client/runtime';
 import { registry } from './registry';
 
-const manifest = getManifest();
+function bootPage() {
+  reloadManifest();
+  mountIslands(registry);
+}
 
-manifest.islands.forEach((island) => {
-  const rootElement = document.getElementById(island.id);
-  const Component = registry[island.name];
+mountIslands(registry);
 
-  if (!rootElement || !Component) {
-    return;
-  }
-
-  createRoot(rootElement).render(<Component {...island.props} />);
+installNavigation({
+  onBeforePageChange: unmountIslands,
+  onPageChanged: bootPage,
 });
-// 创建一个按钮，点击后，调用nestjs的api，获取用户列表
-// 将用户列表显示在页面上
-// 创建一个按钮，点击后，调用nestjs的api，获取用户列表

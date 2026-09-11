@@ -1,4 +1,5 @@
 import React from 'react';
+import { NestLink } from '../../core';
 
 type DemoShellProps = {
   active: 'home' | 'users' | 'dashboard';
@@ -9,9 +10,9 @@ type DemoShellProps = {
 };
 
 const navItems = [
-  { id: 'home', href: '/', label: 'Home' },
-  { id: 'users', href: '/users', label: 'Users' },
-  { id: 'dashboard', href: '/dashboard', label: 'Dashboard' },
+  { id: 'home', to: '/', label: 'Home' },
+  { id: 'users', to: '/users', label: 'Users' },
+  { id: 'dashboard', to: '/dashboard', label: 'Dashboard' },
 ] as const;
 
 export function DemoShell({
@@ -32,25 +33,25 @@ export function DemoShell({
       <body>
         <div className="app-shell">
           <header className="topbar">
-            <a className="brand" href="/">
+            <NestLink className="brand" to="/">
               <span className="brand-mark">NR</span>
               <span>
                 <strong>Nest React</strong>
                 <small>Server-first UI framework</small>
               </span>
-            </a>
+            </NestLink>
 
             <nav className="nav">
               {navItems.map((item) => (
-                <a
+                <NestLink
                   className={
                     item.id === active ? 'nav-link active' : 'nav-link'
                   }
-                  href={item.href}
                   key={item.id}
+                  to={item.to}
                 >
                   {item.label}
-                </a>
+                </NestLink>
               ))}
             </nav>
           </header>

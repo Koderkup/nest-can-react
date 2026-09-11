@@ -19,7 +19,7 @@ type LoadResult = {
   data: unknown;
 };
 
-const manifest = readManifest();
+let manifest = readManifest();
 let loads = manifest.loads;
 let version = 0;
 const pendingLoads = new Set<string>();
@@ -27,6 +27,13 @@ const listeners = new Set<() => void>();
 
 export function getManifest() {
   return manifest;
+}
+
+export function reloadManifest() {
+  manifest = readManifest();
+  loads = manifest.loads;
+  pendingLoads.clear();
+  notify();
 }
 
 export function subscribe(listener: () => void) {
