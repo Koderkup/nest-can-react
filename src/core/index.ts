@@ -4,3 +4,4 @@ export { Island } from './island';
 export { listLoadKeys, load, refreshLoad } from './load';
 export { NestReactModule } from './nest-react.module';
 export { renderPage } from './renderer';
+export { NestLink } from './link';
