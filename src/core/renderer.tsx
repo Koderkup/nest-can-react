@@ -127,15 +127,21 @@ function injectRuntimeHtml(
   markup: string,
   parts: { documentAssets: string; moduleScript: string },
 ) {
-  const slotted = ensureDocumentSlots(markup);
-  const bodyClose = slotted.lastIndexOf('</body>');
+  return injectRuntimeAssets(ensureDocumentSlots(markup), parts);
+}
+
+function injectRuntimeAssets(
+  markup: string,
+  parts: { documentAssets: string; moduleScript: string },
+) {
+  const bodyClose = markup.lastIndexOf('</body>');
 
   if (bodyClose === -1) {
-    return `${slotted}${parts.documentAssets}</div>${parts.moduleScript}`;
+    return `${markup}${parts.documentAssets}</div>${parts.moduleScript}`;
   }
 
-  const beforeBodyClose = slotted.slice(0, bodyClose);
-  const afterBodyClose = slotted.slice(bodyClose);
+  const beforeBodyClose = markup.slice(0, bodyClose);
+  const afterBodyClose = markup.slice(bodyClose);
   const documentClose = beforeBodyClose.lastIndexOf('</div>');
 
   if (documentClose === -1) {
@@ -188,12 +194,34 @@ function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
 function createRuntimeInjectionTransform(
   runtimeFactory: () => { documentAssets: string; moduleScript: string },
 ) {
+  let pending = '';
   let tail = '';
-  const tailSize = 1024;
+  let insertedSlots = false;
+  const tailSize = 2048;
 
   return new Transform({
     transform(chunk, _encoding, callback) {
-      tail += chunk.toString();
+      pending += chunk.toString();
+
+      if (
+        !insertedSlots &&
+        !pending.includes('id="nr-document"') &&
+        /<body[^>]*>/i.test(pending)
+      ) {
+        pending = pending.replace(
+          /<body([^>]*)>/i,
+          '<body$1><div id="nr-runtime"></div><div id="nr-document">',
+        );
+        insertedSlots = true;
+      }
+
+      if (!/<body[^>]*>/i.test(pending) && tail.length === 0) {
+        callback();
+        return;
+      }
+
+      tail += pending;
+      pending = '';
 
       if (tail.length > tailSize) {
         this.push(tail.slice(0, -tailSize));
@@ -203,7 +231,13 @@ function createRuntimeInjectionTransform(
       callback();
     },
     flush(callback) {
-      this.push(injectRuntimeHtml(tail, runtimeFactory()));
+      let markup = pending + tail;
+
+      if (insertedSlots) {
+        markup = markup.replace(/<\/body>/i, '</div></body>');
+      }
+
+      this.push(injectRuntimeAssets(markup, runtimeFactory()));
       callback();
     },
   });
