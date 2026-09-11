@@ -13,11 +13,13 @@ Current status: this is a working architecture demo, not a production-ready npm 
 - Server-side data reads with `load()`.
 - Server-side mutations with `commit()`.
 - Key-based refresh with `revalidate()`.
-- Client React islands mounted with `createRoot()`.
+- Client React islands with two modes: `mount` (empty host, client render) and `hydrate` (SSR HTML, then hydrate).
+- Shared client React context through an app `ClientRuntime` wrapper (`useSession()` in the demo).
 - React client hooks: `useLoad()`, `useCommit()`, and `usePendingLoad()`.
+- Client-side navigation that swaps `#nr-document` without a full reload.
 - A package-owned internal transport through `NestReactModule`.
 - Manifest-based island mounting with no user-authored `data-nest-*` attributes.
-- esbuild-based client bundling with no Vite and no webpack.
+- esbuild client bundling with per-island code splitting (no Vite, no webpack).
 - A polished demo with Home, Users, and Dashboard pages.
 
 ## Core Idea
@@ -36,7 +38,13 @@ export const usersLoad = load('users:list', async () => {
 export default async function UsersPage() {
   const users = await usersLoad();
 
-  return <Island name="UserCreator" props={{ initialUsers: users }} />;
+  return (
+    <Island
+      mode="hydrate"
+      name="UserCreator"
+      props={{ initialUsers: users }}
+    />
+  );
 }
 ```
 
@@ -55,130 +63,80 @@ function UserCreator({ createUser }: Props) {
 }
 ```
 
-## Project Structure
+## Folder Structure: What Matters
+
+**You do not need to copy `src/demo/` to build a first app.** That folder is this repository’s sample application. The framework does not require `pages/`, `services/`, or `load-keys.ts` to live in those paths.
+
+What *is* required is a small set of **roles**, not a specific tree. Point `nest.react.json` at your files, name island modules `*.island.tsx`, and include `#nr-runtime` plus `#nr-document` in the HTML document.
+
+See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-demo) for the required vs optional layout.
+
+This repo looks like:
 
 ```txt
+nest.react.json                 # client entry, runtime entry, island globs
 src/
-  core/
-    client/
-      hooks.ts
-      runtime.ts
-    commit.ts
-    context.ts
-    index.ts
-    inject.ts
-    island.tsx
-    load.ts
-    nest-react.controller.ts
-    nest-react.module.ts
-    renderer.tsx
-
-  demo/
-    client/
-      components/
-      entry.tsx
-      registry.ts
-    components/
-      layout.tsx
-    pages/
-      dashboard.tsx
-      home.tsx
-      users.tsx
+  core/                         # framework (treat as the future package)
+  demo/                         # sample app only — not a required layout
+    app.runtime.tsx             # ClientRuntime (shared client context)
+    client/entry.tsx            # browser boot
+    islands.ts                  # server registerIslandComponents + runtime
+    islands/*.island.tsx
+    pages/*.page.tsx
     services/
-      dashboard.service.ts
-      greeting.service.ts
-      users.service.ts
-    load-keys.ts
-
+    components/layout.tsx       # must include #nr-runtime and #nr-document
   app.controller.ts
   app.module.ts
-  main.ts
-
-scripts/
-  build-client.mjs
-
-public/
-  nest-react/
-    client.js
-    client.js.map
+  main.ts                       # initializeFrontendDI + import islands.ts
+.nest-react/generated/          # written by build:client
+public/nest-react/              # hashed runtime + island chunks
 ```
 
 `src/core` is the package/framework layer.
 
-`src/demo` is the demo application that consumes the core layer.
+`src/demo` is one way to organize an app that consumes that layer.
 
 ## Core APIs
 
-### `renderPage(Page, moduleRef)`
+### `renderPage(Page, moduleRef, options?)`
 
 Renders a server React page inside a Nest-aware context.
 
-It collects:
+Modes:
 
-- load results
-- island descriptors
-- internal transport path
+- `static` (default) — `renderToStaticMarkup`
+- `hydrated` — `renderToString`
+- `streaming` — pipeable stream into an Express `Response`
 
-Then it injects:
+It collects load results and island descriptors, then injects:
 
+- modulepreload hints for the runtime and current-page islands
 - `<script id="nr-manifest" type="application/json">...</script>`
-- `<script type="module" src="/assets/nest-react/client.js"></script>`
+- `<script type="module" src="/assets/nest-react/runtime-….js"></script>`
+
+The runtime URL comes from `public/nest-react/manifest.json` after `npm run build:client`.
 
 ### `inject(token)`
 
 Resolves a Nest provider from the current frontend render/commit context.
 
-Example:
-
 ```ts
 const users = inject<UsersService>(UsersService);
 ```
 
-Current limitation: this is not fully request-scoped yet. Production support should use Nest context IDs for request-scoped providers.
+Current limitation: this is not fully request-scoped yet.
 
 ### `load(key, handler)`
 
-Declares a server-side read operation.
-
-```ts
-export const greetingLoad = load('home:greeting', async () => {
-  return inject<GreetingService>(GreetingService).sayHello();
-});
-```
-
-Calling the returned function runs the handler and records the result in the current render manifest.
+Declares a server-side read. Calling the returned function runs the handler and records the result in the page manifest.
 
 ### `commit(id, handler)`
 
-Declares a server-side mutation.
-
-```ts
-export const updateGreetingCommit = commit(
-  'greeting.update',
-  async (input: { message?: string }) => {
-    inject<GreetingService>(GreetingService).setGreeting(input.message ?? '');
-    return revalidate('home:greeting');
-  },
-);
-```
-
-Every commit gets an opaque client reference:
-
-```ts
-updateGreetingCommit.ref
-```
-
-Client islands receive this ref instead of raw URLs.
+Declares a server-side mutation. Pass `commit.ref` into islands, not URLs.
 
 ### `revalidate(...keys)`
 
-Marks load keys as stale after a commit.
-
-```ts
-return revalidate('users:list', 'dashboard:summary');
-```
-
-The browser runtime refreshes these load keys without reloading the page.
+Marks load keys stale after a commit. The browser runtime refreshes those keys without reloading the page.
 
 ### `Island`
 
@@ -186,6 +144,7 @@ Registers a client island during server render.
 
 ```tsx
 <Island
+  mode="hydrate"
   name="GreetingEditor"
   props={{
     initialMessage: greeting,
@@ -195,13 +154,14 @@ Registers a client island during server render.
 />
 ```
 
-The rendered HTML gets a generated root ID like `nr-i0`. Island metadata is stored in the manifest, not in public `data-nest-*` attributes.
+- `mode="mount"` (default): empty `<div id="nr-i0">`. The client portals the component in.
+- `mode="hydrate"`: the island is SSR’d into that host (wrapped in `ClientRuntime` so context matches), then hydrated on first load.
 
-### `NestReactModule`
+The `name` must match a discovered `*.island.tsx` export (for example `GreetingEditor` from `GreetingEditor.island.tsx`).
 
-Adds the package-owned internal transport.
+### `NestReactModule.forRoot()`
 
-Current internal routes:
+Adds the package-owned internal transport:
 
 ```txt
 POST /_nr/commit
@@ -209,138 +169,61 @@ POST /_nr/loads
 GET  /_nr/loads/:key
 ```
 
-Application controllers do not need to expose framework refresh or commit URLs.
-
 ## Client APIs
 
-### `useLoad(key)`
+### `useLoad(key)` / `usePendingLoad(key)` / `useCommit(ref)`
 
-Reads initial server-loaded data from the manifest and updates when the key is refreshed.
+Read refreshed server data, pending state, and mutations through `/_nr`.
 
-```tsx
-const users = useLoad<User[]>('users:list');
-```
+### Shared runtime context
 
-### `useCommit(commitRef)`
+Export `ClientRuntime` from the file named in `nest.react.json` → `runtime.entry`. Register it on the server with `registerClientRuntime`. Islands can use context from that tree (the demo’s `useSession()`).
 
-Calls a server commit through the internal transport.
-
-```tsx
-const create = useCommit<{ name: string; role: string }>(createUser);
-
-await create.execute({
-  name: 'Ada',
-  role: 'Engineer',
-});
-```
-
-If the commit returns revalidation keys, the client runtime refreshes those loads automatically.
-
-### `usePendingLoad(key)`
-
-Returns whether a load key is currently refreshing.
-
-```tsx
-const refreshing = usePendingLoad('users:list');
-```
-
-This helps keep old data visible while fresh server data is fetched.
+Hydrate-mode islands get their own React root on the host node (so SSR HTML can be hydrated). Context still matches because the same `ClientRuntime` wraps each island; session-like state that must survive multiple roots should live in a module store behind that provider, as the demo does.
 
 ## Demo Routes
 
-### `/`
-
-Home page.
-
-Shows server-rendered greeting data and a client island that edits it with React state and `useCommit()`.
-
-### `/users`
-
-Users page.
-
-Loads users on the server, then mounts a client island for creating users. After a user is created, the users load refreshes without a full page reload.
-
-### `/dashboard`
-
-Dashboard page.
-
-Renders summary cards on the server and mounts a client island with local UI state, a live client clock, and a dashboard refresh commit.
+| Route | What it shows |
+| --- | --- |
+| `/` | Server greeting plus a `hydrate` `GreetingEditor` island |
+| `/users` | Server user list plus a `hydrate` `UserCreator` island |
+| `/dashboard` | Server summary cards plus a `mount` `DashboardControls` island (streaming shell) |
 
 ## Build Scripts
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Build the client island bundle:
-
-```bash
-npm run build:client
-```
-
-Build the Nest server:
-
-```bash
-npm run build
-```
-
-Build both:
-
-```bash
+npm run build:client    # islands, runtime, public/nest-react
+npm run build           # Nest server
 npm run build:all
-```
-
-Run in development:
-
-```bash
 npm run start:dev
 ```
 
-Run production build:
-
-```bash
-npm run build:all
-npm run start:prod
-```
+`start:dev` watches the Nest server only. After changing client islands, runtime, or `entry.tsx`, run `npm run build:client` again.
 
 ## How The Request Flow Works
 
 1. Browser requests a page such as `/users`.
 2. Nest routes the request to `AppController`.
-3. The controller calls `renderPage(Users, moduleRef)`.
-4. The server React page calls `load()`.
-5. `load()` reads data through Nest DI.
-6. `Island` registers client island metadata.
-7. The renderer returns HTML plus the `nr-manifest`.
-8. Browser loads `/assets/nest-react/client.js`.
-9. Client runtime reads the manifest and mounts islands with `createRoot()`.
-10. A client island calls `useCommit()`.
-11. The runtime posts to `/_nr/commit`.
-12. The server commit mutates Nest state and returns revalidation keys.
-13. The runtime refreshes affected load keys through `/_nr/loads`.
-14. `useLoad()` subscribers update without a full page reload.
+3. The controller calls `renderPage(...)`.
+4. The server page calls `load()` and `Island`.
+5. HTML is returned with `#nr-runtime`, `#nr-document`, and `nr-manifest`.
+6. The browser loads the hashed runtime module.
+7. `installClientRuntime` preloads this page’s island chunks.
+8. `hydrate` islands hydrate their SSR markup; `mount` islands portal into empty hosts.
+9. `useCommit()` posts to `/_nr/commit`; `revalidate()` refreshes `/_nr/loads`.
+10. Client navigation swaps `#nr-document` and restores `#nr-manifest` (script tags are not preserved by `innerHTML`).
 
 ## Current Limitations
 
-This prototype is not production ready yet.
-
-Known gaps:
-
-- No full request-scoped provider support yet.
-- Internal transport has no CSRF protection yet.
-- Commit refs are opaque but not signed.
-- Input validation is minimal.
-- Error serialization is minimal.
-- No first-class CSS imports yet.
-- No first-class image/font/SVG asset imports yet.
-- No per-island code splitting yet.
-- One client bundle currently contains all demo islands.
-- Islands are mounted with `createRoot()`; SSR hydration is not fully implemented yet.
-- No true React Server Components Flight protocol yet.
-- Package exports are not prepared for npm publishing yet.
-- Test coverage is still missing for core behavior.
+- Not an npm package yet; `src/core` is in-repo.
+- No full request-scoped provider support.
+- Internal transport has no CSRF protection; commit refs are not signed.
+- Input validation and error serialization are minimal.
+- No first-class CSS / image / font / SVG imports in the client bundler.
+- No true React Server Components Flight protocol.
+- Test coverage for core behavior is still thin.
+- `start:dev` does not rebuild client assets automatically.
 
 ## More Docs
 

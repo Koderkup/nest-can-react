@@ -1,6 +1,6 @@
 # Core Concepts
 
-This document explains the current framework layer in `src/core`.
+This document explains the framework layer in `src/core`.
 
 The current implementation is a working prototype. It proves the model, but it is not production ready yet.
 
@@ -18,295 +18,127 @@ That means:
 - React server pages compose HTML.
 - Client islands add focused browser interactivity.
 - Client islands mutate by calling server `commit()` refs.
+- Shared client UI state uses React context via `ClientRuntime` (see islands below).
+
+Application folder layout is **not** part of this contract. `src/demo/` is a sample. Required wiring is config + `*.island.tsx` + document slots + Nest module/DI. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-demo).
 
 ## `src/core`
 
-The package-like layer lives in:
-
 ```txt
 src/core/
-```
-
-It contains:
-
-```txt
-client/
-  hooks.ts
-  runtime.ts
-commit.ts
-context.ts
-index.ts
-inject.ts
-island.tsx
-load.ts
-nest-react.controller.ts
-nest-react.module.ts
-renderer.tsx
+  build/                 # esbuild client bundler
+  client/
+    hooks.ts
+    mount.tsx            # installClientRuntime, hydrate vs portal
+    navigation.ts        # SPA swap of #nr-document
+    runtime.ts           # manifest, load refresh, commit fetch
+  client-assets.ts
+  commit.ts
+  context.ts
+  index.ts
+  inject.ts
+  island.tsx
+  island-registry.ts
+  load.ts
+  nest-react.controller.ts
+  nest-react.module.ts
+  renderer.tsx
 ```
 
 ## Render Context
 
-`context.ts` owns the server-side render context.
-
-It tracks:
-
-- active Nest `ModuleRef`
-- load results collected during render
-- island entries collected during render
-
-During a page render, `renderPage()` creates a render state and runs the page inside `AsyncLocalStorage`.
-
-This allows server React code to call:
-
-```ts
-inject(SomeService)
-```
-
-without passing services manually through every component.
+`context.ts` tracks the active Nest `ModuleRef`, load results, and island entries (`id`, `name`, `mode`, `props`). `renderPage()` runs the page inside `AsyncLocalStorage` so `inject()` and `Island` work without threading services through every component.
 
 ## Dependency Injection
-
-`inject.ts` exposes:
 
 ```ts
 inject<T>(token): T
 ```
 
-Example:
-
-```ts
-const usersService = inject<UsersService>(UsersService);
-```
-
-This resolves providers from the active Nest module context.
-
-Current limitation: this is not fully request-scoped yet. Request-scoped providers should be supported later with Nest context IDs.
+Resolves from the active Nest module context. Not fully request-scoped yet.
 
 ## Server Rendering
 
-`renderer.tsx` exposes:
-
 ```ts
-renderPage(Page, moduleRef)
+renderPage(Page, moduleRef, options?)
 ```
 
-It does four things:
+Options:
 
-1. Creates a render state.
-2. Runs the React server page inside the frontend context.
-3. Renders the page with `renderToStaticMarkup()`.
-4. Injects the page manifest and client bundle script.
+- `{ mode: 'static' }` — default, `renderToStaticMarkup`
+- `{ mode: 'hydrated' }` — `renderToString`
+- `{ mode: 'streaming', response }` — pipeable stream
 
-The manifest contains:
+The HTML includes:
 
-```ts
-{
-  transportPath: '/_nr',
-  loads: {...},
-  islands: [...]
-}
-```
+- `#nr-runtime` — empty host for the shared client runtime root
+- `#nr-document` — page body that client navigation replaces
+- `#nr-manifest` — JSON loads + islands
+- hashed runtime `<script type="module">` and island `modulepreload` hints
 
-The HTML receives:
+Asset URLs come from `public/nest-react/manifest.json` (written by `npm run build:client`).
 
-```html
-<script id="nr-manifest" type="application/json">...</script>
-<script type="module" src="/assets/nest-react/client.js"></script>
-```
+## `load()` / `commit()` / `revalidate()`
 
-## `load()`
+- `load(key, handler)` — server read; result is stored in the page manifest.
+- `commit(id, handler)` — server mutation; pass `commit.ref` into islands.
+- `revalidate(...keys)` — after a commit, the client refreshes those keys via `POST /_nr/loads`.
 
-`load()` is a server read primitive.
-
-It does not create routes.
-
-Example:
-
-```ts
-export const usersLoad = load('users:list', async () => {
-  return inject<UsersService>(UsersService).findAll();
-});
-```
-
-Calling `usersLoad()`:
-
-- runs the handler
-- records the result under `users:list`
-- makes the value available to the page manifest
-
-The browser can later refresh this key through the internal transport.
-
-## Load Keys
-
-Load keys identify data.
-
-Examples:
-
-```ts
-'home:greeting'
-'users:list'
-'dashboard:summary'
-```
-
-Good load keys are:
-
-- stable
-- descriptive
-- specific enough to avoid unnecessary refresh
-
-## `commit()`
-
-`commit()` is a server mutation primitive.
-
-It does not create user-facing routes.
-
-Example:
-
-```ts
-export const createUserCommit = commit(
-  'users.create',
-  async (input: { name?: string; role?: string }) => {
-    inject<UsersService>(UsersService).create(input);
-    return revalidate('users:list');
-  },
-);
-```
-
-Every commit has:
-
-```ts
-createUserCommit.id
-createUserCommit.ref
-```
-
-`id` is used internally by the server registry.
-
-`ref` is safe to pass to a client island:
-
-```tsx
-<Island
-  name="UserCreator"
-  props={{
-    createUser: createUserCommit.ref,
-  }}
-/>
-```
-
-## `revalidate()`
-
-`revalidate()` marks load keys as stale after a mutation.
-
-Example:
-
-```ts
-return revalidate('users:list', 'dashboard:summary');
-```
-
-The client runtime receives these keys and refreshes them.
-
-The UI keeps old data visible while fresh data loads.
+Load keys should be stable and specific (`home:greeting`, `users:list`).
 
 ## `Island`
 
-`Island` registers a client component mount point.
-
-Example:
-
 ```tsx
 <Island
-  name="DashboardControls"
-  props={{
-    initialSummary: summary,
-    summaryLoadKey: dashboardSummaryLoad.key,
-    refreshDashboard: refreshDashboardCommit.ref,
-  }}
+  mode="hydrate" // or "mount" (default)
+  name="GreetingEditor"
+  props={{ ... }}
 />
 ```
 
-`Island` currently renders:
+`name` must match a generated registry key (export from `*.island.tsx`).
 
-```html
-<div id="nr-i0"></div>
-```
+| Mode | Server HTML | Client |
+| --- | --- | --- |
+| `mount` | Empty `<div id="nr-i0">` | `createPortal` from the runtime root into that host |
+| `hydrate` | Same host, inner HTML from `renderToString(<ClientRuntime><Component /></ClientRuntime>)` | `hydrateRoot` on that host on first load; after SPA navigation, `createRoot` on the new host so session state does not fight leftover SSR |
 
-The detailed island metadata goes into the manifest:
+Do not portal into a hydrate host that still contains SSR markup: `createPortal` **appends**, which duplicates the island (dead HTML plus a live tree). That is why hydrate islands use `hydrateRoot` on the host instead of a portal into existing inner HTML.
 
-```ts
-{
-  id: 'nr-i0',
-  name: 'DashboardControls',
-  props: {...}
-}
-```
+## Client Runtime And Shared Context
 
-This avoids user-authored `data-nest-*` attributes.
+`installClientRuntime(registry, ClientRuntime)`:
 
-## Client Runtime
+1. Preloads island modules listed in the current manifest (so the first paint can hydrate).
+2. `createRoot(#nr-runtime)` with `<ClientRuntime><IslandOutlet /></ClientRuntime>`.
+3. Portals **mount** islands from that tree (one React tree → context works as usual).
+4. Hydrates **hydrate** islands on their hosts, each wrapped in the same `ClientRuntime`.
 
-`src/core/client/runtime.ts` runs in the browser.
+`ClientRuntime` is your app component (`runtime.entry`, re-exported as `.nest-react/generated/client-runtime.ts`). Register it on the server with `registerClientRuntime` so hydrate SSR matches the client (otherwise `useContext` falls back and you can get `visits: 0` in static HTML vs a live island).
 
-It:
+Hydrate islands are separate roots (required to attach to existing DOM). React context does not cross roots by itself. The demo’s `useSession()` still feels like context: the provider is the API, and the visit count lives in a module store plus `useSyncExternalStore` so every root reads the same value.
 
-- reads `nr-manifest`
-- stores initial load data
-- tracks pending loads
-- posts commits to the internal transport
-- refreshes load keys
-- notifies React subscribers
+Portal keys are `island.id` only. Including the runtime `version` in the key remounts islands on every load refresh.
 
-Client islands do not call raw URLs. They call commit refs.
+## Client Navigation
+
+`installNavigation` intercepts same-origin `<a>` clicks, fetches HTML, and replaces `#nr-document` innerHTML.
+
+`innerHTML` does **not** keep `<script id="nr-manifest">`. The navigator copies manifest text from the parsed response and writes it back before `reloadManifest()`.
+
+Before swapping the document, hydrate-mode roots are unmounted so React does not own detached nodes.
 
 ## Client Hooks
 
-### `useLoad(key)`
+`src/core/client/hooks.ts`:
 
-Reads current data for a load key.
+- `useLoad(key)` — manifest data; updates after refresh
+- `usePendingLoad(key)` — refresh in flight
+- `useCommit(ref)` — `execute`, `fromSubmitEvent`, `pending`, `error`
 
-```tsx
-const users = useLoad<User[]>('users:list');
-```
-
-The value updates when the key is refreshed.
-
-### `usePendingLoad(key)`
-
-Returns whether a load key is refreshing.
-
-```tsx
-const refreshing = usePendingLoad('users:list');
-```
-
-### `useCommit(ref)`
-
-Returns helpers for calling a server commit.
-
-```tsx
-const create = useCommit<{ name: string; role: string }>(createUser);
-
-await create.execute({
-  name: 'Ada',
-  role: 'Engineer',
-});
-```
-
-The hook exposes:
-
-- `pending`
-- `error`
-- `execute(input)`
-- `fromSubmitEvent(event)`
+Islands must not submit forms natively if they use `useCommit` (call `preventDefault`).
 
 ## Internal Transport
-
-`NestReactModule` registers `NestReactController`.
-
-Current internal path:
-
-```txt
-/_nr
-```
-
-Current transport endpoints:
 
 ```txt
 POST /_nr/commit
@@ -314,116 +146,63 @@ POST /_nr/loads
 GET  /_nr/loads/:key
 ```
 
-These endpoints are framework internals. App controllers should stay focused on user-facing pages and domain APIs.
+Registered by `NestReactModule`. Application controllers stay on user-facing routes.
 
 ## Client Bundle
 
-The browser bundle is built by:
+Built by `src/core/build/build-client.mjs` (`npm run build:client`).
 
-```txt
-scripts/build-client.mjs
-```
+Config (`nest.react.json`):
 
-It uses esbuild and writes:
+- `client.entry` — browser boot
+- `client.outDir` / `client.publicPath`
+- `client.codeSplitting` — per-island chunks when true
+- `runtime.entry` — `ClientRuntime`
+- `islands.include` / `islands.exclude`
 
-```txt
-public/nest-react/client.js
-public/nest-react/client.js.map
-```
+Output:
 
-The demo client entry is:
+- `.nest-react/generated/client-registry.ts`
+- `.nest-react/generated/server-registry.ts`
+- `.nest-react/generated/client-runtime.ts`
+- `public/nest-react/runtime-[hash].js`
+- `public/nest-react/chunks/*`
+- `public/nest-react/manifest.json`
 
-```txt
-src/demo/client/entry.tsx
-```
-
-The current registry is:
-
-```txt
-src/demo/client/registry.ts
-```
-
-Every island name must exist in the registry.
+There is no hand-maintained `src/demo/client/registry.ts`.
 
 ## Demo App
 
-The demo lives in:
-
-```txt
-src/demo/
-```
-
-It includes:
-
-- `Home`
-- `Users`
-- `Dashboard`
-- in-memory demo services
-- a polished shared layout
-- client island components
+`src/demo/` is optional sample code: pages, services, layout, islands. It is not the required application skeleton.
 
 ## Current Performance Behavior
 
-Server data is loaded only for the requested page.
-
-For example:
-
-- `/` runs Home page loads.
-- `/users` runs Users page loads.
-- `/dashboard` runs Dashboard page loads.
-
-But the current client build emits one bundle containing all demo islands.
-
-That means:
-
-- current page data is scoped
-- current page island mounting is scoped
-- client JavaScript is not code-split yet
+- Server `load()` runs only for the page being rendered.
+- With `codeSplitting: true`, only the current page’s island chunks are preloaded.
+- `start:dev` does not rebuild those chunks.
 
 ## Current Asset Support
 
-Current support:
+Supported:
 
-- static files served from `public/` through `/assets`
-- inline CSS through server React
-- esbuild client bundle
+- static files from `public/` at `/assets`
+- inline CSS in server React
+- hashed JS chunks from esbuild
 
-Not implemented yet:
+Not implemented: CSS/image/font/SVG imports, CSS modules, per-island CSS.
 
-- CSS imports
-- CSS modules
-- image imports
-- font imports
-- SVG imports
-- hashed asset filenames
-- asset manifest generation
-- per-island CSS chunks
+## Server HTML vs Island HTML After Commit
+
+A heading rendered **outside** an island is static until the next document render (full load or a future fragment refresh). The same value **inside** an island updates through `useLoad()` after `revalidate()`.
+
+That is intentional with the current primitives.
 
 ## Production Readiness Checklist
 
-Before this becomes a production package, add:
-
-- request-scoped provider support
-- signed commit refs
-- CSRF protection
-- input validation helpers
-- structured error serialization
-- production asset manifest
-- hashed JS/CSS filenames
-- CSS and asset import support
-- per-island code splitting
-- hydration mode for SSR-safe islands
-- tests for core APIs
+- request-scoped providers
+- signed commit refs and CSRF protection
+- input validation and structured errors
+- CSS/asset import pipeline
+- tests for mount vs hydrate and SPA manifest restore
 - npm package exports
-- documentation for public/private APIs
-
-
-So the current behavior is intentional:
-
-Server-rendered greeting outside island: static until full page reload
-Greeting inside client island: updates without reload
-If you want the top server-rendered greeting to update too, there are three options:
-
-Put that displayed greeting inside the island.
-Add a framework-level “server slot refresh” system later.
-Add true partial server-rendered fragment refresh later.
+- public vs private API docs
