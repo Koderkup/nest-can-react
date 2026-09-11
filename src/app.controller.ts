@@ -2,9 +2,9 @@ import { Controller, Get, Header, Res } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { Response } from 'express';
 
-import Dashboard from './demo/pages/dashboard';
-import Home from './demo/pages/home';
-import Users from './demo/pages/users';
+import Dashboard from './demo/pages/dashboard.page';
+import Home from './demo/pages/home.page';
+import Users from './demo/pages/users.page';
 import { renderPage } from './core/renderer';
 
 @Controller()

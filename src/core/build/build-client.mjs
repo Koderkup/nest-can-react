@@ -1,17 +1,27 @@
-import { existsSync } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import {
+  basename,
+  dirname,
+  extname,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as esbuild from 'esbuild';
-
-const ownDir = dirname(fileURLToPath(import.meta.url));
 
 const defaultConfig = {
   clientEntry: 'src/demo/client/entry.tsx',
   outDir: 'public/nest-react',
   publicPath: '/assets/nest-react',
   codeSplitting: true,
-  islands: [],
+  islands: {
+    include: ['src/**/*.island.tsx'],
+    exclude: ['src/**/*.test.tsx', 'src/**/*.spec.tsx'],
+  },
+  generatedDir: '.nest-react/generated',
 };
 
 export async function buildNestReactClient(overrides = {}) {
@@ -20,6 +30,10 @@ export async function buildNestReactClient(overrides = {}) {
   const codeSplitting = shouldSplit(config);
   const entryPoint = resolve(rootDir, config.clientEntry);
   const outdir = resolve(rootDir, config.outDir);
+  const generatedDir = resolve(rootDir, config.generatedDir);
+  const islands = await discoverIslands(rootDir, config.islands);
+
+  await generateIslandRegistries({ generatedDir, islands, rootDir });
 
   await rm(outdir, { recursive: true, force: true });
   await mkdir(outdir, { recursive: true });
@@ -48,7 +62,7 @@ export async function buildNestReactClient(overrides = {}) {
   const manifest = createAssetManifest(result.metafile, {
     codeSplitting,
     entryPoint,
-    islands: config.islands ?? [],
+    islands,
     outdir,
     publicPath: normalizePublicPath(config.publicPath),
     rootDir,
@@ -63,22 +77,53 @@ export async function buildNestReactClient(overrides = {}) {
 }
 
 async function loadConfig(rootDir, overrides) {
-  const configPath = resolve(
-    rootDir,
-    overrides.config ?? 'nest-react.config.mjs',
-  );
+  const jsonConfigPath = resolve(rootDir, overrides.config ?? 'nest.react.json');
 
-  if (!existsSync(configPath)) {
-    return { ...defaultConfig, ...overrides };
+  if (existsSync(jsonConfigPath)) {
+    const fileConfig = JSON.parse(readFileSync(jsonConfigPath, 'utf8'));
+    return normalizeConfig({ ...fileConfig, ...overrides });
   }
 
-  const configModule = await import(pathToFileURL(configPath).href);
+  const mjsConfigPath = resolve(rootDir, 'nest-react.config.mjs');
+
+  if (!existsSync(mjsConfigPath)) {
+    return normalizeConfig({ ...defaultConfig, ...overrides });
+  }
+
+  const configModule = await import(pathToFileURL(mjsConfigPath).href);
   const fileConfig = configModule.default ?? configModule;
+
+  return normalizeConfig({ ...fileConfig, ...overrides });
+}
+
+function normalizeConfig(config) {
+  const client = config.client ?? {};
+  const islands = normalizeIslandConfig(config.islands);
 
   return {
     ...defaultConfig,
-    ...fileConfig,
-    ...overrides,
+    clientEntry: client.entry ?? config.clientEntry ?? defaultConfig.clientEntry,
+    outDir: client.outDir ?? config.outDir ?? defaultConfig.outDir,
+    publicPath:
+      client.publicPath ?? config.publicPath ?? defaultConfig.publicPath,
+    codeSplitting:
+      client.codeSplitting ?? config.codeSplitting ?? defaultConfig.codeSplitting,
+    islands,
+    generatedDir: config.generatedDir ?? defaultConfig.generatedDir,
+  };
+}
+
+function normalizeIslandConfig(islands) {
+  if (Array.isArray(islands)) {
+    return {
+      include: islands,
+      exclude: defaultConfig.islands.exclude,
+    };
+  }
+
+  return {
+    include: islands?.include ?? defaultConfig.islands.include,
+    exclude: islands?.exclude ?? defaultConfig.islands.exclude,
   };
 }
 
@@ -108,9 +153,9 @@ function createAssetManifest(metafile, config) {
   }
 
   const islands = Object.fromEntries(
-    config.islands.map((name) => [
-      name,
-      findIslandAssets(name, outputs, metafile, config),
+    config.islands.map((island) => [
+      island.name,
+      findIslandAssets(island.name, outputs, metafile, config),
     ]),
   );
 
@@ -126,6 +171,160 @@ function createAssetManifest(metafile, config) {
   };
 }
 
+async function discoverIslands(rootDir, config) {
+  const files = await walk(rootDir);
+  const include = config.include.map(globToRegex);
+  const exclude = config.exclude.map(globToRegex);
+  const islands = files
+    .map((file) => ({
+      file,
+      relativeFile: toPosixPath(relative(rootDir, file)),
+    }))
+    .filter(({ relativeFile }) => include.some((regex) => regex.test(relativeFile)))
+    .filter(({ relativeFile }) => !exclude.some((regex) => regex.test(relativeFile)))
+    .map(({ file }) => ({
+      file,
+      name: getIslandName(file),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  assertUniqueIslandNames(islands);
+
+  return islands;
+}
+
+async function walk(rootDir) {
+  const ignoredDirectories = new Set([
+    '.git',
+    '.nest-react',
+    'dist',
+    'node_modules',
+    'public',
+  ]);
+  const entries = await readdir(rootDir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const path = join(rootDir, entry.name);
+
+    if (entry.isDirectory()) {
+      if (!ignoredDirectories.has(entry.name)) {
+        files.push(...(await walk(path)));
+      }
+
+      continue;
+    }
+
+    if (entry.isFile()) {
+      files.push(path);
+    }
+  }
+
+  return files;
+}
+
+function getIslandName(file) {
+  const fileName = basename(file);
+  return fileName.replace(/\.island\.[^.]+$/, '');
+}
+
+function assertUniqueIslandNames(islands) {
+  const seen = new Map();
+
+  for (const island of islands) {
+    const previous = seen.get(island.name);
+
+    if (previous) {
+      throw new Error(
+        `Duplicate island name "${island.name}" found in ${previous} and ${island.file}.`,
+      );
+    }
+
+    seen.set(island.name, island.file);
+  }
+}
+
+async function generateIslandRegistries({ generatedDir, islands, rootDir }) {
+  await mkdir(generatedDir, { recursive: true });
+
+  await Promise.all([
+    writeFile(
+      join(generatedDir, 'client-registry.ts'),
+      createClientRegistry({ generatedDir, islands, rootDir }),
+    ),
+    writeFile(
+      join(generatedDir, 'server-registry.ts'),
+      createServerRegistry({ generatedDir, islands, rootDir }),
+    ),
+  ]);
+}
+
+function createClientRegistry({ generatedDir, islands, rootDir }) {
+  const mountImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/mount.tsx'),
+  );
+  const entries = islands
+    .map((island) => {
+      const islandImport = toImportSpecifier(generatedDir, island.file);
+      return `  ${JSON.stringify(island.name)}: () => import(${JSON.stringify(
+        islandImport,
+      )}).then((module) => module.${island.name}),`;
+    })
+    .join('\n');
+
+  return [
+    `import type { IslandClientRegistry } from ${JSON.stringify(mountImport)};`,
+    '',
+    'export const registry = {',
+    entries,
+    '} satisfies IslandClientRegistry;',
+    '',
+  ].join('\n');
+}
+
+function createServerRegistry({ generatedDir, islands }) {
+  const imports = islands
+    .map((island) => {
+      const islandImport = toImportSpecifier(generatedDir, island.file);
+      return `import { ${island.name} } from ${JSON.stringify(islandImport)};`;
+    })
+    .join('\n');
+  const entries = islands.map((island) => `  ${island.name},`).join('\n');
+
+  return [
+    imports,
+    '',
+    'export const registry = {',
+    entries,
+    '};',
+    '',
+  ].join('\n');
+}
+
+function toImportSpecifier(fromDir, toFile) {
+  const relativePath = toPosixPath(relative(fromDir, toFile)).replace(
+    /\.[^.]+$/,
+    '.js',
+  );
+  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+}
+
+function globToRegex(pattern) {
+  const escaped = toPosixPath(pattern)
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '__NEST_REACT_GLOBSTAR__')
+    .replace(/\*/g, '[^/]*');
+
+  return new RegExp(
+    `^${escaped.replace(/__NEST_REACT_GLOBSTAR__/g, '.*')}$`,
+  );
+}
+
+function toPosixPath(path) {
+  return path.split(sep).join('/');
+}
+
 function findIslandAssets(name, outputs, metafile, config) {
   const matchingFiles = outputs
     .filter(([file, output]) => isIslandOutput(name, file, output))
@@ -136,11 +335,17 @@ function findIslandAssets(name, outputs, metafile, config) {
 
 function isIslandOutput(name, file, output) {
   const entryBase = output.entryPoint
-    ? basename(output.entryPoint, extname(output.entryPoint))
+    ? normalizeIslandOutputName(
+        basename(output.entryPoint, extname(output.entryPoint)),
+      )
     : '';
-  const outputBase = basename(file, extname(file));
+  const outputBase = normalizeIslandOutputName(basename(file, extname(file)));
 
   return entryBase === name || outputBase.startsWith(`${name}-`);
+}
+
+function normalizeIslandOutputName(name) {
+  return name.replace(/\.island(?=-|$)/, '');
 }
 
 function collectOutputFiles(file, metafile, seen = new Set()) {

@@ -9,7 +9,7 @@ import {
   require_react
 } from "./chunk-6HGV5ZIV.js";
 
-// src/demo/client/components/DashboardControls.tsx
+// src/demo/islands/DashboardControls.island.tsx
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 function DashboardControls({
@@ -90,4 +90,4 @@ function DashboardControls({
 export {
   DashboardControls
 };
-//# sourceMappingURL=DashboardControls-VO7KCV3F.js.map
+//# sourceMappingURL=DashboardControls.island-QQ3X672J.js.map

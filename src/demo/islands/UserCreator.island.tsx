@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { useCommit, useLoad, usePendingLoad } from '../../../core/client/hooks';
-import { CommitRef } from '../../../core/client/runtime';
+import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
+import { CommitRef } from '../../core/client/runtime';
 
 type DemoUser = {
   id: number;

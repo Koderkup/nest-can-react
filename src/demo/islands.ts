@@ -1,10 +1,4 @@
 import { registerIslandComponents } from '../core';
-import { DashboardControls } from './client/components/DashboardControls';
-import { GreetingEditor } from './client/components/GreetingEditor';
-import { UserCreator } from './client/components/UserCreator';
+import { registry } from '../../.nest-react/generated/server-registry.js';
 
-registerIslandComponents({
-  DashboardControls,
-  GreetingEditor,
-  UserCreator,
-});
+registerIslandComponents(registry);

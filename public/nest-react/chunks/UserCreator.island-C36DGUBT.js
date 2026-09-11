@@ -9,7 +9,7 @@ import {
   require_react
 } from "./chunk-6HGV5ZIV.js";
 
-// src/demo/client/components/UserCreator.tsx
+// src/demo/islands/UserCreator.island.tsx
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 function UserCreator({
@@ -75,4 +75,4 @@ function UserCreator({
 export {
   UserCreator
 };
-//# sourceMappingURL=UserCreator-JGWINHDU.js.map
+//# sourceMappingURL=UserCreator.island-C36DGUBT.js.map

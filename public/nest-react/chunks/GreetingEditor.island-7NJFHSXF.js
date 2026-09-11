@@ -9,7 +9,7 @@ import {
   require_react
 } from "./chunk-6HGV5ZIV.js";
 
-// src/demo/client/components/GreetingEditor.tsx
+// src/demo/islands/GreetingEditor.island.tsx
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 function GreetingEditor({
@@ -57,4 +57,4 @@ function GreetingEditor({
 export {
   GreetingEditor
 };
-//# sourceMappingURL=GreetingEditor-GXQNEZ5B.js.map
+//# sourceMappingURL=GreetingEditor.island-7NJFHSXF.js.map

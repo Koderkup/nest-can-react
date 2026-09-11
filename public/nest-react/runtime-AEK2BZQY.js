@@ -22670,15 +22670,11 @@ function shouldUseBrowserNavigation(link, event) {
   return event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target.length > 0 && link.target !== "_self" || link.hasAttribute("download") || nextUrl.origin !== window.location.origin || isHashOnlyNavigation;
 }
 
-// src/demo/client/registry.ts
+// .nest-react/generated/client-registry.ts
 var registry = {
-  DashboardControls: () => import("./chunks/DashboardControls-VO7KCV3F.js").then(
-    (module) => module.DashboardControls
-  ),
-  GreetingEditor: () => import("./chunks/GreetingEditor-GXQNEZ5B.js").then(
-    (module) => module.GreetingEditor
-  ),
-  UserCreator: () => import("./chunks/UserCreator-JGWINHDU.js").then((module) => module.UserCreator)
+  "DashboardControls": () => import("./chunks/DashboardControls.island-QQ3X672J.js").then((module) => module.DashboardControls),
+  "GreetingEditor": () => import("./chunks/GreetingEditor.island-7NJFHSXF.js").then((module) => module.GreetingEditor),
+  "UserCreator": () => import("./chunks/UserCreator.island-C36DGUBT.js").then((module) => module.UserCreator)
 };
 
 // src/demo/client/entry.tsx
@@ -22726,4 +22722,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-WQAYW3XU.js.map
+//# sourceMappingURL=runtime-AEK2BZQY.js.map
