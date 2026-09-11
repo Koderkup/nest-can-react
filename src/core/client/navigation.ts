@@ -33,7 +33,7 @@ export function installNavigation(options: NavigationOptions) {
     event.preventDefault();
 
     try {
-      await navigate(link.href, options, 'push');
+      await navigate(link.href, options, 'push', false);
     } catch {
       window.location.href = link.href;
     }
@@ -42,15 +42,24 @@ export function installNavigation(options: NavigationOptions) {
   window.addEventListener('popstate', () => {
     void restoreHistoryEntry(window.location.href, options);
   });
+
+  window.addEventListener('nr:loads-refreshed', () => {
+    invalidateSnapshots();
+  });
 }
 
 async function navigate(
   href: string,
   options: NavigationOptions,
   historyMode: 'push' | 'replace' | 'none',
+  useCache: boolean,
 ) {
   pageCache.set(currentUrl, takeSnapshot());
-  const snapshot = pageCache.get(href) ?? (await fetchSnapshot(href));
+  const snapshot =
+    useCache && pageCache.has(href)
+      ? pageCache.get(href)!
+      : await fetchSnapshot(href);
+
   pageCache.set(href, snapshot);
   applySnapshot(snapshot, options);
 
@@ -68,7 +77,7 @@ async function navigate(
 
 async function restoreHistoryEntry(href: string, options: NavigationOptions) {
   try {
-    await navigate(href, options, 'none');
+    await navigate(href, options, 'none', true);
   } catch {
     window.location.reload();
   }
@@ -113,6 +122,11 @@ function takeSnapshot(): PageSnapshot {
     scrollX: window.scrollX,
     scrollY: window.scrollY,
   };
+}
+
+function invalidateSnapshots() {
+  pageCache.clear();
+  pageCache.set(currentUrl, takeSnapshot());
 }
 
 function getAnchor(target: EventTarget | null) {

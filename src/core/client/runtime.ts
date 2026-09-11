@@ -85,6 +85,11 @@ export async function refresh(keys: string[]) {
     });
 
     loads = nextLoads;
+    window.dispatchEvent(
+      new CustomEvent('nr:loads-refreshed', {
+        detail: { keys: uniqueKeys },
+      }),
+    );
   } finally {
     uniqueKeys.forEach((key) => pendingLoads.delete(key));
     notify();

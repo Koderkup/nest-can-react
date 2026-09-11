@@ -23889,6 +23889,11 @@ async function refresh(keys) {
       nextLoads[load.key] = load.data;
     });
     loads = nextLoads;
+    window.dispatchEvent(
+      new CustomEvent("nr:loads-refreshed", {
+        detail: { keys: uniqueKeys }
+      })
+    );
   } finally {
     uniqueKeys.forEach((key) => pendingLoads.delete(key));
     notify();
@@ -23970,7 +23975,7 @@ function installNavigation(options) {
     }
     event.preventDefault();
     try {
-      await navigate(link.href, options, "push");
+      await navigate(link.href, options, "push", false);
     } catch {
       window.location.href = link.href;
     }
@@ -23978,10 +23983,13 @@ function installNavigation(options) {
   window.addEventListener("popstate", () => {
     void restoreHistoryEntry(window.location.href, options);
   });
+  window.addEventListener("nr:loads-refreshed", () => {
+    invalidateSnapshots();
+  });
 }
-async function navigate(href, options, historyMode) {
+async function navigate(href, options, historyMode, useCache) {
   pageCache.set(currentUrl, takeSnapshot());
-  const snapshot = pageCache.get(href) ?? await fetchSnapshot(href);
+  const snapshot = useCache && pageCache.has(href) ? pageCache.get(href) : await fetchSnapshot(href);
   pageCache.set(href, snapshot);
   applySnapshot(snapshot, options);
   if (historyMode === "push") {
@@ -23995,7 +24003,7 @@ async function navigate(href, options, historyMode) {
 }
 async function restoreHistoryEntry(href, options) {
   try {
-    await navigate(href, options, "none");
+    await navigate(href, options, "none", true);
   } catch {
     window.location.reload();
   }
@@ -24032,6 +24040,10 @@ function takeSnapshot() {
     scrollX: window.scrollX,
     scrollY: window.scrollY
   };
+}
+function invalidateSnapshots() {
+  pageCache.clear();
+  pageCache.set(currentUrl, takeSnapshot());
 }
 function getAnchor(target) {
   if (!(target instanceof Element)) {
