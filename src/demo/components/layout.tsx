@@ -25,7 +25,7 @@ export function DemoShell({
   return (
     <html>
       <head>
-        <title>{title} | Nest React</title>
+        <title>{`${title} | Nest React`}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>{demoStyles}</style>
       </head>

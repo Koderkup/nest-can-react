@@ -5,13 +5,13 @@ import { loadKeys } from '../load-keys';
 import { UsersService } from '../services/users.service';
 
 export const usersLoad = load(loadKeys.users, async () => {
-  return inject<UsersService>(UsersService).findAll();
+  return await inject<UsersService>(UsersService).findAll();
 });
 
 export const createUserCommit = commit(
   'users.create',
   async (input: { name?: string; role?: string }) => {
-    inject<UsersService>(UsersService).create(input);
+    await inject<UsersService>(UsersService).create(input);
     return revalidate(loadKeys.users, loadKeys.dashboard);
   },
 );

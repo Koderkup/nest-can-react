@@ -5,13 +5,15 @@ import { loadKeys } from '../load-keys';
 import { GreetingService } from '../services/greeting.service';
 
 export const greetingLoad = load(loadKeys.greeting, async () => {
-  return inject<GreetingService>(GreetingService).sayHello();
+  return await inject<GreetingService>(GreetingService).sayHello();
 });
 
 export const updateGreetingCommit = commit(
   'greeting.update',
   async (input: { message?: string }) => {
-    inject<GreetingService>(GreetingService).setGreeting(input.message ?? '');
+    await inject<GreetingService>(GreetingService).setGreeting(
+      input.message ?? '',
+    );
     return revalidate(loadKeys.greeting, loadKeys.dashboard);
   },
 );

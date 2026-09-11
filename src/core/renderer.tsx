@@ -66,7 +66,7 @@ async function renderBufferedPage(
     renderState,
     async () => {
       const page = await Page();
-      return '<!DOCTYPE html>' + renderToStaticMarkup(page);
+      return '<!DOCTYPE html>' + render(page);
     },
   );
 
@@ -143,7 +143,7 @@ function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
 
 function createRuntimeInjectionTransform(runtimeFactory: () => string) {
   let tail = '';
-  const tailSize = 8192;
+  const tailSize = 1024;
 
   return new Transform({
     transform(chunk, _encoding, callback) {

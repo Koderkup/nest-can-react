@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { delay } from './delay';
 
 export type DemoUser = {
   id: number;
@@ -15,11 +16,13 @@ export class UsersService {
     { id: 3, name: 'Katherine Johnson', role: 'Flight Analyst' },
   ];
 
-  findAll() {
+  async findAll() {
+    await delay(1200);
     return [...this.users];
   }
 
-  create(input: { name?: string; role?: string }) {
+  async create(input: { name?: string; role?: string }) {
+    await delay(800);
     const user = {
       id: this.nextId++,
       name: input.name?.trim() || 'New teammate',
