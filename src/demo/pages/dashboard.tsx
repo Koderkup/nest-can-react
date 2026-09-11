@@ -89,7 +89,7 @@ export default async function Dashboard() {
 
 function createSlowInsightResource(): SlowInsightResource {
   let ready = false;
-  const promise = delay(2500).then(() => {
+  const promise = delay(0).then(() => {
     ready = true;
   });
 
