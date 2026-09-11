@@ -15,3 +15,4 @@ manifest.islands.forEach((island) => {
 
   createRoot(rootElement).render(<Component {...island.props} />);
 });
+// 创建一个按钮，点击后，调用nestjs的api，获取用户列表
