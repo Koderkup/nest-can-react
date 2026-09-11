@@ -6,7 +6,7 @@ export class GreetingService {
   private greeting = 'Hello from Nest DI';
 
   async sayHello() {
-    await delay(700);
+    await delay(7000);
     return this.greeting;
   }
 
