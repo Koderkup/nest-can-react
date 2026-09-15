@@ -31,6 +31,8 @@ React handles the UI.
 Server React can access Nest providers:
 
 ```tsx
+import { UserCreator } from './islands/UserCreator.island';
+
 export const usersLoad = load('users:list', async () => {
   return inject<UsersService>(UsersService).findAll();
 });
@@ -41,7 +43,7 @@ export default async function UsersPage() {
   return (
     <Island
       mode="hydrate"
-      name="UserCreator"
+      name={UserCreator}
       props={{ initialUsers: users }}
     />
   );
@@ -152,9 +154,11 @@ Marks load keys stale after a commit. The browser runtime refreshes those keys w
 Registers a client island during server render.
 
 ```tsx
+import { GreetingEditor } from './islands/GreetingEditor.island';
+
 <Island
   mode="hydrate"
-  name="GreetingEditor"
+  name={GreetingEditor}
   props={{
     initialMessage: greeting,
     loadKey: greetingLoad.key,
@@ -166,7 +170,7 @@ Registers a client island during server render.
 - `mode="mount"` (default): empty `<div id="nr-i0">`. The client portals the component in.
 - `mode="hydrate"`: the island is SSR’d into that host (wrapped in `ClientRuntime` so context matches), then hydrated on first load.
 
-The `name` must match a discovered `*.island.tsx` export (for example `GreetingEditor` from `GreetingEditor.island.tsx`).
+Pass the island component as `name` (for example `GreetingEditor` from `GreetingEditor.island.tsx`). String names still work as an escape hatch. The registry key stays the discovered export name.
 
 ### `NestReactModule.forRoot()`
 

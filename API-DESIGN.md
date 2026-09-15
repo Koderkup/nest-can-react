@@ -97,7 +97,7 @@ export default async function Home() {
   return (
     <Island
       mode="hydrate"
-      name="GreetingEditor"
+      name={GreetingEditor}
       props={{ initialMessage: greeting }}
     />
   );

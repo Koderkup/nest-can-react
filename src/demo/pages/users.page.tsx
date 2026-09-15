@@ -1,5 +1,6 @@
 import React from 'react';
 import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
+import { UserCreator } from '../islands/UserCreator.island';
 import { loadKeys } from '../load-keys';
 import { UsersService } from '../services/users.service';
 
@@ -39,7 +40,7 @@ export default async function Users() {
       <section className="card span-8">
         <Island
           mode="hydrate"
-          name="UserCreator"
+          name={UserCreator}
           props={{
             initialUsers: users,
             usersLoadKey: usersLoad.key,

@@ -26,7 +26,7 @@ Copy the **roles** below, not the demo folder names.
 | Island files | Browser components | `*.island.tsx` matching `islands.include` |
 | Nest wiring | Transport, DI, `/assets`, generated boot | `NestReactModule.forRoot()` |
 
-Island **file name** matters: `GreetingEditor.island.tsx` must export `GreetingEditor`, and `<Island name="GreetingEditor" />` must use that same name. The **directory** does not.
+Island **file name** matters: `GreetingEditor.island.tsx` must export `GreetingEditor`, and `<Island name={GreetingEditor} />` must pass that same component. The **directory** does not.
 
 The package generates client entry, registries, and `server-boot.ts`. It injects `#nr-runtime` and `#nr-document`. Do not author those files or slot ids.
 
@@ -172,6 +172,7 @@ Pages set chrome via `setLayoutMeta` and return only the page body:
 ```tsx
 import React from 'react';
 import { commit, inject, Island, load, revalidate, setLayoutMeta } from './core';
+import { GreetingEditor } from './islands/GreetingEditor.island';
 import { GreetingService } from './greeting.service';
 
 export const greetingLoad = load('home:greeting', async () => {
@@ -196,7 +197,7 @@ export default async function HomePage() {
       <p>{greeting}</p>
       <Island
         mode="hydrate"
-        name="GreetingEditor"
+        name={GreetingEditor}
         props={{
           initialMessage: greeting,
           loadKey: greetingLoad.key,
@@ -211,7 +212,7 @@ export default async function HomePage() {
 - `mode="hydrate"`: HTML for the island is rendered on the server, then hydrated.
 - `mode="mount"`: empty host; the client renders into it.
 
-`name` must match the island component export.
+Pass the island component as `name` so the editor can jump to it. String names still work as an escape hatch.
 
 ## 5. Render From A Controller
 
@@ -235,7 +236,7 @@ export class AppController {
 
 ## 6. Create A Client Island
 
-File name: `greeting-editor.island.tsx` **or** `GreetingEditor.island.tsx`. The discovered export name is what you pass to `<Island name="..." />`. The demo uses PascalCase filenames (`GreetingEditor.island.tsx` → `GreetingEditor`).
+File name: `greeting-editor.island.tsx` **or** `GreetingEditor.island.tsx`. Import the discovered export and pass it to `<Island name={GreetingEditor} />`. The demo uses PascalCase filenames (`GreetingEditor.island.tsx` → `GreetingEditor`).
 
 ```tsx
 import React, { useEffect, useState } from 'react';

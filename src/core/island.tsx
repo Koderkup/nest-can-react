@@ -1,29 +1,37 @@
-import React from 'react';
+import React, { ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
 import { IslandRenderMode, registerIsland } from './context';
-import { getClientRuntime, getIslandComponent } from './island-registry';
+import {
+  getClientRuntime,
+  getIslandComponent,
+  resolveIslandName,
+} from './island-registry';
 
-type IslandProps = {
+type IslandName = string | ComponentType<any>;
+
+type IslandProps<C extends IslandName> = {
   mode?: IslandRenderMode;
-  name: string;
-  props?: Record<string, unknown>;
+  name: C;
+  props?: C extends ComponentType<infer P> ? P : Record<string, unknown>;
   children?: React.ReactNode;
 };
 
-export function Island({
+export function Island<C extends IslandName>({
   mode = 'mount',
   name,
-  props = {},
+  props,
   children,
-}: IslandProps) {
-  const serializedProps = serializeProps(props);
-  const id = registerIsland(name, mode, serializedProps);
+}: IslandProps<C>) {
+  const resolvedName = resolveIslandName(name);
+  const serializedProps = serializeProps((props ?? {}) as object);
+  const id = registerIsland(resolvedName, mode, serializedProps);
 
   if (mode === 'hydrate') {
-    const Component = getIslandComponent(name);
+    const Component =
+      typeof name === 'string' ? getIslandComponent(resolvedName) : name;
 
     if (!Component) {
-      throw new Error(`No island component registered for "${name}".`);
+      throw new Error(`No island component registered for "${resolvedName}".`);
     }
 
     const Runtime = getClientRuntime();
@@ -44,6 +52,6 @@ export function Island({
   return <div id={id}>{children}</div>;
 }
 
-function serializeProps(value: Record<string, unknown>) {
+function serializeProps(value: object) {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
 }

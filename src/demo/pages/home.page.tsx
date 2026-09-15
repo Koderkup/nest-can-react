@@ -1,5 +1,6 @@
 import React from 'react';
 import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
+import { GreetingEditor } from '../islands/GreetingEditor.island';
 import { loadKeys } from '../load-keys';
 import { GreetingService } from '../services/greeting.service';
 
@@ -42,7 +43,7 @@ export default async function Home() {
         <span className="pill">Client island</span>
         <Island
           mode="hydrate"
-          name="GreetingEditor"
+          name={GreetingEditor}
           props={{
             initialMessage: greeting,
             loadKey: greetingLoad.key,

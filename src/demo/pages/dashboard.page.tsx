@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
+import { DashboardControls } from '../islands/DashboardControls.island';
 import { loadKeys } from '../load-keys';
 import { DashboardService } from '../services/dashboard.service';
 import { delay } from '../services/delay';
@@ -69,7 +70,7 @@ export default async function Dashboard() {
       <section className="card span-12">
         <Island
           mode="mount"
-          name="DashboardControls"
+          name={DashboardControls}
           props={{
             initialSummary: summary,
             summaryLoadKey: dashboardSummaryLoad.key,

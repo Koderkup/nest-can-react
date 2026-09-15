@@ -94,14 +94,16 @@ Load keys should be stable and specific (`home:greeting`, `users:list`).
 ## `Island`
 
 ```tsx
+import { GreetingEditor } from './islands/GreetingEditor.island';
+
 <Island
   mode="hydrate" // or "mount" (default)
-  name="GreetingEditor"
+  name={GreetingEditor}
   props={{ ... }}
 />
 ```
 
-`name` must match a generated registry key (export from `*.island.tsx`).
+Pass the island component as `name`. The framework resolves it to the generated registry key (the `*.island.tsx` export). String names still work as an escape hatch.
 
 | Mode | Server HTML | Client |
 | --- | --- | --- |
