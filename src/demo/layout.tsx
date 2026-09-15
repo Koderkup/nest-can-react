@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { NestLink, useLayoutMeta } from '../core';
+import favicon from './favicon.svg';
 
 const navItems = [
   { id: 'home', to: '/', label: 'Home' },
@@ -18,6 +19,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html>
       <head>
         <title>{`${title} | Nest React`}</title>
+        <link rel="icon" href={favicon} type="image/svg+xml" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
 
