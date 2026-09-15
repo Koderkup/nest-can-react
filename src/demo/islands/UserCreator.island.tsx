@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
-import { useSession } from '../app.runtime';
+import { useSession } from '../context/session';
 
 type DemoUser = {
   id: number;

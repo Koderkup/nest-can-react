@@ -6,7 +6,7 @@ import {
   isLoadPending,
   require_react,
   subscribe
-} from "/assets/nest-react/chunks/chunk-GKVIBCEZ.js";
+} from "/assets/nest-react/chunks/chunk-7LMWQLQ2.js";
 
 // src/core/client/hooks.ts
 var import_react = __toESM(require_react());
@@ -59,4 +59,4 @@ export {
   usePendingLoad,
   useCommit
 };
-//# sourceMappingURL=/assets/nest-react/chunks/chunk-GB3B6RSN.js.map
+//# sourceMappingURL=/assets/nest-react/chunks/chunk-JK3DK5AG.js.map

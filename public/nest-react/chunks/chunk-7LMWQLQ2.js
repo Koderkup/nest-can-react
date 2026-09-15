@@ -1457,7 +1457,7 @@ function readManifest() {
   return JSON.parse(script.textContent);
 }
 
-// src/demo/app.runtime.tsx
+// src/demo/context/session.tsx
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var SessionContext = (0, import_react.createContext)(null);
@@ -1476,7 +1476,7 @@ function bumpVisits() {
   visits += 1;
   sessionListeners.forEach((listener) => listener());
 }
-function ClientRuntime({ children }) {
+function SessionProvider({ children }) {
   const currentVisits = (0, import_react.useSyncExternalStore)(
     subscribeSession,
     getVisits,
@@ -1510,7 +1510,7 @@ export {
   isLoadPending,
   commit,
   require_jsx_runtime,
-  ClientRuntime,
+  SessionProvider,
   useSession
 };
 /*! Bundled license information:
@@ -1537,4 +1537,4 @@ react/cjs/react-jsx-runtime.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=/assets/nest-react/chunks/chunk-GKVIBCEZ.js.map
+//# sourceMappingURL=/assets/nest-react/chunks/chunk-7LMWQLQ2.js.map

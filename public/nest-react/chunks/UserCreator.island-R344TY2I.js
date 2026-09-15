@@ -2,13 +2,13 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "/assets/nest-react/chunks/chunk-GB3B6RSN.js";
+} from "/assets/nest-react/chunks/chunk-JK3DK5AG.js";
 import {
   __toESM,
   require_jsx_runtime,
   require_react,
   useSession
-} from "/assets/nest-react/chunks/chunk-GKVIBCEZ.js";
+} from "/assets/nest-react/chunks/chunk-7LMWQLQ2.js";
 
 // src/demo/islands/UserCreator.island.tsx
 var import_react = __toESM(require_react());
@@ -81,4 +81,4 @@ function UserCreator({
 export {
   UserCreator
 };
-//# sourceMappingURL=/assets/nest-react/chunks/UserCreator.island-QGMTKMGE.js.map
+//# sourceMappingURL=/assets/nest-react/chunks/UserCreator.island-R344TY2I.js.map

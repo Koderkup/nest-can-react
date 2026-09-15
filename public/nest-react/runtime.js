@@ -1,5 +1,5 @@
 import {
-  ClientRuntime,
+  SessionProvider,
   __commonJS,
   __toESM,
   getManifest,
@@ -8,7 +8,7 @@ import {
   require_jsx_runtime,
   require_react,
   subscribe
-} from "/assets/nest-react/chunks/chunk-GKVIBCEZ.js";
+} from "/assets/nest-react/chunks/chunk-7LMWQLQ2.js";
 
 // node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS({
@@ -22833,10 +22833,16 @@ function shouldUseBrowserNavigation(link, event) {
 
 // .nest-react/generated/client-registry.ts
 var registry = {
-  "DashboardControls": () => import("/assets/nest-react/chunks/DashboardControls.island-ZFMSFHRS.js").then((module) => module.DashboardControls),
-  "GreetingEditor": () => import("/assets/nest-react/chunks/GreetingEditor.island-B73FXHZG.js").then((module) => module.GreetingEditor),
-  "UserCreator": () => import("/assets/nest-react/chunks/UserCreator.island-QGMTKMGE.js").then((module) => module.UserCreator)
+  "DashboardControls": () => import("/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js").then((module) => module.DashboardControls),
+  "GreetingEditor": () => import("/assets/nest-react/chunks/GreetingEditor.island-HCTNMS7C.js").then((module) => module.GreetingEditor),
+  "UserCreator": () => import("/assets/nest-react/chunks/UserCreator.island-R344TY2I.js").then((module) => module.UserCreator)
 };
+
+// src/demo/app.runtime.tsx
+var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+function ClientRuntime({ children }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(SessionProvider, { children });
+}
 
 // .nest-react/generated/client-entry.tsx
 function bootPage() {
@@ -22885,4 +22891,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=/assets/nest-react/runtime-ITQZKEVY.js.map
+//# sourceMappingURL=/assets/nest-react/runtime.js.map

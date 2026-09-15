@@ -2,32 +2,32 @@
   "version": 1,
   "codeSplitting": true,
   "publicPath": "/assets/nest-react",
-  "runtime": "/assets/nest-react/runtime-ITQZKEVY.js",
+  "runtime": "/assets/nest-react/runtime.js",
   "css": [
-    "/assets/nest-react/runtime-FOPV3UWX.css"
+    "/assets/nest-react/runtime.css"
   ],
   "chunks": [
-    "/assets/nest-react/chunks/DashboardControls.island-ZFMSFHRS.js",
-    "/assets/nest-react/chunks/GreetingEditor.island-B73FXHZG.js",
-    "/assets/nest-react/chunks/UserCreator.island-QGMTKMGE.js",
-    "/assets/nest-react/chunks/chunk-GB3B6RSN.js",
-    "/assets/nest-react/chunks/chunk-GKVIBCEZ.js"
+    "/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js",
+    "/assets/nest-react/chunks/GreetingEditor.island-HCTNMS7C.js",
+    "/assets/nest-react/chunks/UserCreator.island-R344TY2I.js",
+    "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
+    "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
   ],
   "islands": {
     "DashboardControls": [
-      "/assets/nest-react/chunks/DashboardControls.island-ZFMSFHRS.js",
-      "/assets/nest-react/chunks/chunk-GB3B6RSN.js",
-      "/assets/nest-react/chunks/chunk-GKVIBCEZ.js"
+      "/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js",
+      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
+      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
     ],
     "GreetingEditor": [
-      "/assets/nest-react/chunks/GreetingEditor.island-B73FXHZG.js",
-      "/assets/nest-react/chunks/chunk-GB3B6RSN.js",
-      "/assets/nest-react/chunks/chunk-GKVIBCEZ.js"
+      "/assets/nest-react/chunks/GreetingEditor.island-HCTNMS7C.js",
+      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
+      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
     ],
     "UserCreator": [
-      "/assets/nest-react/chunks/UserCreator.island-QGMTKMGE.js",
-      "/assets/nest-react/chunks/chunk-GB3B6RSN.js",
-      "/assets/nest-react/chunks/chunk-GKVIBCEZ.js"
+      "/assets/nest-react/chunks/UserCreator.island-R344TY2I.js",
+      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
+      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
     ]
   },
   "islandCss": {
