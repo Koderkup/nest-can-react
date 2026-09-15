@@ -1,4 +1,4 @@
-import './register-assets';
+import './assets/register-assets';
 
 export {
   configureNestReact,
@@ -6,19 +6,19 @@ export {
   getGlobalStylesheetHrefs,
   getIslandAssetHints,
   getStylesheetHrefs,
-} from './client-assets';
-export type { ClientAssetsManifest, NestReactOptions } from './client-assets';
-export { commit, revalidate } from './commit';
-export { initializeFrontendDI, inject } from './inject';
-export { Island } from './island';
+} from './assets/client-assets';
+export type { ClientAssetsManifest, NestReactOptions } from './assets/client-assets';
+export { commit, revalidate } from './data/commit';
+export { initializeFrontendDI, inject } from './data/inject';
+export { Island } from './island/island';
 export {
   registerClientRuntime,
   registerIslandComponents,
-} from './island-registry';
-export { getLayout, registerLayout } from './layout-registry';
-export { listLoadKeys, load, refreshLoad } from './load';
-export { NestReactModule } from './nest-react.module';
-export { renderPage } from './renderer';
-export { NestLink } from './link';
-export { getLayoutMeta, setLayoutMeta, useLayoutMeta } from './context';
-export type { LayoutMeta } from './context';
+} from './island/island-registry';
+export { getLayout, registerLayout } from './render/layout-registry';
+export { listLoadKeys, load, refreshLoad } from './data/load';
+export { NestReactModule } from './nest/nest-react.module';
+export { renderPage } from './render/renderer';
+export { NestLink } from './render/link';
+export { getLayoutMeta, setLayoutMeta, useLayoutMeta } from './data/context';
+export type { LayoutMeta } from './data/context';

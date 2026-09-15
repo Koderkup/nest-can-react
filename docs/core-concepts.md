@@ -26,27 +26,20 @@ Application folder layout is **not** part of this contract. `src/demo/` is a sam
 
 ```txt
 src/core/
-  build/                 # esbuild client bundler
+  index.ts
+  nest/                  # Nest wiring
+  render/                # SSR document
+  island/                # server Island + registry
+  data/                  # load / commit / DI context
+  assets/                # static + SSR asset URLs
+  errors/                # client-hook-on-server error page
   client/
     hooks.ts
     mount.tsx            # installClientRuntime, hydrate vs portal
     navigation.ts        # SPA swap of #nr-document
     runtime.ts           # manifest, load refresh, commit fetch
     styles.ts            # ensure stylesheet links on SPA navigation
-  client-assets.ts
-  commit.ts
-  context.ts
-  index.ts
-  inject.ts
-  island.tsx
-  island-registry.ts
-  layout-registry.ts
-  default-layout.tsx
-  load.ts
-  nest-react.controller.ts
-  nest-react.module.ts
-  register-assets.ts     # Nest ignores CSS; maps hashed asset URLs
-  renderer.tsx
+  build/                 # esbuild client bundler
 ```
 
 ## Render Context

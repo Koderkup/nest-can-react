@@ -212,7 +212,7 @@ Current demo islands already gesture at this (`useCommit(ref)` instead of a URL)
 
 ## Current holes (this repo, today)
 
-`src/core/nest-react.controller.ts` exposes:
+`src/core/nest/nest-react.controller.ts` exposes:
 
 ```txt
 POST /_nr/commit      { id, args }
@@ -228,7 +228,7 @@ GET  /_nr/loads/:key
 - Send arbitrary `args` with no DTO validation.
 - Hit `GET /_nr/loads/:key`, which is cacheable, prefetchable, and CSRF-friendly.
 
-`inject()` is not request-scoped (`src/core/inject.ts` falls back to the root `ModuleRef`). Even a future `AuthGuard` would be unsafe until that is fixed: the wrong user, or no user, can be visible to a concurrent request.
+`inject()` is not request-scoped (`src/core/data/inject.ts` falls back to the root `ModuleRef`). Even a future `AuthGuard` would be unsafe until that is fixed: the wrong user, or no user, can be visible to a concurrent request.
 
 The HTML manifest is also a capability dump. XSS that can read `#nr-manifest` can replay every commit on the page.
 

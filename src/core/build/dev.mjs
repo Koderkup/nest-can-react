@@ -1,18 +1,17 @@
 import { spawn } from 'node:child_process';
 import { watch } from 'node:fs';
-import http from 'node:http';
-import net from 'node:net';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   collectChangedClientModules,
   watchNestReactClient,
 } from './build-client.mjs';
+import { classifyChange, toPosixPath } from './dev-classify.mjs';
+import { broadcast, startProxy, waitFor, waitForPort } from './dev-proxy.mjs';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const publicPort = Number(process.env.PORT ?? 3000);
 const nestPort = Number(process.env.NEST_REACT_NEST_PORT ?? publicPort + 1);
-const sseClients = new Set();
 let previousOutputFiles = new Set();
 let seenFirstClientBuild = false;
 
@@ -83,7 +82,7 @@ const client = await watchNestReactClient(
 
 nestProcess = startNest();
 await waitForPort(nestPort);
-const server = startProxy();
+const server = startProxy(publicPort, nestPort);
 
 watchSourceFiles();
 watchConfigFile();
@@ -137,91 +136,6 @@ function startNest() {
   return child;
 }
 
-function startProxy() {
-  const server = http.createServer((req, res) => {
-    const path = (req.url ?? '/').split('?')[0];
-
-    if (path === '/_nr/hmr') {
-      attachSseClient(req, res);
-      return;
-    }
-
-    proxyRequest(req, res);
-  });
-
-  server.listen(publicPort);
-  return server;
-}
-
-function attachSseClient(req, res) {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
-  res.write('\n');
-  sseClients.add(res);
-
-  const ping = setInterval(() => {
-    try {
-      res.write(': ping\n\n');
-    } catch {
-      clearInterval(ping);
-      sseClients.delete(res);
-    }
-  }, 15000);
-
-  req.on('close', () => {
-    clearInterval(ping);
-    sseClients.delete(res);
-  });
-}
-
-function broadcast(data) {
-  const payload = `data: ${JSON.stringify(data)}\n\n`;
-
-  for (const client of sseClients) {
-    client.write(payload);
-  }
-}
-
-function proxyRequest(req, res, retried = false) {
-  const proxyReq = http.request(
-    {
-      hostname: '127.0.0.1',
-      port: nestPort,
-      path: req.url,
-      method: req.method,
-      headers: req.headers,
-    },
-    (proxyRes) => {
-      res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
-      proxyRes.pipe(res);
-    },
-  );
-
-  proxyReq.on('error', () => {
-    if (!retried && req.method === 'GET' && !res.headersSent) {
-      waitForPort(nestPort, 8000)
-        .then(() => proxyRequest(req, res, true))
-        .catch(sendProxyUnavailable);
-      return;
-    }
-
-    sendProxyUnavailable();
-  });
-
-  req.pipe(proxyReq);
-
-  function sendProxyUnavailable() {
-    if (!res.headersSent) {
-      res.writeHead(502, { 'content-type': 'text/plain' });
-      res.end('Nest React dev proxy: server unavailable');
-    }
-  }
-}
-
 function watchSourceFiles() {
   watch(join(rootDir, 'src'), { recursive: true }, (event, filename) => {
     if (!filename) {
@@ -242,7 +156,7 @@ function watchConfigFile() {
 }
 
 function handleFileChange(file, event = 'change') {
-  const kind = classifyChange(file);
+  const kind = classifyChange(file, rootDir);
 
   if (kind === 'ignore') {
     return;
@@ -312,131 +226,6 @@ function scheduleServerReload() {
       });
     }
   }, 400);
-}
-
-function classifyChange(file) {
-  const path = toPosixPath(relative(rootDir, file));
-
-  if (
-    path.includes('/node_modules/') ||
-    path.includes('/dist/') ||
-    path.includes('/public/') ||
-    path.includes('/.nest-react/') ||
-    path.includes('/.git/') ||
-    path.includes('/src/core/build/') ||
-    /\.d\.ts$/.test(path) ||
-    /\.map$/.test(path)
-  ) {
-    return 'ignore';
-  }
-
-  if (
-    /\/src\/core\/client\/(mount|navigation|runtime|hmr|refresh-runtime)\.[jt]sx?$/.test(
-      path,
-    )
-  ) {
-    return 'client-protocol';
-  }
-
-  if (path.includes('/src/core/client/')) {
-    return 'client';
-  }
-
-  if (/\.island\.[jt]sx$/.test(path)) {
-    return 'client';
-  }
-
-  if (
-    /app\.runtime\.[jt]sx$/.test(path) ||
-    /\/context\/.*\.[jt]sx$/.test(path)
-  ) {
-    return 'client';
-  }
-
-  if (/\.(css|module\.css)$/.test(path)) {
-    return 'client';
-  }
-
-  if (
-    /\.(png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|eot)$/.test(path) &&
-    path.startsWith('src/')
-  ) {
-    return 'client';
-  }
-
-  if (/\.page\.[jt]sx$/.test(path) || /(?:^|\/)layout\.[jt]sx$/.test(path)) {
-    return 'server';
-  }
-
-  if (path.startsWith('src/core/')) {
-    return 'server';
-  }
-
-  if (
-    /\.(controller|module|service|filter|guard|interceptor|pipe)\.[jt]s$/.test(
-      path,
-    )
-  ) {
-    return 'server';
-  }
-
-  if (path.startsWith('src/') && /\.[jt]sx?$/.test(path)) {
-    return 'server';
-  }
-
-  return 'ignore';
-}
-
-function waitForPort(port, timeoutMs = 20000) {
-  const start = Date.now();
-
-  return new Promise((resolveWait, reject) => {
-    const attempt = () => {
-      const socket = net.connect({ port, host: '127.0.0.1' }, () => {
-        socket.end();
-        resolveWait();
-      });
-
-      socket.on('error', () => {
-        socket.destroy();
-
-        if (Date.now() - start > timeoutMs) {
-          reject(new Error(`Timed out waiting for port ${port}`));
-          return;
-        }
-
-        setTimeout(attempt, 120);
-      });
-    };
-
-    attempt();
-  });
-}
-
-function waitFor(predicate, timeoutMs) {
-  const start = Date.now();
-
-  return new Promise((resolveWait, reject) => {
-    const attempt = () => {
-      if (predicate()) {
-        resolveWait();
-        return;
-      }
-
-      if (Date.now() - start > timeoutMs) {
-        reject(new Error('Timed out waiting for Nest restart'));
-        return;
-      }
-
-      setTimeout(attempt, 100);
-    };
-
-    attempt();
-  });
-}
-
-function toPosixPath(path) {
-  return path.split(sep).join('/');
 }
 
 async function shutdown() {

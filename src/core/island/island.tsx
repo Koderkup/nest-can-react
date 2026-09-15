@@ -1,6 +1,6 @@
 import React, { ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
-import { IslandRenderMode, registerIsland } from './context';
+import { IslandRenderMode, registerIsland } from '../data/context';
 import {
   getClientRuntime,
   getIslandComponent,

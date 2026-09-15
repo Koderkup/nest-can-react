@@ -1,4 +1,4 @@
-import './register-assets';
+import '../assets/register-assets';
 import { join } from 'node:path';
 import {
   DynamicModule,
@@ -10,11 +10,11 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, ModuleRef } from '@nestjs/core';
 import express, { NextFunction, Request, Response } from 'express';
-import { configureNestReact, NestReactOptions } from './client-assets';
-import { initializeFrontendDI } from './context';
+import { configureNestReact, NestReactOptions } from '../assets/client-assets';
+import { initializeFrontendDI } from '../data/context';
 import { ClientHookOnServerFilter } from './dev-hook-error.filter';
 import { NestReactController } from './nest-react.controller';
-import '../../.nest-react/generated/server-boot.js';
+import '../../../.nest-react/generated/server-boot.js';
 
 const publicDir = join(process.cwd(), 'public');
 const servePublic = express.static(publicDir, {

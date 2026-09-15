@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
-import { useLayoutMeta } from '../core/context';
-import { NestLink } from '../core/link';
+import { NestLink, useLayoutMeta } from '../core';
 
 const navItems = [
   { id: 'home', to: '/', label: 'Home' },

@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { executeCommit } from './commit';
-import { runWithFrontendContext } from './context';
-import { refreshLoad } from './load';
+import { executeCommit } from '../data/commit';
+import { runWithFrontendContext } from '../data/context';
+import { refreshLoad } from '../data/load';
 
 type CommitBody = {
   id: string;

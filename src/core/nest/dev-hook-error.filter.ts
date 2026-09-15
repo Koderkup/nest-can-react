@@ -7,7 +7,7 @@ import { Response } from 'express';
 import {
   ClientHookOnServerError,
   sendClientHookErrorResponse,
-} from './dev-hook-error';
+} from '../errors/dev-hook-error';
 
 @Catch(ClientHookOnServerError)
 export class ClientHookOnServerFilter
