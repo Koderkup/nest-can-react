@@ -19,7 +19,7 @@ Current status: this is a working architecture demo, not a production-ready npm 
 - Client-side navigation that swaps `#nr-document` without a full reload.
 - A package-owned internal transport through `NestReactModule`.
 - Manifest-based island mounting with no user-authored `data-nest-*` attributes.
-- esbuild client bundling with per-island code splitting (no Vite, no webpack).
+- esbuild client bundling with per-island code splitting, CSS, and hashed static assets (no Vite, no webpack).
 - A polished demo with Home, Users, and Dashboard pages.
 
 ## Core Idea
@@ -83,11 +83,12 @@ See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-demo
 This repo looks like:
 
 ```txt
-nest.react.json                 # layout, optional runtime, island globs
+nest.react.json                 # layout, optional runtime, island globs, client.styles
 src/
   core/                         # framework (treat as the future package)
   demo/                         # sample app only
     layout.tsx
+    layout.css                  # listed in client.styles
     app.runtime.tsx             # optional ClientRuntime
     islands/*.island.tsx
     pages/*.page.tsx
@@ -96,7 +97,7 @@ src/
   app.module.ts
   main.ts                       # NestFactory + listen
 .nest-react/generated/          # entry, registries, server-boot (build:client)
-public/nest-react/              # hashed runtime + island chunks
+public/nest-react/              # hashed runtime, CSS, and assets
 ```
 
 `src/core` is the package/framework layer.
@@ -117,6 +118,7 @@ Modes:
 
 It collects load results and island descriptors, then injects:
 
+- stylesheet `<link>` tags for global CSS and this page’s islands
 - modulepreload hints for the runtime and current-page islands
 - `<script id="nr-manifest" type="application/json">...</script>`
 - `<script type="module" src="/assets/nest-react/runtime-….js"></script>`
@@ -231,7 +233,7 @@ npm run start:dev
 - No full request-scoped provider support.
 - Internal transport has no CSRF protection; commit refs are not signed.
 - Input validation and error serialization are minimal.
-- No first-class CSS / image / font / SVG imports in the client bundler.
+- No PostCSS, Tailwind, CSS modules on server pages, or Vite `?url` / `?raw` / HMR.
 - No true React Server Components Flight protocol.
 - Test coverage for core behavior is still thin.
 - `start:dev` does not rebuild client assets automatically.

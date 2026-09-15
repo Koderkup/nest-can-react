@@ -12,7 +12,12 @@ import {
   createRenderState,
   runWithFrontendContext,
 } from './context';
-import { getClientAssetManifest, getIslandAssetHints } from './client-assets';
+import {
+  getClientAssetManifest,
+  getGlobalStylesheetHrefs,
+  getIslandAssetHints,
+  getStylesheetHrefs,
+} from './client-assets';
 import DefaultLayout from './default-layout';
 import { getLayout } from './layout-registry';
 
@@ -123,32 +128,49 @@ function injectRuntime(markup: string, manifest: Record<string, unknown>) {
   return injectRuntimeHtml(markup, createRuntimeParts(manifest));
 }
 
-function injectRuntimeHtml(
-  markup: string,
-  parts: { documentAssets: string; moduleScript: string },
-) {
+type RuntimeParts = {
+  stylesheets: string;
+  islandStylesheets: string;
+  documentAssets: string;
+  moduleScript: string;
+};
+
+function injectRuntimeHtml(markup: string, parts: RuntimeParts) {
   return injectRuntimeAssets(ensureDocumentSlots(markup), parts);
 }
 
-function injectRuntimeAssets(
-  markup: string,
-  parts: { documentAssets: string; moduleScript: string },
-) {
-  const bodyClose = markup.lastIndexOf('</body>');
+function injectRuntimeAssets(markup: string, parts: RuntimeParts) {
+  const withStyles = injectStylesheets(markup, parts.stylesheets);
+  const documentAssets = withStyles.injected
+    ? parts.documentAssets
+    : `${parts.stylesheets}${parts.documentAssets}`;
+  const html = withStyles.markup;
+  const bodyClose = html.lastIndexOf('</body>');
 
   if (bodyClose === -1) {
-    return `${markup}${parts.documentAssets}</div>${parts.moduleScript}`;
+    return `${html}${documentAssets}</div>${parts.moduleScript}`;
   }
 
-  const beforeBodyClose = markup.slice(0, bodyClose);
-  const afterBodyClose = markup.slice(bodyClose);
+  const beforeBodyClose = html.slice(0, bodyClose);
+  const afterBodyClose = html.slice(bodyClose);
   const documentClose = beforeBodyClose.lastIndexOf('</div>');
 
   if (documentClose === -1) {
-    return `${beforeBodyClose}${parts.documentAssets}</div>${parts.moduleScript}${afterBodyClose}`;
+    return `${beforeBodyClose}${documentAssets}</div>${parts.moduleScript}${afterBodyClose}`;
   }
 
-  return `${beforeBodyClose.slice(0, documentClose)}${parts.documentAssets}${beforeBodyClose.slice(documentClose)}${parts.moduleScript}${afterBodyClose}`;
+  return `${beforeBodyClose.slice(0, documentClose)}${documentAssets}${beforeBodyClose.slice(documentClose)}${parts.moduleScript}${afterBodyClose}`;
+}
+
+function injectStylesheets(markup: string, stylesheets: string) {
+  if (!stylesheets || !/<\/head>/i.test(markup)) {
+    return { markup, injected: false };
+  }
+
+  return {
+    markup: markup.replace(/<\/head>/i, `${stylesheets}</head>`),
+    injected: true,
+  };
 }
 
 function ensureDocumentSlots(markup: string) {
@@ -162,7 +184,7 @@ function ensureDocumentSlots(markup: string) {
   );
 }
 
-function createRuntimeParts(manifest: Record<string, unknown>) {
+function createRuntimeParts(manifest: Record<string, unknown>): RuntimeParts {
   const clientAssets = getClientAssetManifest();
   const islandNames = getManifestIslandNames(manifest);
   const preloadAssets = [
@@ -171,6 +193,12 @@ function createRuntimeParts(manifest: Record<string, unknown>) {
   ];
 
   return {
+    stylesheets: createStylesheetTags(getStylesheetHrefs(islandNames)),
+    islandStylesheets: createStylesheetTags(
+      getStylesheetHrefs(islandNames).filter(
+        (href) => !getGlobalStylesheetHrefs().includes(href),
+      ),
+    ),
     documentAssets: [
       ...preloadAssets.map(
         (asset) =>
@@ -180,6 +208,15 @@ function createRuntimeParts(manifest: Record<string, unknown>) {
     ].join(''),
     moduleScript: `<script type="module" src="${escapeHtmlAttribute(clientAssets.runtime)}"></script>`,
   };
+}
+
+function createStylesheetTags(hrefs: string[]) {
+  return hrefs
+    .map(
+      (href) =>
+        `<link rel="stylesheet" data-nr-style="1" href="${escapeHtmlAttribute(href)}">`,
+    )
+    .join('');
 }
 
 function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
@@ -192,16 +229,27 @@ function createManifest(mode: RenderMode, renderState: FrontendRenderState) {
 }
 
 function createRuntimeInjectionTransform(
-  runtimeFactory: () => { documentAssets: string; moduleScript: string },
+  runtimeFactory: () => RuntimeParts,
 ) {
   let pending = '';
   let tail = '';
   let insertedSlots = false;
+  let insertedGlobalStyles = false;
   const tailSize = 2048;
 
   return new Transform({
     transform(chunk, _encoding, callback) {
       pending += chunk.toString();
+
+      if (!insertedGlobalStyles && /<\/head>/i.test(pending)) {
+        const globalStyles = createStylesheetTags(getGlobalStylesheetHrefs());
+
+        if (globalStyles) {
+          pending = pending.replace(/<\/head>/i, `${globalStyles}</head>`);
+        }
+
+        insertedGlobalStyles = true;
+      }
 
       if (
         !insertedSlots &&
@@ -237,7 +285,13 @@ function createRuntimeInjectionTransform(
         markup = markup.replace(/<\/body>/i, '</div></body>');
       }
 
-      this.push(injectRuntimeAssets(markup, runtimeFactory()));
+      const parts = runtimeFactory();
+
+      if (insertedGlobalStyles) {
+        parts.stylesheets = parts.islandStylesheets;
+      }
+
+      this.push(injectRuntimeAssets(markup, parts));
       callback();
     },
   });

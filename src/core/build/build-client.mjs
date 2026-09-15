@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import {
   basename,
-  dirname,
   extname,
   join,
   relative,
@@ -12,10 +11,27 @@ import {
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as esbuild from 'esbuild';
 
+const fileLoaders = {
+  '.png': 'file',
+  '.jpg': 'file',
+  '.jpeg': 'file',
+  '.gif': 'file',
+  '.webp': 'file',
+  '.avif': 'file',
+  '.svg': 'file',
+  '.ico': 'file',
+  '.woff': 'file',
+  '.woff2': 'file',
+  '.ttf': 'file',
+  '.eot': 'file',
+  '.module.css': 'local-css',
+};
+
 const defaultConfig = {
   outDir: 'public/nest-react',
   publicPath: '/assets/nest-react',
   codeSplitting: true,
+  styles: [],
   islands: {
     include: ['src/**/*.island.tsx'],
     exclude: ['src/**/*.test.tsx', 'src/**/*.spec.tsx'],
@@ -32,6 +48,7 @@ export async function buildNestReactClient(overrides = {}) {
   const outdir = resolve(rootDir, config.outDir);
   const generatedDir = resolve(rootDir, config.generatedDir);
   const islands = await discoverIslands(rootDir, config.islands);
+  const publicPath = normalizePublicPath(config.publicPath);
 
   await generateIslandRegistries({
     generatedDir,
@@ -39,6 +56,7 @@ export async function buildNestReactClient(overrides = {}) {
     rootDir,
     runtimeEntry: config.runtimeEntry,
     layoutEntry: config.layoutEntry,
+    styles: config.styles,
   });
 
   const entryPoint = resolve(
@@ -62,6 +80,9 @@ export async function buildNestReactClient(overrides = {}) {
     splitting: codeSplitting,
     entryNames: codeSplitting ? 'runtime-[hash]' : 'client-[hash]',
     chunkNames: 'chunks/[name]-[hash]',
+    assetNames: 'assets/[name]-[hash]',
+    publicPath: `${publicPath}/`,
+    loader: fileLoaders,
     metafile: true,
     define: {
       'process.env.NODE_ENV': JSON.stringify(
@@ -75,13 +96,21 @@ export async function buildNestReactClient(overrides = {}) {
     entryPoint,
     islands,
     outdir,
-    publicPath: normalizePublicPath(config.publicPath),
+    publicPath,
     rootDir,
   });
 
   await writeFile(
     join(outdir, 'manifest.json'),
     `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await writeFile(
+    join(generatedDir, 'asset-urls.json'),
+    `${JSON.stringify(createAssetUrlMap(result.metafile, {
+      outdir,
+      publicPath,
+      rootDir,
+    }), null, 2)}\n`,
   );
 
   console.log(`Built Nest React client assets in ${outdir}`);
@@ -119,6 +148,7 @@ function normalizeConfig(config) {
       client.publicPath ?? config.publicPath ?? defaultConfig.publicPath,
     codeSplitting:
       client.codeSplitting ?? config.codeSplitting ?? defaultConfig.codeSplitting,
+    styles: normalizeStyles(client.styles ?? config.styles),
     islands,
     generatedDir: config.generatedDir ?? defaultConfig.generatedDir,
     runtimeEntry:
@@ -143,6 +173,18 @@ function normalizeIslandConfig(islands) {
   };
 }
 
+function normalizeStyles(styles) {
+  if (styles == null) {
+    return [];
+  }
+
+  if (!Array.isArray(styles)) {
+    throw new Error('client.styles must be an array of file paths.');
+  }
+
+  return styles;
+}
+
 function shouldSplit(config) {
   if (process.argv.includes('--no-code-splitting')) {
     return false;
@@ -156,13 +198,13 @@ function shouldSplit(config) {
 }
 
 function createAssetManifest(metafile, config) {
-  const outputs = Object.entries(metafile.outputs).filter(([file]) =>
+  const jsOutputs = Object.entries(metafile.outputs).filter(([file]) =>
     file.endsWith('.js'),
   );
   const runtimeOutput =
-    outputs.find(([, output]) =>
+    jsOutputs.find(([, output]) =>
       isSameFile(resolve(config.rootDir, output.entryPoint ?? ''), config.entryPoint),
-    ) ?? outputs[0];
+    ) ?? jsOutputs[0];
 
   if (!runtimeOutput) {
     throw new Error('Nest React client build did not emit a runtime bundle.');
@@ -171,7 +213,13 @@ function createAssetManifest(metafile, config) {
   const islands = Object.fromEntries(
     config.islands.map((island) => [
       island.name,
-      findIslandAssets(island.name, outputs, metafile, config),
+      findIslandAssets(island.name, jsOutputs, metafile, config),
+    ]),
+  );
+  const islandCss = Object.fromEntries(
+    config.islands.map((island) => [
+      island.name,
+      findIslandCss(island.name, jsOutputs, metafile, config),
     ]),
   );
 
@@ -180,10 +228,14 @@ function createAssetManifest(metafile, config) {
     codeSplitting: config.codeSplitting,
     publicPath: config.publicPath,
     runtime: toPublicAsset(runtimeOutput[0], config),
-    chunks: outputs
+    css: collectCssFromJsGraph(runtimeOutput[0], metafile, {
+      followDynamic: false,
+    }).map((file) => toPublicAsset(file, config)),
+    chunks: jsOutputs
       .filter(([file]) => file !== runtimeOutput[0])
       .map(([file]) => toPublicAsset(file, config)),
     islands,
+    islandCss,
   };
 }
 
@@ -266,6 +318,7 @@ async function generateIslandRegistries({
   rootDir,
   runtimeEntry,
   layoutEntry,
+  styles,
 }) {
   await mkdir(generatedDir, { recursive: true });
 
@@ -291,6 +344,10 @@ async function generateIslandRegistries({
       createServerLayoutModule({ generatedDir, rootDir, layoutEntry }),
     ),
     writeFile(
+      join(generatedDir, 'client-styles.ts'),
+      createClientStyles({ generatedDir, rootDir, styles }),
+    ),
+    writeFile(
       join(generatedDir, 'client-entry.tsx'),
       createClientEntry({ generatedDir, rootDir }),
     ),
@@ -299,6 +356,24 @@ async function generateIslandRegistries({
       createServerBoot({ generatedDir, rootDir }),
     ),
   ]);
+}
+
+function createClientStyles({ generatedDir, rootDir, styles }) {
+  if (!styles.length) {
+    return 'export {};\n';
+  }
+
+  return `${styles
+    .map((style) => {
+      const stylePath = resolve(rootDir, style);
+
+      if (!existsSync(stylePath)) {
+        throw new Error(`Nest React client style "${style}" was not found.`);
+      }
+
+      return `import ${JSON.stringify(toStyleImportSpecifier(generatedDir, stylePath))};`;
+    })
+    .join('\n')}\n`;
 }
 
 function createClientEntry({ generatedDir, rootDir }) {
@@ -316,6 +391,7 @@ function createClientEntry({ generatedDir, rootDir }) {
   );
 
   return [
+    'import "./client-styles.js";',
     `import { installClientRuntime } from ${JSON.stringify(mountImport)};`,
     `import { installNavigation } from ${JSON.stringify(navigationImport)};`,
     `import { reloadManifest } from ${JSON.stringify(runtimeImport)};`,
@@ -452,6 +528,11 @@ function toImportSpecifier(fromDir, toFile) {
   return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
 }
 
+function toStyleImportSpecifier(fromDir, toFile) {
+  const relativePath = toPosixPath(relative(fromDir, toFile));
+  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+}
+
 function globToRegex(pattern) {
   const escaped = toPosixPath(pattern)
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
@@ -473,6 +554,16 @@ function findIslandAssets(name, outputs, metafile, config) {
     .flatMap(([file]) => collectOutputFiles(file, metafile));
 
   return [...new Set(matchingFiles)].map((file) => toPublicAsset(file, config));
+}
+
+function findIslandCss(name, outputs, metafile, config) {
+  const cssFiles = outputs
+    .filter(([file, output]) => isIslandOutput(name, file, output))
+    .flatMap(([file]) =>
+      collectCssFromJsGraph(file, metafile, { followDynamic: true }),
+    );
+
+  return [...new Set(cssFiles)].map((file) => toPublicAsset(file, config));
 }
 
 function isIslandOutput(name, file, output) {
@@ -503,6 +594,112 @@ function collectOutputFiles(file, metafile, seen = new Set()) {
       collectOutputFiles(entry.path, metafile, seen),
     ),
   ].filter((outputFile) => outputFile.endsWith('.js'));
+}
+
+function collectCssFromJsGraph(
+  file,
+  metafile,
+  options = { followDynamic: true },
+  seenJs = new Set(),
+  seenCss = new Set(),
+) {
+  if (seenJs.has(file) || !metafile.outputs[file]) {
+    return [];
+  }
+
+  seenJs.add(file);
+
+  const output = metafile.outputs[file];
+  const cssFiles = [];
+
+  if (output.cssBundle) {
+    cssFiles.push(...collectCssOutputs(output.cssBundle, metafile, seenCss));
+  }
+
+  for (const entry of output.imports ?? []) {
+    const follow =
+      entry.kind !== 'dynamic-import' || options.followDynamic === true;
+
+    if (!follow) {
+      continue;
+    }
+
+    if (entry.path.endsWith('.css')) {
+      cssFiles.push(...collectCssOutputs(entry.path, metafile, seenCss));
+      continue;
+    }
+
+    if (entry.path.endsWith('.js')) {
+      cssFiles.push(
+        ...collectCssFromJsGraph(
+          entry.path,
+          metafile,
+          options,
+          seenJs,
+          seenCss,
+        ),
+      );
+    }
+  }
+
+  return cssFiles;
+}
+
+function collectCssOutputs(file, metafile, seen = new Set()) {
+  if (seen.has(file)) {
+    return [];
+  }
+
+  seen.add(file);
+
+  if (!metafile.outputs[file]) {
+    return file.endsWith('.css') ? [file] : [];
+  }
+
+  return [
+    ...(file.endsWith('.css') ? [file] : []),
+    ...(metafile.outputs[file].imports ?? []).flatMap((entry) =>
+      collectCssOutputs(entry.path, metafile, seen),
+    ),
+  ].filter((outputFile) => outputFile.endsWith('.css'));
+}
+
+const staticAssetExtensions = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.avif',
+  '.svg',
+  '.ico',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.eot',
+]);
+
+function createAssetUrlMap(metafile, config) {
+  const map = {};
+
+  for (const [outputFile, output] of Object.entries(metafile.outputs)) {
+    if (!staticAssetExtensions.has(extname(outputFile).toLowerCase())) {
+      continue;
+    }
+
+    const publicUrl = toPublicAsset(outputFile, config);
+
+    for (const input of Object.keys(output.inputs ?? {})) {
+      if (!staticAssetExtensions.has(extname(input).toLowerCase())) {
+        continue;
+      }
+
+      map[toPosixPath(input)] = publicUrl;
+      map[basename(input)] = publicUrl;
+    }
+  }
+
+  return map;
 }
 
 function toPublicAsset(file, config) {

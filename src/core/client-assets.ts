@@ -11,8 +11,10 @@ export type ClientAssetsManifest = {
   codeSplitting: boolean;
   publicPath: string;
   runtime: string;
+  css?: string[];
   chunks: string[];
   islands: Record<string, string[]>;
+  islandCss?: Record<string, string[]>;
 };
 
 const defaultOptions: Required<NestReactOptions> = {
@@ -46,14 +48,30 @@ export function getIslandAssetHints(islandNames: string[]) {
   return [...new Set(assets)];
 }
 
+export function getStylesheetHrefs(islandNames: string[]) {
+  const manifest = getClientAssetManifest();
+  const assets = [
+    ...(manifest.css ?? []),
+    ...islandNames.flatMap((name) => manifest.islandCss?.[name] ?? []),
+  ];
+
+  return [...new Set(assets)];
+}
+
+export function getGlobalStylesheetHrefs() {
+  return [...new Set(getClientAssetManifest().css ?? [])];
+}
+
 function createFallbackManifest(): ClientAssetsManifest {
   return {
     version: 1,
     codeSplitting: false,
     publicPath: options.publicPath,
     runtime: `${options.publicPath}/client.js`,
+    css: [],
     chunks: [],
     islands: {},
+    islandCss: {},
   };
 }
 

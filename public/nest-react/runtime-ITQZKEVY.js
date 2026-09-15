@@ -8,7 +8,7 @@ import {
   require_jsx_runtime,
   require_react,
   subscribe
-} from "./chunks/chunk-QAKKRXL7.js";
+} from "/assets/nest-react/chunks/chunk-GKVIBCEZ.js";
 
 // node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS({
@@ -3190,7 +3190,7 @@ var require_react_dom_client_development = __commonJS({
         return "input" === nodeName ? !!supportedInputTypes[elem.type] : "textarea" === nodeName ? true : false;
       }
       function isEventSupported(eventNameSuffix) {
-        if (!canUseDOM) return false;
+        if (!canUseDOM2) return false;
         eventNameSuffix = "on" + eventNameSuffix;
         var isSupported = eventNameSuffix in document;
         isSupported || (isSupported = document.createElement("div"), isSupported.setAttribute(eventNameSuffix, "return;"), isSupported = "function" === typeof isSupported[eventNameSuffix]);
@@ -20072,8 +20072,8 @@ var require_react_dom_client_development = __commonJS({
         "^(aria)-[:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$"
       ), rARIACamel = RegExp(
         "^(aria)[A-Z][:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$"
-      ), isJavaScriptProtocol = /^[\u0000-\u001F ]*j[\r\n\t]*a[\r\n\t]*v[\r\n\t]*a[\r\n\t]*s[\r\n\t]*c[\r\n\t]*r[\r\n\t]*i[\r\n\t]*p[\r\n\t]*t[\r\n\t]*:/i, currentReplayingEvent = null, restoreTarget = null, restoreQueue = null, isInsideEventHandler = false, canUseDOM = !("undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement), passiveBrowserEventsSupported = false;
-      if (canUseDOM)
+      ), isJavaScriptProtocol = /^[\u0000-\u001F ]*j[\r\n\t]*a[\r\n\t]*v[\r\n\t]*a[\r\n\t]*s[\r\n\t]*c[\r\n\t]*r[\r\n\t]*i[\r\n\t]*p[\r\n\t]*t[\r\n\t]*:/i, currentReplayingEvent = null, restoreTarget = null, restoreQueue = null, isInsideEventHandler = false, canUseDOM2 = !("undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement), passiveBrowserEventsSupported = false;
+      if (canUseDOM2)
         try {
           var options$jscomp$0 = {};
           Object.defineProperty(options$jscomp$0, "passive", {
@@ -20248,9 +20248,9 @@ var require_react_dom_client_development = __commonJS({
         newState: 0,
         oldState: 0,
         source: 0
-      }), SyntheticToggleEvent = createSyntheticEvent(ToggleEventInterface), END_KEYCODES = [9, 13, 27, 32], START_KEYCODE = 229, canUseCompositionEvent = canUseDOM && "CompositionEvent" in window, documentMode = null;
-      canUseDOM && "documentMode" in document && (documentMode = document.documentMode);
-      var canUseTextInputEvent = canUseDOM && "TextEvent" in window && !documentMode, useFallbackCompositionData = canUseDOM && (!canUseCompositionEvent || documentMode && 8 < documentMode && 11 >= documentMode), SPACEBAR_CODE = 32, SPACEBAR_CHAR = String.fromCharCode(SPACEBAR_CODE), hasSpaceKeypress = false, isComposing = false, supportedInputTypes = {
+      }), SyntheticToggleEvent = createSyntheticEvent(ToggleEventInterface), END_KEYCODES = [9, 13, 27, 32], START_KEYCODE = 229, canUseCompositionEvent = canUseDOM2 && "CompositionEvent" in window, documentMode = null;
+      canUseDOM2 && "documentMode" in document && (documentMode = document.documentMode);
+      var canUseTextInputEvent = canUseDOM2 && "TextEvent" in window && !documentMode, useFallbackCompositionData = canUseDOM2 && (!canUseCompositionEvent || documentMode && 8 < documentMode && 11 >= documentMode), SPACEBAR_CODE = 32, SPACEBAR_CHAR = String.fromCharCode(SPACEBAR_CODE), hasSpaceKeypress = false, isComposing = false, supportedInputTypes = {
         color: true,
         date: true,
         datetime: true,
@@ -20267,8 +20267,8 @@ var require_react_dom_client_development = __commonJS({
         url: true,
         week: true
       }, activeElement$1 = null, activeElementInst$1 = null, isInputEventSupported = false;
-      canUseDOM && (isInputEventSupported = isEventSupported("input") && (!document.documentMode || 9 < document.documentMode));
-      var objectIs = "function" === typeof Object.is ? Object.is : is, skipSelectionChangeEvent = canUseDOM && "documentMode" in document && 11 >= document.documentMode, activeElement = null, activeElementInst = null, lastSelection = null, mouseDown = false, vendorPrefixes = {
+      canUseDOM2 && (isInputEventSupported = isEventSupported("input") && (!document.documentMode || 9 < document.documentMode));
+      var objectIs = "function" === typeof Object.is ? Object.is : is, skipSelectionChangeEvent = canUseDOM2 && "documentMode" in document && 11 >= document.documentMode, activeElement = null, activeElementInst = null, lastSelection = null, mouseDown = false, vendorPrefixes = {
         animationend: makePrefixMap("Animation", "AnimationEnd"),
         animationiteration: makePrefixMap("Animation", "AnimationIteration"),
         animationstart: makePrefixMap("Animation", "AnimationStart"),
@@ -20277,7 +20277,7 @@ var require_react_dom_client_development = __commonJS({
         transitioncancel: makePrefixMap("Transition", "TransitionCancel"),
         transitionend: makePrefixMap("Transition", "TransitionEnd")
       }, prefixedEventNames = {}, style = {};
-      canUseDOM && (style = document.createElement("div").style, "AnimationEvent" in window || (delete vendorPrefixes.animationend.animation, delete vendorPrefixes.animationiteration.animation, delete vendorPrefixes.animationstart.animation), "TransitionEvent" in window || delete vendorPrefixes.transitionend.transition);
+      canUseDOM2 && (style = document.createElement("div").style, "AnimationEvent" in window || (delete vendorPrefixes.animationend.animation, delete vendorPrefixes.animationiteration.animation, delete vendorPrefixes.animationstart.animation), "TransitionEvent" in window || delete vendorPrefixes.transitionend.transition);
       var ANIMATION_END = getVendorPrefixedEventName("animationend"), ANIMATION_ITERATION = getVendorPrefixedEventName("animationiteration"), ANIMATION_START = getVendorPrefixedEventName("animationstart"), TRANSITION_RUN = getVendorPrefixedEventName("transitionrun"), TRANSITION_START = getVendorPrefixedEventName("transitionstart"), TRANSITION_CANCEL = getVendorPrefixedEventName("transitioncancel"), TRANSITION_END = getVendorPrefixedEventName("transitionend"), topLevelEventsToReactNames = /* @__PURE__ */ new Map(), simpleEventPluginEvents = "abort auxClick beforeToggle cancel canPlay canPlayThrough click close contextMenu copy cut drag dragEnd dragEnter dragExit dragLeave dragOver dragStart drop durationChange emptied encrypted ended error fullscreenChange fullscreenError gotPointerCapture input invalid keyDown keyPress keyUp load loadedData loadedMetadata loadStart lostPointerCapture mouseDown mouseMove mouseOut mouseOver mouseUp paste pause play playing pointerCancel pointerDown pointerMove pointerOut pointerOver pointerUp progress rateChange reset resize seeked seeking stalled submit suspend timeUpdate touchCancel touchEnd touchStart volumeChange scroll toggle touchMove waiting wheel".split(
         " "
       );
@@ -22430,7 +22430,7 @@ var require_react_dom_client_development = __commonJS({
         internals.setRefreshHandler = setRefreshHandler;
         internals.getCurrentFiber = getCurrentFiberForDevTools;
         return injectInternals(internals);
-      })() && canUseDOM && window.top === window.self && (-1 < navigator.userAgent.indexOf("Chrome") && -1 === navigator.userAgent.indexOf("Edge") || -1 < navigator.userAgent.indexOf("Firefox"))) {
+      })() && canUseDOM2 && window.top === window.self && (-1 < navigator.userAgent.indexOf("Chrome") && -1 === navigator.userAgent.indexOf("Edge") || -1 < navigator.userAgent.indexOf("Firefox"))) {
         var protocol = window.location.protocol;
         /^(https?|file):$/.test(protocol) && console.info(
           "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools" + ("file:" === protocol ? "\nYou might need to use a local HTTP server (instead of file://): https://react.dev/link/react-devtools-faq" : ""),
@@ -22660,6 +22660,45 @@ function getComponent(name, loadComponent) {
   return component;
 }
 
+// src/core/client/styles.ts
+var STYLE_ATTR = "data-nr-style";
+function collectStylesheetHrefs(doc = document) {
+  return [...doc.querySelectorAll(`link[${STYLE_ATTR}]`)].map((link) => link.getAttribute("href") ?? "").filter(Boolean);
+}
+function ensureStylesheets(hrefs) {
+  if (!canUseDOM()) {
+    return;
+  }
+  const existing = new Set(collectStylesheetHrefs(document));
+  for (const href of hrefs) {
+    if (!href || hasStylesheet(existing, href)) {
+      continue;
+    }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute(STYLE_ATTR, "1");
+    document.head.appendChild(link);
+    existing.add(href);
+  }
+}
+function hasStylesheet(existing, href) {
+  if (existing.has(href)) {
+    return true;
+  }
+  return [...existing].some((current) => urlsMatch(current, href));
+}
+function urlsMatch(left, right) {
+  try {
+    return new URL(left, window.location.origin).href === new URL(right, window.location.origin).href;
+  } catch {
+    return left === right;
+  }
+}
+function canUseDOM() {
+  return typeof window !== "undefined" && typeof document !== "undefined";
+}
+
 // src/core/client/navigation.ts
 var installed = false;
 var currentUrl = window.location.href;
@@ -22734,6 +22773,7 @@ async function fetchSnapshot(href) {
     title: nextDocument.title,
     document: nextSlot.innerHTML,
     manifest: nextManifest.textContent,
+    stylesheets: collectStylesheetHrefs(nextDocument),
     scrollX: 0,
     scrollY: 0
   };
@@ -22748,6 +22788,7 @@ function applySnapshot(snapshot, options) {
   unmountHydrateIslands();
   slot.innerHTML = snapshot.document;
   writeManifest(snapshot.manifest);
+  ensureStylesheets(snapshot.stylesheets);
   options.onPageChanged();
 }
 function takeSnapshot() {
@@ -22756,6 +22797,7 @@ function takeSnapshot() {
     title: document.title,
     document: slot?.innerHTML ?? "",
     manifest: document.getElementById("nr-manifest")?.textContent ?? "",
+    stylesheets: collectStylesheetHrefs(document),
     scrollX: window.scrollX,
     scrollY: window.scrollY
   };
@@ -22791,9 +22833,9 @@ function shouldUseBrowserNavigation(link, event) {
 
 // .nest-react/generated/client-registry.ts
 var registry = {
-  "DashboardControls": () => import("./chunks/DashboardControls.island-COUDFP2F.js").then((module) => module.DashboardControls),
-  "GreetingEditor": () => import("./chunks/GreetingEditor.island-BNSYZOB2.js").then((module) => module.GreetingEditor),
-  "UserCreator": () => import("./chunks/UserCreator.island-FYYDPGRB.js").then((module) => module.UserCreator)
+  "DashboardControls": () => import("/assets/nest-react/chunks/DashboardControls.island-ZFMSFHRS.js").then((module) => module.DashboardControls),
+  "GreetingEditor": () => import("/assets/nest-react/chunks/GreetingEditor.island-B73FXHZG.js").then((module) => module.GreetingEditor),
+  "UserCreator": () => import("/assets/nest-react/chunks/UserCreator.island-QGMTKMGE.js").then((module) => module.UserCreator)
 };
 
 // .nest-react/generated/client-entry.tsx
@@ -22843,4 +22885,4 @@ react-dom/cjs/react-dom-client.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 */
-//# sourceMappingURL=runtime-VTZWA5IF.js.map
+//# sourceMappingURL=/assets/nest-react/runtime-ITQZKEVY.js.map

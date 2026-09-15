@@ -2,16 +2,21 @@ import {
   useCommit,
   useLoad,
   usePendingLoad
-} from "./chunk-TNB3XDEL.js";
+} from "/assets/nest-react/chunks/chunk-GB3B6RSN.js";
 import {
   __toESM,
   require_jsx_runtime,
   require_react,
   useSession
-} from "./chunk-QAKKRXL7.js";
+} from "/assets/nest-react/chunks/chunk-GKVIBCEZ.js";
 
 // src/demo/islands/GreetingEditor.island.tsx
 var import_react = __toESM(require_react());
+
+// src/demo/islands/session-mark.svg
+var session_mark_default = "/assets/nest-react/assets/session-mark-Y2KFTSIX.svg";
+
+// src/demo/islands/GreetingEditor.island.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 function GreetingEditor({
   initialMessage,
@@ -28,7 +33,15 @@ function GreetingEditor({
   }, [serverMessage]);
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { className: "island-card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pill", children: "useState + useCommit" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "muted", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "muted greeting-session", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "img",
+        {
+          alt: "",
+          className: "greeting-session-mark",
+          src: session_mark_default
+        }
+      ),
       "Shared runtime visits: ",
       session.visits
     ] }),
@@ -64,4 +77,4 @@ function GreetingEditor({
 export {
   GreetingEditor
 };
-//# sourceMappingURL=GreetingEditor.island-BNSYZOB2.js.map
+//# sourceMappingURL=/assets/nest-react/chunks/GreetingEditor.island-B73FXHZG.js.map

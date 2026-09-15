@@ -1,3 +1,4 @@
+import './register-assets';
 import { join } from 'node:path';
 import {
   DynamicModule,

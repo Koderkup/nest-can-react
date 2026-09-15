@@ -11,6 +11,7 @@
   "client": {
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
-    "codeSplitting": true
+    "codeSplitting": true,
+    "styles": ["src/demo/layout.css"]
   }
 }

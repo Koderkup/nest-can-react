@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
 import { useSession } from '../app.runtime';
+import './GreetingEditor.css';
+import sessionMark from './session-mark.svg';
 
 type GreetingEditorProps = {
   initialMessage: string;
@@ -27,7 +29,14 @@ export function GreetingEditor({
   return (
     <section className="island-card">
       <span className="pill">useState + useCommit</span>
-      <p className="muted">Shared runtime visits: {session.visits}</p>
+      <p className="muted greeting-session">
+        <img
+          alt=""
+          className="greeting-session-mark"
+          src={sessionMark}
+        />
+        Shared runtime visits: {session.visits}
+      </p>
       <button onClick={session.bump} type="button">
         Bump session
       </button>

@@ -1,4 +1,5 @@
 import { unmountHydrateIslands } from './mount';
+import { collectStylesheetHrefs, ensureStylesheets } from './styles';
 
 type NavigationOptions = {
   onPageChanged: () => void;
@@ -8,6 +9,7 @@ type PageSnapshot = {
   title: string;
   document: string;
   manifest: string;
+  stylesheets: string[];
   scrollX: number;
   scrollY: number;
 };
@@ -112,6 +114,7 @@ async function fetchSnapshot(href: string): Promise<PageSnapshot> {
     title: nextDocument.title,
     document: nextSlot.innerHTML,
     manifest: nextManifest.textContent,
+    stylesheets: collectStylesheetHrefs(nextDocument),
     scrollX: 0,
     scrollY: 0,
   };
@@ -129,6 +132,7 @@ function applySnapshot(snapshot: PageSnapshot, options: NavigationOptions) {
   unmountHydrateIslands();
   slot.innerHTML = snapshot.document;
   writeManifest(snapshot.manifest);
+  ensureStylesheets(snapshot.stylesheets);
   options.onPageChanged();
 }
 
@@ -139,6 +143,7 @@ function takeSnapshot(): PageSnapshot {
     title: document.title,
     document: slot?.innerHTML ?? '',
     manifest: document.getElementById('nr-manifest')?.textContent ?? '',
+    stylesheets: collectStylesheetHrefs(document),
     scrollX: window.scrollX,
     scrollY: window.scrollY,
   };

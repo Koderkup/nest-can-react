@@ -32,6 +32,7 @@ src/core/
     mount.tsx            # installClientRuntime, hydrate vs portal
     navigation.ts        # SPA swap of #nr-document
     runtime.ts           # manifest, load refresh, commit fetch
+    styles.ts            # ensure stylesheet links on SPA navigation
   client-assets.ts
   commit.ts
   context.ts
@@ -44,6 +45,7 @@ src/core/
   load.ts
   nest-react.controller.ts
   nest-react.module.ts
+  register-assets.ts     # Nest ignores CSS; maps hashed asset URLs
   renderer.tsx
 ```
 
@@ -73,6 +75,7 @@ Options:
 
 `renderPage` wraps the page in the configured layout, then injects:
 
+- stylesheet `<link>` tags for `client.styles` and the current page’s island CSS
 - `#nr-runtime` — empty host for the shared client runtime root
 - `#nr-document` — page body that client navigation replaces
 - `#nr-manifest` — JSON loads + islands
@@ -159,9 +162,22 @@ Config (`nest.react.json`):
 - `layout` — server layout module (default layout if omitted)
 - `client.outDir` / `client.publicPath`
 - `client.codeSplitting` — per-island chunks when true
+- `client.styles` — global CSS files always linked on every page
 - `client.entry` — optional override of generated client boot
 - `runtime.entry` — optional `ClientRuntime`
 - `islands.include` / `islands.exclude`
+
+Islands and `runtime.entry` can import CSS the way Vite does:
+
+```ts
+import './GreetingEditor.css';
+import mark from './session-mark.svg';
+import classes from './editor.module.css';
+```
+
+`import './file.css'` is a side effect (extracted to a hashed stylesheet). `import url from './file.svg'` (png/jpeg/gif/webp/avif/ico/woff/woff2/ttf/eot) is a hashed public URL. CSS `url(./font.woff2)` is rewritten too. CSS modules work in **client islands only**.
+
+Do not import CSS or assets from server pages or `layout.tsx` — Nest does not bundle them. Put global CSS in `client.styles`. Put page-specific CSS next to islands.
 
 Output:
 
@@ -169,10 +185,14 @@ Output:
 - `.nest-react/generated/client-registry.ts`
 - `.nest-react/generated/server-registry.ts`
 - `.nest-react/generated/client-runtime.ts`
+- `.nest-react/generated/client-styles.ts`
 - `.nest-react/generated/server-layout.ts`
 - `.nest-react/generated/server-boot.ts`
+- `.nest-react/generated/asset-urls.json`
 - `public/nest-react/runtime-[hash].js`
+- `public/nest-react/*.css`
 - `public/nest-react/chunks/*`
+- `public/nest-react/assets/*`
 - `public/nest-react/manifest.json`
 
 ## Demo App
@@ -190,10 +210,12 @@ Output:
 Supported:
 
 - static files from `public/` at `/assets`
-- inline CSS in server React
+- global CSS via `client.styles` (linked in `<head>` before JS)
+- `import './file.css'` and `.module.css` from islands / `runtime.entry`
+- hashed image, font, and SVG URLs from JS imports and CSS `url()`
 - hashed JS chunks from esbuild
 
-Not implemented: CSS/image/font/SVG imports, CSS modules, per-island CSS.
+Not implemented: PostCSS, Tailwind, Vite `?url` / `?raw`, CSS modules in server pages, HMR.
 
 ## Server HTML vs Island HTML After Commit
 
@@ -206,7 +228,7 @@ That is intentional with the current primitives.
 - request-scoped providers
 - signed commit refs and CSRF protection
 - input validation and structured errors
-- CSS/asset import pipeline
+- PostCSS / Tailwind / asset query suffixes
 - tests for mount vs hydrate and SPA manifest restore
 - npm package exports
 - public vs private API docs

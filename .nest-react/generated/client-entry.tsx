@@ -1,3 +1,4 @@
+import "./client-styles.js";
 import { installClientRuntime } from "../../src/core/client/mount.js";
 import { installNavigation } from "../../src/core/client/navigation.js";
 import { reloadManifest } from "../../src/core/client/runtime.js";

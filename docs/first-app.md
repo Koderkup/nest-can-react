@@ -49,6 +49,7 @@ src/
   app.controller.ts
   greeting.service.ts
   layout.tsx
+  layout.css
   home.tsx
   GreetingEditor.island.tsx
 public/nest-react/
@@ -62,7 +63,8 @@ Example `nest.react.json`:
   "client": {
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
-    "codeSplitting": true
+    "codeSplitting": true,
+    "styles": ["src/layout.css"]
   },
   "islands": {
     "include": ["src/**/*.island.tsx"],
@@ -72,6 +74,15 @@ Example `nest.react.json`:
 ```
 
 `publicPath` must match how Nest serves `public/` (this demo uses `prefix: '/assets/'`, so files in `public/nest-react/` are `/assets/nest-react/...`).
+
+List global CSS in `client.styles`. The bundler emits hashed stylesheets and `renderPage` injects `<link rel="stylesheet">` into `<head>`, so first paint does not wait for JS. Do not `import` CSS from `layout.tsx` or other server files.
+
+Islands can import CSS and assets:
+
+```tsx
+import './GreetingEditor.css';
+import mark from './session-mark.svg';
+```
 
 ## 1. Import The Core Module
 
@@ -230,6 +241,7 @@ File name: `greeting-editor.island.tsx` **or** `GreetingEditor.island.tsx`. The 
 import React, { useEffect, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from './core/client/hooks';
 import { CommitRef } from './core/client/runtime';
+import './GreetingEditor.css';
 
 type Props = {
   initialMessage: string;
@@ -289,8 +301,8 @@ Open `http://localhost:3000`. After changing islands or `runtime.entry`, run `bu
 Output:
 
 ```txt
-.nest-react/generated/     # boot, registries, layout
-public/nest-react/         # runtime-[hash].js, chunks/, manifest.json
+.nest-react/generated/     # boot, registries, layout, client-styles
+public/nest-react/         # runtime-[hash].js, CSS, assets/, chunks/, manifest.json
 ```
 
 ## What Happens After A Commit
@@ -315,7 +327,8 @@ The large server-rendered heading **outside** the island will not change until t
 
 ## Current Limitations
 
-- CSS and asset imports are not first-class in the client bundler.
 - Request-scoped Nest providers still need hardening.
 - Commit refs are not signed; CSRF is not implemented.
+- No PostCSS, Tailwind, or Vite `?url` / `?raw` / HMR.
+- CSS modules work in client islands, not in server pages.
 - `start:dev` does not rebuild client chunks.

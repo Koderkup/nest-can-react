@@ -1,7 +1,11 @@
+import './register-assets';
+
 export {
   configureNestReact,
   getClientAssetManifest,
+  getGlobalStylesheetHrefs,
   getIslandAssetHints,
+  getStylesheetHrefs,
 } from './client-assets';
 export type { ClientAssetsManifest, NestReactOptions } from './client-assets';
 export { commit, revalidate } from './commit';
