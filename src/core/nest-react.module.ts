@@ -8,10 +8,11 @@ import {
   OnModuleInit,
   RequestMethod,
 } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
+import { APP_FILTER, ModuleRef } from '@nestjs/core';
 import express, { NextFunction, Request, Response } from 'express';
 import { configureNestReact, NestReactOptions } from './client-assets';
 import { initializeFrontendDI } from './context';
+import { ClientHookOnServerFilter } from './dev-hook-error.filter';
 import { NestReactController } from './nest-react.controller';
 import '../../.nest-react/generated/server-boot.js';
 
@@ -46,6 +47,12 @@ export class NestReactModule implements NestModule, OnModuleInit {
     return {
       module: NestReactModule,
       controllers: [NestReactController],
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: ClientHookOnServerFilter,
+        },
+      ],
     };
   }
 

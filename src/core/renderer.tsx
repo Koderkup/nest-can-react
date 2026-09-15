@@ -19,6 +19,13 @@ import {
   getStylesheetHrefs,
 } from './client-assets';
 import DefaultLayout from './default-layout';
+import {
+  ClientHookOnServerError,
+  isClientHookError,
+  rethrowIfClientHookError,
+  sendClientHookErrorResponse,
+  toClientHookOnServerError,
+} from './dev-hook-error';
 import { getLayout } from './layout-registry';
 
 type ServerPage = () => React.ReactNode | Promise<React.ReactNode>;
@@ -69,17 +76,21 @@ async function renderBufferedPage(
 ) {
   const renderState = createRenderState();
 
-  const markup = await runWithFrontendContext(
-    moduleRef,
-    renderState,
-    async () => {
-      const page = await Page();
-      const Layout = getLayout() ?? DefaultLayout;
-      return '<!DOCTYPE html>' + render(<Layout>{page}</Layout>);
-    },
-  );
+  try {
+    const markup = await runWithFrontendContext(
+      moduleRef,
+      renderState,
+      async () => {
+        const page = await Page();
+        const Layout = getLayout() ?? DefaultLayout;
+        return '<!DOCTYPE html>' + render(<Layout>{page}</Layout>);
+      },
+    );
 
-  return injectRuntime(markup, createManifest(mode, renderState));
+    return injectRuntime(markup, createManifest(mode, renderState));
+  } catch (error) {
+    rethrowIfClientHookError(error);
+  }
 }
 
 async function renderStreamingPage(
@@ -89,39 +100,56 @@ async function renderStreamingPage(
 ) {
   const renderState = createRenderState();
 
-  await runWithFrontendContext(moduleRef, renderState, async () => {
-    const page = await Page();
-    const Layout = getLayout() ?? DefaultLayout;
-    const documentTree = <Layout>{page}</Layout>;
+  try {
+    await runWithFrontendContext(moduleRef, renderState, async () => {
+      const page = await Page();
+      const Layout = getLayout() ?? DefaultLayout;
+      const documentTree = <Layout>{page}</Layout>;
 
-    await new Promise<void>((resolve, reject) => {
-      let didError = false;
-      let stream: ReturnType<typeof renderToPipeableStream>;
-      const transform = createRuntimeInjectionTransform(() =>
-        createRuntimeParts(createManifest('streaming', renderState)),
-      );
+      await new Promise<void>((resolve, reject) => {
+        let didError = false;
+        let stream: ReturnType<typeof renderToPipeableStream>;
+        const transform = createRuntimeInjectionTransform(() =>
+          createRuntimeParts(createManifest('streaming', renderState)),
+        );
 
-      transform.on('finish', resolve);
-      transform.on('error', reject);
-      transform.pipe(options.response);
+        transform.on('finish', resolve);
+        transform.on('error', reject);
+        transform.pipe(options.response);
 
-      stream = renderToPipeableStream(documentTree, {
-        onShellReady() {
-          options.response.status(didError ? 500 : (options.statusCode ?? 200));
-          options.response.setHeader('content-type', 'text/html');
-          transform.write('<!DOCTYPE html>');
-          stream.pipe(transform);
-        },
-        onShellError(error) {
-          reject(error);
-        },
-        onError(error) {
-          didError = true;
-          console.error(error);
-        },
+        stream = renderToPipeableStream(documentTree, {
+          onShellReady() {
+            options.response.status(
+              didError ? 500 : (options.statusCode ?? 200),
+            );
+            options.response.setHeader('content-type', 'text/html');
+            transform.write('<!DOCTYPE html>');
+            stream.pipe(transform);
+          },
+          onShellError(error) {
+            reject(error);
+          },
+          onError(error) {
+            didError = true;
+            console.error(error);
+          },
+        });
       });
     });
-  });
+  } catch (error) {
+    if (
+      error instanceof ClientHookOnServerError ||
+      isClientHookError(error)
+    ) {
+      sendClientHookErrorResponse(
+        options.response,
+        toClientHookOnServerError(error),
+      );
+      return;
+    }
+
+    throw error;
+  }
 }
 
 function injectRuntime(markup: string, manifest: Record<string, unknown>) {
