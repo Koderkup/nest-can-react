@@ -2,6 +2,6 @@
   "version": 3,
   "sources": ["../../../src/demo/islands/GreetingEditor.css"],
   "sourcesContent": [".greeting-session {\n  align-items: center;\n  display: flex;\n  gap: 10px;\n}\n\n.greeting-session-mark {\n  display: block;\n  flex: none;\n  height: 18px;\n  width: 18px;\n}\n"],
-  "mappings": "AAAA,CAAC,iBACC,YAAa,OACb,QAAS,KACT,IAAK,IACP,CAEA,CAAC,sBACC,QAAS,MACT,KAAM,KACN,OAAQ,KACR,MAAO,IACT",
+  "mappings": ";AAAA,CAAC;AACC,eAAa;AACb,WAAS;AACT,OAAK;AACP;AAEA,CAAC;AACC,WAAS;AACT,QAAM;AACN,UAAQ;AACR,SAAO;AACT;",
   "names": []
 }

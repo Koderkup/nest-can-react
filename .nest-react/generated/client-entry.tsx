@@ -1,3 +1,5 @@
+import "../../src/core/client/refresh-runtime.js";
+import { installHmr } from "../../src/core/client/hmr.js";
 import "./client-styles.js";
 import { installClientRuntime } from "../../src/core/client/mount.js";
 import { installNavigation } from "../../src/core/client/navigation.js";
@@ -15,6 +17,7 @@ async function boot() {
   installNavigation({
     onPageChanged: bootPage,
   });
+  installHmr();
 }
 
 void boot();
