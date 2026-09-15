@@ -2,13 +2,13 @@
   "version": 1,
   "codeSplitting": true,
   "publicPath": "/assets/nest-react",
-  "runtime": "/assets/nest-react/runtime.js",
+  "runtime": "/assets/nest-react/runtime-QDHT6CRY.js",
   "css": [
-    "/assets/nest-react/runtime.css"
+    "/assets/nest-react/runtime-FOPV3UWX.css"
   ],
   "chunks": [
     "/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js",
-    "/assets/nest-react/chunks/GreetingEditor.island-HCTNMS7C.js",
+    "/assets/nest-react/chunks/GreetingEditor.island-ABBZXAJU.js",
     "/assets/nest-react/chunks/UserCreator.island-R344TY2I.js",
     "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
     "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
@@ -20,7 +20,7 @@
       "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
     ],
     "GreetingEditor": [
-      "/assets/nest-react/chunks/GreetingEditor.island-HCTNMS7C.js",
+      "/assets/nest-react/chunks/GreetingEditor.island-ABBZXAJU.js",
       "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
       "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
     ],

@@ -78,7 +78,17 @@ export default async function Dashboard() {
           }}
         />
       </section>
-
+      <section className="card span-12">
+        <Island
+          mode="mount"
+          name={DashboardControls}
+          props={{
+            initialSummary: summary,
+            summaryLoadKey: dashboardSummaryLoad.key,
+            refreshDashboard: refreshDashboardCommit.ref,
+          }}
+        />
+      </section>
       <React.Suspense
         fallback={
           <section className="card span-12">
