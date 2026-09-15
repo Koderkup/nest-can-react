@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../../core';
 import { loadKeys } from '../load-keys';
 import { DashboardService } from '../services/dashboard.service';
@@ -28,6 +28,13 @@ export const refreshDashboardCommit = commit('dashboard.refresh', async () => {
 });
 
 export default async function Dashboard() {
+  // const [time, setTime] = useState(new Date().toLocaleTimeString());
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setTime(new Date().toLocaleTimeString());
+  //   }, 1000);
+  //   return () => clearInterval(interval);
+  // }, []);
   const summary = await dashboardSummaryLoad();
   const slowInsight = createSlowInsightResource();
 
