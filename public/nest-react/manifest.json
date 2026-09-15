@@ -2,38 +2,38 @@
   "version": 1,
   "codeSplitting": true,
   "publicPath": "/assets/nest-react",
-  "runtime": "/assets/nest-react/runtime-QDHT6CRY.js",
+  "runtime": "/assets/nest-react/runtime-HUDQIUXB.js",
   "css": [
-    "/assets/nest-react/runtime-FOPV3UWX.css"
+    "/assets/nest-react/runtime-CIDO5BI3.css"
   ],
   "chunks": [
-    "/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js",
-    "/assets/nest-react/chunks/GreetingEditor.island-ABBZXAJU.js",
-    "/assets/nest-react/chunks/UserCreator.island-R344TY2I.js",
-    "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
-    "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
+    "/assets/nest-react/chunks/DashboardControls.island-PQ7HVM5J.js",
+    "/assets/nest-react/chunks/GreetingEditor.island-U5J7HKBL.js",
+    "/assets/nest-react/chunks/UserCreator.island-JNJOWO6F.js",
+    "/assets/nest-react/chunks/chunk-6V3LISAS.js",
+    "/assets/nest-react/chunks/chunk-YS2ZQTDS.js"
   ],
   "islands": {
     "DashboardControls": [
-      "/assets/nest-react/chunks/DashboardControls.island-OHH2B6DP.js",
-      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
-      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
+      "/assets/nest-react/chunks/DashboardControls.island-PQ7HVM5J.js",
+      "/assets/nest-react/chunks/chunk-6V3LISAS.js",
+      "/assets/nest-react/chunks/chunk-YS2ZQTDS.js"
     ],
     "GreetingEditor": [
-      "/assets/nest-react/chunks/GreetingEditor.island-ABBZXAJU.js",
-      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
-      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
+      "/assets/nest-react/chunks/GreetingEditor.island-U5J7HKBL.js",
+      "/assets/nest-react/chunks/chunk-6V3LISAS.js",
+      "/assets/nest-react/chunks/chunk-YS2ZQTDS.js"
     ],
     "UserCreator": [
-      "/assets/nest-react/chunks/UserCreator.island-R344TY2I.js",
-      "/assets/nest-react/chunks/chunk-JK3DK5AG.js",
-      "/assets/nest-react/chunks/chunk-7LMWQLQ2.js"
+      "/assets/nest-react/chunks/UserCreator.island-JNJOWO6F.js",
+      "/assets/nest-react/chunks/chunk-6V3LISAS.js",
+      "/assets/nest-react/chunks/chunk-YS2ZQTDS.js"
     ]
   },
   "islandCss": {
     "DashboardControls": [],
     "GreetingEditor": [
-      "/assets/nest-react/chunks/GreetingEditor.island-TIETNBYP.css"
+      "/assets/nest-react/chunks/GreetingEditor.island-MIJRW6OR.css"
     ],
     "UserCreator": []
   }

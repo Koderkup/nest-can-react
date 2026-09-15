@@ -12,23 +12,40 @@ type SessionState = {
 
 const SessionContext = createContext<SessionState | null>(null);
 
-let visits = 1;
-const sessionListeners = new Set<() => void>();
+type SessionStore = {
+  visits: number;
+  listeners: Set<() => void>;
+};
+
+const sessionStore: SessionStore = (() => {
+  const globalState = globalThis as typeof globalThis & {
+    __NR_SESSION_STORE__?: SessionStore;
+  };
+
+  if (!globalState.__NR_SESSION_STORE__) {
+    globalState.__NR_SESSION_STORE__ = {
+      visits: 1,
+      listeners: new Set(),
+    };
+  }
+
+  return globalState.__NR_SESSION_STORE__;
+})();
 
 function subscribeSession(listener: () => void) {
-  sessionListeners.add(listener);
+  sessionStore.listeners.add(listener);
   return () => {
-    sessionListeners.delete(listener);
+    sessionStore.listeners.delete(listener);
   };
 }
 
 function getVisits() {
-  return visits;
+  return sessionStore.visits;
 }
 
 function bumpVisits() {
-  visits += 1;
-  sessionListeners.forEach((listener) => listener());
+  sessionStore.visits += 1;
+  sessionStore.listeners.forEach((listener) => listener());
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {

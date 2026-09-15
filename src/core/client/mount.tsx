@@ -60,6 +60,14 @@ export function unmountHydrateIslands() {
   hydrateRoots.clear();
 }
 
+export function replaceIslandComponent(
+  name: string,
+  component: ComponentType<any>,
+) {
+  loadedComponents.set(name, component);
+  componentCache.set(name, Promise.resolve(component));
+}
+
 function IslandOutlet({
   Runtime,
   registry,

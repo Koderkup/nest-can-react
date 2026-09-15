@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
 import { CommitRef } from '../../core/client/runtime';
 import { useSession } from '../context/session';
@@ -21,8 +21,14 @@ export function GreetingEditor({
   const [message, setMessage] = useState(initialMessage);
   const saveGreeting = useCommit<{ message: string }>(updateGreeting);
   const session = useSession();
+  const previousServerMessage = useRef(serverMessage);
 
   useEffect(() => {
+    if (previousServerMessage.current === serverMessage) {
+      return;
+    }
+
+    previousServerMessage.current = serverMessage;
     setMessage(serverMessage);
   }, [serverMessage]);
 
@@ -30,11 +36,7 @@ export function GreetingEditor({
     <section className="island-card">
       <span className="pill">useState + useCommit</span>
       <p className="muted greeting-session">
-        <img
-          alt=""
-          className="greeting-session-mark"
-          src={sessionMark}
-        />
+        <img alt="" className="greeting-session-mark" src={sessionMark} />
         Shared runtime visits: {session.visits}
       </p>
       <button onClick={session.bump} type="button">

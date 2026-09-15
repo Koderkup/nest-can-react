@@ -210,13 +210,13 @@ Hydrate-mode islands get their own React root on the host node (so SSR HTML can 
 
 ```bash
 npm install
-npm run build:client    # islands, runtime, public/nest-react
+npm run build:client    # islands, runtime, public/nest-react (hashed, production)
 npm run build           # Nest server
 npm run build:all
-npm run start:dev
+npm run view:dev        # esbuild watch + Nest watch + browser HMR
 ```
 
-`start:dev` watches the Nest server only. After changing client islands, runtime, or layout used by the client bundle, run `npm run build:client` again.
+`view:dev` (also `start:dev`) watches client islands and the Nest server together. Island/runtime/CSS edits Fast Refresh in the browser without wiping `useState` or the session store. Page, layout, and Nest service edits trigger a full document reload once Nest is back up. Production `build:client` still emits hashed filenames and does not include the HMR client.
 
 ## How The Request Flow Works
 
@@ -237,10 +237,9 @@ npm run start:dev
 - No full request-scoped provider support.
 - Internal transport has no CSRF protection; commit refs are not signed.
 - Input validation and error serialization are minimal.
-- No PostCSS, Tailwind, CSS modules on server pages, or Vite `?url` / `?raw` / HMR.
+- No PostCSS, Tailwind, CSS modules on server pages, or Vite `?url` / `?raw`.
 - No true React Server Components Flight protocol.
 - Test coverage for core behavior is still thin.
-- `start:dev` does not rebuild client assets automatically.
 
 ## More Docs
 

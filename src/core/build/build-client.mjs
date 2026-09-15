@@ -1,13 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
-import {
-  basename,
-  extname,
-  join,
-  relative,
-  resolve,
-  sep,
-} from 'node:path';
+import { basename, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as esbuild from 'esbuild';
 
@@ -57,6 +50,7 @@ export async function buildNestReactClient(overrides = {}) {
     runtimeEntry: config.runtimeEntry,
     layoutEntry: config.layoutEntry,
     styles: config.styles,
+    hmr: false,
   });
 
   const entryPoint = resolve(
@@ -67,7 +61,188 @@ export async function buildNestReactClient(overrides = {}) {
   await rm(outdir, { recursive: true, force: true });
   await mkdir(outdir, { recursive: true });
 
-  const result = await esbuild.build({
+  const result = await esbuild.build(
+    createEsbuildOptions({
+      codeSplitting,
+      entryPoint,
+      hmr: false,
+      outdir,
+      publicPath,
+      stableNames: false,
+    }),
+  );
+
+  await writeBuildArtifacts(result, {
+    codeSplitting,
+    entryPoint,
+    generatedDir,
+    islands,
+    outdir,
+    publicPath,
+    rootDir,
+  });
+
+  console.log(`Built Nest React client assets in ${outdir}`);
+}
+
+export async function watchNestReactClient(overrides = {}, handlers = {}) {
+  const rootDir = resolve(overrides.rootDir ?? process.cwd());
+  const config = await loadConfig(rootDir, overrides);
+  const codeSplitting = shouldSplit(config);
+  const outdir = resolve(rootDir, config.outDir);
+  const generatedDir = resolve(rootDir, config.generatedDir);
+  const publicPath = normalizePublicPath(config.publicPath);
+  const state = {
+    islands: await discoverIslands(rootDir, config.islands),
+  };
+
+  await generateIslandRegistries({
+    generatedDir,
+    islands: state.islands,
+    rootDir,
+    runtimeEntry: config.runtimeEntry,
+    layoutEntry: config.layoutEntry,
+    styles: config.styles,
+    hmr: true,
+  });
+
+  const entryPoint = resolve(
+    rootDir,
+    config.clientEntry ?? join(config.generatedDir, 'client-entry.tsx'),
+  );
+  const { createReactRefreshPlugin } =
+    await import('./react-refresh-plugin.mjs');
+
+  await rm(outdir, { recursive: true, force: true });
+  await mkdir(outdir, { recursive: true });
+
+  let firstBuild = null;
+  const firstBuildDone = new Promise((resolve, reject) => {
+    firstBuild = { resolve, reject };
+  });
+
+  const context = await esbuild.context({
+    ...createEsbuildOptions({
+      codeSplitting,
+      entryPoint,
+      hmr: true,
+      outdir,
+      publicPath,
+      stableNames: true,
+    }),
+    plugins: [
+      createReactRefreshPlugin({ rootDir }),
+      {
+        name: 'nest-react-watch-artifacts',
+        setup(build) {
+          build.onEnd(async (result) => {
+            if (result.errors.length > 0) {
+              const error = new Error(formatEsbuildErrors(result.errors));
+              handlers.onError?.(error, result.errors);
+              firstBuild?.reject(error);
+              firstBuild = null;
+              return;
+            }
+
+            try {
+              const manifest = await writeBuildArtifacts(result, {
+                codeSplitting,
+                entryPoint,
+                generatedDir,
+                islands: state.islands,
+                outdir,
+                publicPath,
+                rootDir,
+              });
+              handlers.onRebuild?.({
+                islands: state.islands,
+                manifest,
+                metafile: result.metafile,
+              });
+              firstBuild?.resolve(manifest);
+              firstBuild = null;
+            } catch (error) {
+              handlers.onError?.(error);
+              firstBuild?.reject(error);
+              firstBuild = null;
+            }
+          });
+        },
+      },
+    ],
+  });
+
+  await context.watch();
+
+  try {
+    await firstBuildDone;
+  } catch {
+    // Keep watching so the next save can recover.
+  }
+
+  return {
+    async dispose() {
+      await context.dispose();
+    },
+    getIslands() {
+      return state.islands;
+    },
+    async regenerate() {
+      const islands = await discoverIslands(rootDir, config.islands);
+      const graphChanged =
+        islandGraphKey(islands) !== islandGraphKey(state.islands);
+      state.islands = islands;
+      await generateIslandRegistries({
+        generatedDir,
+        islands,
+        rootDir,
+        runtimeEntry: config.runtimeEntry,
+        layoutEntry: config.layoutEntry,
+        styles: config.styles,
+        hmr: true,
+      });
+      return { graphChanged, islands };
+    },
+  };
+}
+
+export function collectChangedClientModules(
+  metafile,
+  previousOutputFiles,
+  config,
+) {
+  const urls = [];
+
+  for (const [outputFile, output] of Object.entries(metafile.outputs ?? {})) {
+    if (
+      previousOutputFiles.has(outputFile) ||
+      !outputFile.endsWith('.js') ||
+      isRuntimeOutput(outputFile) ||
+      isVendorJsOutput(output)
+    ) {
+      continue;
+    }
+
+    urls.push(toPublicAsset(outputFile, config));
+  }
+
+  return urls;
+}
+
+export function getIslandName(file) {
+  const fileName = basename(file);
+  return fileName.replace(/\.island\.[^.]+$/, '');
+}
+
+function createEsbuildOptions({
+  codeSplitting,
+  entryPoint,
+  hmr,
+  outdir,
+  publicPath,
+  stableNames,
+}) {
+  return {
     entryPoints: [entryPoint],
     outdir,
     bundle: true,
@@ -75,12 +250,19 @@ export async function buildNestReactClient(overrides = {}) {
     platform: 'browser',
     target: ['es2022'],
     jsx: 'automatic',
+    jsxDev: Boolean(hmr),
     sourcemap: true,
     minify: process.env.NODE_ENV === 'production',
     splitting: codeSplitting,
-    entryNames: codeSplitting ? 'runtime-[hash]' : 'client-[hash]',
+    entryNames: stableNames
+      ? codeSplitting
+        ? 'runtime'
+        : 'client'
+      : codeSplitting
+        ? 'runtime-[hash]'
+        : 'client-[hash]',
     chunkNames: 'chunks/[name]-[hash]',
-    assetNames: 'assets/[name]-[hash]',
+    assetNames: stableNames ? 'assets/[name]' : 'assets/[name]-[hash]',
     publicPath: `${publicPath}/`,
     loader: fileLoaders,
     metafile: true,
@@ -89,35 +271,79 @@ export async function buildNestReactClient(overrides = {}) {
         process.env.NODE_ENV ?? 'development',
       ),
     },
-  });
+  };
+}
 
-  const manifest = createAssetManifest(result.metafile, {
-    codeSplitting,
-    entryPoint,
-    islands,
-    outdir,
-    publicPath,
-    rootDir,
-  });
+async function writeBuildArtifacts(result, config) {
+  const manifest = createAssetManifest(result.metafile, config);
 
   await writeFile(
-    join(outdir, 'manifest.json'),
+    join(config.outdir, 'manifest.json'),
     `${JSON.stringify(manifest, null, 2)}\n`,
   );
   await writeFile(
-    join(generatedDir, 'asset-urls.json'),
-    `${JSON.stringify(createAssetUrlMap(result.metafile, {
-      outdir,
-      publicPath,
-      rootDir,
-    }), null, 2)}\n`,
+    join(config.generatedDir, 'asset-urls.json'),
+    `${JSON.stringify(
+      createAssetUrlMap(result.metafile, {
+        outdir: config.outdir,
+        publicPath: config.publicPath,
+        rootDir: config.rootDir,
+      }),
+      null,
+      2,
+    )}\n`,
   );
 
-  console.log(`Built Nest React client assets in ${outdir}`);
+  return manifest;
+}
+
+function formatEsbuildErrors(errors) {
+  return errors
+    .map((error) => {
+      const location = error.location
+        ? `${error.location.file}:${error.location.line}:${error.location.column} `
+        : '';
+      return `${location}${error.text}`;
+    })
+    .join('\n');
+}
+
+function islandGraphKey(islands) {
+  return islands.map((island) => `${island.name}:${island.file}`).join('|');
+}
+
+function isRuntimeOutput(outputFile) {
+  const name = outputFile.split('/').pop() ?? '';
+  return /^runtime(?:-[A-Z0-9]+)?\.js$/i.test(name);
+}
+
+function isVendorJsOutput(output) {
+  const inputs = Object.keys(output.inputs ?? {});
+
+  return (
+    inputs.length > 0 &&
+    inputs.every((input) => toPosixPath(input).includes('node_modules/'))
+  );
+}
+
+async function writeFileIfChanged(path, contents) {
+  try {
+    if (readFileSync(path, 'utf8') === contents) {
+      return false;
+    }
+  } catch {
+    // File does not exist yet.
+  }
+
+  await writeFile(path, contents);
+  return true;
 }
 
 async function loadConfig(rootDir, overrides) {
-  const jsonConfigPath = resolve(rootDir, overrides.config ?? 'nest.react.json');
+  const jsonConfigPath = resolve(
+    rootDir,
+    overrides.config ?? 'nest.react.json',
+  );
 
   if (existsSync(jsonConfigPath)) {
     const fileConfig = JSON.parse(readFileSync(jsonConfigPath, 'utf8'));
@@ -147,7 +373,9 @@ function normalizeConfig(config) {
     publicPath:
       client.publicPath ?? config.publicPath ?? defaultConfig.publicPath,
     codeSplitting:
-      client.codeSplitting ?? config.codeSplitting ?? defaultConfig.codeSplitting,
+      client.codeSplitting ??
+      config.codeSplitting ??
+      defaultConfig.codeSplitting,
     styles: normalizeStyles(client.styles ?? config.styles),
     islands,
     generatedDir: config.generatedDir ?? defaultConfig.generatedDir,
@@ -155,7 +383,8 @@ function normalizeConfig(config) {
       config.runtime?.entry ??
       config.runtimeEntry ??
       defaultConfig.runtimeEntry,
-    layoutEntry: config.layout ?? config.layoutEntry ?? defaultConfig.layoutEntry,
+    layoutEntry:
+      config.layout ?? config.layoutEntry ?? defaultConfig.layoutEntry,
   };
 }
 
@@ -203,7 +432,10 @@ function createAssetManifest(metafile, config) {
   );
   const runtimeOutput =
     jsOutputs.find(([, output]) =>
-      isSameFile(resolve(config.rootDir, output.entryPoint ?? ''), config.entryPoint),
+      isSameFile(
+        resolve(config.rootDir, output.entryPoint ?? ''),
+        config.entryPoint,
+      ),
     ) ?? jsOutputs[0];
 
   if (!runtimeOutput) {
@@ -248,8 +480,12 @@ async function discoverIslands(rootDir, config) {
       file,
       relativeFile: toPosixPath(relative(rootDir, file)),
     }))
-    .filter(({ relativeFile }) => include.some((regex) => regex.test(relativeFile)))
-    .filter(({ relativeFile }) => !exclude.some((regex) => regex.test(relativeFile)))
+    .filter(({ relativeFile }) =>
+      include.some((regex) => regex.test(relativeFile)),
+    )
+    .filter(
+      ({ relativeFile }) => !exclude.some((regex) => regex.test(relativeFile)),
+    )
     .map(({ file }) => ({
       file,
       name: getIslandName(file),
@@ -291,11 +527,6 @@ async function walk(rootDir) {
   return files;
 }
 
-function getIslandName(file) {
-  const fileName = basename(file);
-  return fileName.replace(/\.island\.[^.]+$/, '');
-}
-
 function assertUniqueIslandNames(islands) {
   const seen = new Map();
 
@@ -319,19 +550,20 @@ async function generateIslandRegistries({
   runtimeEntry,
   layoutEntry,
   styles,
+  hmr = false,
 }) {
   await mkdir(generatedDir, { recursive: true });
 
   await Promise.all([
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'client-registry.ts'),
       createClientRegistry({ generatedDir, islands, rootDir }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'server-registry.ts'),
       createServerRegistry({ generatedDir, islands }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'client-runtime.ts'),
       createClientRuntimeModule({
         generatedDir,
@@ -339,19 +571,19 @@ async function generateIslandRegistries({
         runtimeEntry,
       }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'server-layout.ts'),
       createServerLayoutModule({ generatedDir, rootDir, layoutEntry }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'client-styles.ts'),
       createClientStyles({ generatedDir, rootDir, styles }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'client-entry.tsx'),
-      createClientEntry({ generatedDir, rootDir }),
+      createClientEntry({ generatedDir, rootDir, hmr }),
     ),
-    writeFile(
+    writeFileIfChanged(
       join(generatedDir, 'server-boot.ts'),
       createServerBoot({ generatedDir, rootDir }),
     ),
@@ -376,7 +608,7 @@ function createClientStyles({ generatedDir, rootDir, styles }) {
     .join('\n')}\n`;
 }
 
-function createClientEntry({ generatedDir, rootDir }) {
+function createClientEntry({ generatedDir, rootDir, hmr = false }) {
   const mountImport = toImportSpecifier(
     generatedDir,
     resolve(rootDir, 'src/core/client/mount.tsx'),
@@ -389,8 +621,22 @@ function createClientEntry({ generatedDir, rootDir }) {
     generatedDir,
     resolve(rootDir, 'src/core/client/runtime.ts'),
   );
+  const refreshImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/refresh-runtime.ts'),
+  );
+  const hmrImport = toImportSpecifier(
+    generatedDir,
+    resolve(rootDir, 'src/core/client/hmr.ts'),
+  );
 
   return [
+    ...(hmr
+      ? [
+          `import ${JSON.stringify(refreshImport)};`,
+          `import { installHmr } from ${JSON.stringify(hmrImport)};`,
+        ]
+      : []),
     'import "./client-styles.js";',
     `import { installClientRuntime } from ${JSON.stringify(mountImport)};`,
     `import { installNavigation } from ${JSON.stringify(navigationImport)};`,
@@ -408,6 +654,7 @@ function createClientEntry({ generatedDir, rootDir }) {
     '  installNavigation({',
     '    onPageChanged: bootPage,',
     '  });',
+    ...(hmr ? ['  installHmr();'] : []),
     '}',
     '',
     'void boot();',
@@ -510,14 +757,9 @@ function createServerRegistry({ generatedDir, islands }) {
     .join('\n');
   const entries = islands.map((island) => `  ${island.name},`).join('\n');
 
-  return [
-    imports,
-    '',
-    'export const registry = {',
-    entries,
-    '};',
-    '',
-  ].join('\n');
+  return [imports, '', 'export const registry = {', entries, '};', ''].join(
+    '\n',
+  );
 }
 
 function toImportSpecifier(fromDir, toFile) {
@@ -539,9 +781,7 @@ function globToRegex(pattern) {
     .replace(/\*\*/g, '__NEST_REACT_GLOBSTAR__')
     .replace(/\*/g, '[^/]*');
 
-  return new RegExp(
-    `^${escaped.replace(/__NEST_REACT_GLOBSTAR__/g, '.*')}$`,
-  );
+  return new RegExp(`^${escaped.replace(/__NEST_REACT_GLOBSTAR__/g, '.*')}$`);
 }
 
 function toPosixPath(path) {
@@ -704,7 +944,9 @@ function createAssetUrlMap(metafile, config) {
 
 function toPublicAsset(file, config) {
   const absoluteFile = resolve(config.rootDir, file);
-  const relativeFile = relative(config.outdir, absoluteFile).split(sep).join('/');
+  const relativeFile = relative(config.outdir, absoluteFile)
+    .split(sep)
+    .join('/');
   return `${config.publicPath}/${relativeFile}`;
 }
 
@@ -716,6 +958,9 @@ function isSameFile(left, right) {
   return resolve(left) === resolve(right);
 }
 
-if (process.argv[1] && isSameFile(fileURLToPath(import.meta.url), process.argv[1])) {
+if (
+  process.argv[1] &&
+  isSameFile(fileURLToPath(import.meta.url), process.argv[1])
+) {
   await buildNestReactClient();
 }

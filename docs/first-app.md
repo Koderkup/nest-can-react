@@ -294,16 +294,16 @@ Shared client context is optional. Point `runtime.entry` at a module that export
 
 ```bash
 npm run build:client
-npm run start:dev
+npm run view:dev
 ```
 
-Open `http://localhost:3000`. After changing islands or `runtime.entry`, run `build:client` again.
+Open `http://localhost:3000`. Island and runtime edits Fast Refresh in the open browser. Page, layout, and Nest service edits reload the document automatically.
 
 Output:
 
 ```txt
 .nest-react/generated/     # boot, registries, layout, client-styles
-public/nest-react/         # runtime-[hash].js, CSS, assets/, chunks/, manifest.json
+public/nest-react/         # runtime.js in dev, runtime-[hash].js in production
 ```
 
 ## What Happens After A Commit
@@ -330,6 +330,5 @@ The large server-rendered heading **outside** the island will not change until t
 
 - Request-scoped Nest providers still need hardening.
 - Commit refs are not signed; CSRF is not implemented.
-- No PostCSS, Tailwind, or Vite `?url` / `?raw` / HMR.
+- No PostCSS, Tailwind, or Vite `?url` / `?raw`.
 - CSS modules work in client islands, not in server pages.
-- `start:dev` does not rebuild client chunks.

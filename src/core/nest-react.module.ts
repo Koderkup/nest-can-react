@@ -17,7 +17,13 @@ import { NestReactController } from './nest-react.controller';
 import '../../.nest-react/generated/server-boot.js';
 
 const publicDir = join(process.cwd(), 'public');
-const servePublic = express.static(publicDir);
+const servePublic = express.static(publicDir, {
+  setHeaders(res) {
+    if (process.env.NODE_ENV !== 'production') {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  },
+});
 
 function serveNestReactAssets(req: Request, res: Response, next: NextFunction) {
   const originalUrl = req.originalUrl.split('?')[0];

@@ -205,7 +205,7 @@ Output:
 
 - Server `load()` runs only for the page being rendered.
 - With `codeSplitting: true`, only the current page’s island chunks are preloaded.
-- `start:dev` does not rebuild those chunks.
+- `view:dev` watches client chunks and Fast Refresh islands; page/layout/service edits full-reload.
 
 ## Current Asset Support
 
@@ -217,7 +217,7 @@ Supported:
 - hashed image, font, and SVG URLs from JS imports and CSS `url()`
 - hashed JS chunks from esbuild
 
-Not implemented: PostCSS, Tailwind, Vite `?url` / `?raw`, CSS modules in server pages, HMR.
+Not implemented: PostCSS, Tailwind, Vite `?url` / `?raw`, CSS modules in server pages.
 
 ## Server HTML vs Island HTML After Commit
 
