@@ -1,18 +1,19 @@
 import React, { ReactNode } from 'react';
-import { NestLink, useLayoutMeta } from '../core';
-import favicon from './favicon.svg';
+import favicon from './assets/favicon.svg';
+import { NestLink, useLayoutMeta } from './core';
 
 const navItems = [
-  { id: 'home', to: '/', label: 'Home' },
-  { id: 'users', to: '/users', label: 'Users' },
-  { id: 'dashboard', to: '/dashboard', label: 'Dashboard' },
+  { id: 'welcome', to: '/', label: 'Welcome' },
+  { id: 'note', to: '/note', label: 'Note' },
+  { id: 'pulse', to: '/pulse', label: 'Pulse' },
 ] as const;
 
 export default function Layout({ children }: { children: ReactNode }) {
   const meta = useLayoutMeta();
   const title = typeof meta.title === 'string' ? meta.title : 'Nest React';
   const eyebrow = typeof meta.eyebrow === 'string' ? meta.eyebrow : '';
-  const description = typeof meta.description === 'string' ? meta.description : '';
+  const description =
+    typeof meta.description === 'string' ? meta.description : '';
   const active = typeof meta.active === 'string' ? meta.active : '';
 
   return (
@@ -30,7 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <span className="brand-mark">NR</span>
               <span>
                 <strong>Nest React</strong>
-                <small>Server-first UI framework</small>
+                <small>Starter UI — safe to delete</small>
               </span>
             </NestLink>
 
@@ -61,4 +62,3 @@ export default function Layout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-

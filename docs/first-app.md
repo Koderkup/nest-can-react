@@ -11,9 +11,9 @@ Server React can use Nest DI.
 Client React talks back through commit refs.
 ```
 
-## Folder Structure Is Not The Demo
+## Folder Structure Is Not The Starter
 
-**You do not have to mirror `src/demo/`.** That tree is only how *this repository* organizes its sample (Home / Users / Dashboard, layout, in-memory services). The builder never looks for `src/demo/pages` or `src/demo/services`.
+**You do not have to mirror `src/welcome`, `src/note`, or `src/pulse`.** Those folders are how *this repository* organizes a disposable sample. The builder never looks for those names.
 
 Copy the **roles** below, not the demo folder names.
 
@@ -26,13 +26,13 @@ Copy the **roles** below, not the demo folder names.
 | Island files | Browser components | `*.island.tsx` matching `islands.include` |
 | Nest wiring | Transport, DI, `/assets`, generated boot | `NestReactModule.forRoot()` |
 
-Island **file name** matters: `GreetingEditor.island.tsx` must export `GreetingEditor`, and `<Island name={GreetingEditor} />` must pass that same component. The **directory** does not.
+Island **file name** matters: `NoteEditor.island.tsx` must export `NoteEditor`, and `<Island name={NoteEditor} />` must pass that same component. The **directory** does not.
 
 The package generates client entry, registries, and `server-boot.ts`. It injects `#nr-runtime` and `#nr-document`. Do not author those files or slot ids.
 
 ### Optional
 
-- `src/demo/` folder names
+- this repo’s `welcome/` / `note/` / `pulse/` folder names
 - `*.page.tsx` filenames
 - `load-keys.ts`
 - `runtime.entry` / `app.runtime.tsx` (pass-through `ClientRuntime` if omitted)
@@ -46,12 +46,15 @@ src/
   core/
   main.ts
   app.module.ts
-  app.controller.ts
-  greeting.service.ts
   layout.tsx
-  layout.css
-  home.tsx
-  GreetingEditor.island.tsx
+  assets/layout.css
+  welcome/
+    welcome.module.ts
+    welcome.controller.ts
+    welcome.service.ts
+    welcome.page.tsx
+    load-keys.ts
+    islands/ThemeToggle.island.tsx
 public/nest-react/
 ```
 
@@ -64,7 +67,7 @@ Example `nest.react.json`:
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
     "codeSplitting": true,
-    "styles": ["src/layout.css"]
+    "styles": ["src/assets/layout.css"]
   },
   "islands": {
     "include": ["src/**/*.island.tsx"],
@@ -80,8 +83,8 @@ List global CSS in `client.styles`. The bundler emits hashed stylesheets and `re
 Islands can import CSS and assets:
 
 ```tsx
-import './GreetingEditor.css';
-import mark from './session-mark.svg';
+import './NoteEditor.css';
+import mark from '../assets/mark.svg';
 ```
 
 ## 1. Import The Core Module
@@ -89,13 +92,10 @@ import mark from './session-mark.svg';
 ```ts
 import { Module } from '@nestjs/common';
 import { NestReactModule } from './core';
-import { AppController } from './app.controller';
-import { GreetingService } from './greeting.service';
+import { WelcomeModule } from './welcome/welcome.module';
 
 @Module({
-  imports: [NestReactModule.forRoot()],
-  controllers: [AppController],
-  providers: [GreetingService],
+  imports: [NestReactModule.forRoot(), WelcomeModule],
 })
 export class AppModule {}
 ```
@@ -236,7 +236,7 @@ export class AppController {
 
 ## 6. Create A Client Island
 
-File name: `greeting-editor.island.tsx` **or** `GreetingEditor.island.tsx`. Import the discovered export and pass it to `<Island name={GreetingEditor} />`. The demo uses PascalCase filenames (`GreetingEditor.island.tsx` → `GreetingEditor`).
+File name: `note-editor.island.tsx` **or** `NoteEditor.island.tsx`. Import the discovered export and pass it to `<Island name={NoteEditor} />`. This starter uses PascalCase filenames (`NoteEditor.island.tsx` → `NoteEditor`).
 
 ```tsx
 import React, { useEffect, useState } from 'react';
@@ -288,7 +288,7 @@ Always `preventDefault` on island forms. Without it, the browser does a full sub
 
 `build:client` writes `.nest-react/generated/` (client entry, registries, `server-boot.ts`, layout re-export). `NestReactModule` loads `server-boot.ts`. You do not write `islands.ts` or `client/entry.tsx`.
 
-Shared client context is optional. Point `runtime.entry` at a module that exports `ClientRuntime`. If omitted, the bundler emits a pass-through. The demo `useSession()` counter lives in `src/demo/app.runtime.tsx`.
+Shared client context is optional. Point `runtime.entry` at a module that exports `ClientRuntime`. If omitted, the bundler emits a pass-through. This starter’s `useTheme()` lives in `src/runtime/`.
 
 ## 8. Build And Run
 
@@ -319,7 +319,7 @@ The large server-rendered heading **outside** the island will not change until t
 ## Best Practices
 
 - Keep framework code in `src/core`; keep *your* app anywhere else.
-- Do not treat `src/demo` as a required skeleton.
+- Do not treat `src/welcome`, `src/note`, or `src/pulse` as a required skeleton.
 - Put chrome in `layout.tsx`; put page body in the page module.
 - Do not author `#nr-runtime` / `#nr-document`.
 - Use `hydrate` when the island should be visible before JS; use `mount` for controls that can appear after JS.

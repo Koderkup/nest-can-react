@@ -20,7 +20,7 @@ That means:
 - Client islands mutate by calling server `commit()` refs.
 - Shared client UI state uses React context via `ClientRuntime` (see islands below).
 
-Application folder layout is **not** part of this contract. `src/demo/` is a sample. Required wiring is `nest.react.json`, `layout.tsx`, `*.island.tsx`, and `NestReactModule.forRoot()`. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-demo).
+Application folder layout is **not** part of this contract. `src/welcome`, `src/note`, and `src/pulse` are a sample. Required wiring is `nest.react.json`, `layout.tsx`, `*.island.tsx`, and `NestReactModule.forRoot()`. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-starter).
 
 ## `src/core`
 
@@ -116,7 +116,7 @@ Do not portal into a hydrate host that still contains SSR markup: `createPortal`
 
 `ClientRuntime` is your app component (`runtime.entry`, re-exported as `.nest-react/generated/client-runtime.ts`). Register it on the server with `registerClientRuntime` so hydrate SSR matches the client (otherwise `useContext` falls back and you can get `visits: 0` in static HTML vs a live island).
 
-Hydrate islands are separate roots (required to attach to existing DOM). React context does not cross roots by itself. The demo’s `useSession()` still feels like context: the provider is the API, and the visit count lives in a module store plus `useSyncExternalStore` so every root reads the same value.
+Hydrate islands are separate roots (required to attach to existing DOM). React context does not cross roots by itself. The starter’s `useTheme()` still feels like context: the provider is the API, and the theme lives in a module store plus `useSyncExternalStore` so every root reads the same value.
 
 Portal keys are `island.id` only. Including the runtime `version` in the key remounts islands on every load refresh.
 
@@ -190,9 +190,9 @@ Output:
 - `public/nest-react/assets/*`
 - `public/nest-react/manifest.json`
 
-## Demo App
+## Starter App
 
-`src/demo/` is optional sample code: pages, services, layout, islands. It is not the required application skeleton.
+`src/welcome`, `src/note`, and `src/pulse` are optional sample features: module, controller, service, page, islands, load-keys. They are not the required application skeleton.
 
 ## Current Performance Behavior
 

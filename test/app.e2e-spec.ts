@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '@/app.module';
 
-describe('AppController (e2e)', () => {
+describe('Welcome (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -20,7 +20,11 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        if (!response.text.includes('now Nest can react')) {
+          throw new Error('Expected welcome tagline in HTML');
+        }
+      });
   });
 
   afterEach(async () => {

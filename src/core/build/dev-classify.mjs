@@ -34,7 +34,8 @@ export function classifyChange(file, rootDir) {
 
   if (
     /app\.runtime\.[jt]sx$/.test(path) ||
-    /\/context\/.*\.[jt]sx$/.test(path)
+    /\/context\/.*\.[jt]sx$/.test(path) ||
+    /\/runtime\/.*\.[jt]sx$/.test(path)
   ) {
     return 'client';
   }

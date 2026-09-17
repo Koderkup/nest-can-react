@@ -1,9 +1,9 @@
 {
   "$schema": "./node_modules/@nestjs/react/schema.json",
   "runtime": {
-    "entry": "src/demo/app.runtime.tsx"
+    "entry": "src/runtime/app.runtime.tsx"
   },
-  "layout": "src/demo/layout.tsx",
+  "layout": "src/layout.tsx",
   "islands": {
     "include": ["src/**/*.island.tsx"],
     "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
@@ -12,6 +12,6 @@
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
     "codeSplitting": true,
-    "styles": ["src/demo/layout.css"]
+    "styles": ["src/assets/layout.css"]
   }
 }

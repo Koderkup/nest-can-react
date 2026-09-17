@@ -14,13 +14,13 @@ Current status: this is a working architecture demo, not a production-ready npm 
 - Server-side mutations with `commit()`.
 - Key-based refresh with `revalidate()`.
 - Client React islands with two modes: `mount` (empty host, client render) and `hydrate` (SSR HTML, then hydrate).
-- Shared client React context through an app `ClientRuntime` wrapper (`useSession()` in the demo).
+- Shared client React context through an app `ClientRuntime` wrapper (`useTheme()` in the starter).
 - React client hooks: `useLoad()`, `useCommit()`, and `usePendingLoad()`.
 - Client-side navigation that swaps `#nr-document` without a full reload.
 - A package-owned internal transport through `NestReactModule`.
 - Manifest-based island mounting with no user-authored `data-nest-*` attributes.
 - esbuild client bundling with per-island code splitting, CSS, and hashed static assets (no Vite, no webpack).
-- A polished demo with Home, Users, and Dashboard pages.
+- A disposable starter with Welcome, Note, and Pulse feature folders.
 
 ## Core Idea
 
@@ -67,7 +67,7 @@ function UserCreator({ createUser }: Props) {
 
 ## Folder Structure: What Matters
 
-**You do not need to copy `src/demo/`.** The package owns client boot, island registration, static `/assets`, DI init, and `#nr-runtime` / `#nr-document`.
+**You do not need to copy this repo’s feature folders.** The package owns client boot, island registration, static `/assets`, DI init, and `#nr-runtime` / `#nr-document`.
 
 Required app files:
 
@@ -80,7 +80,7 @@ Optional: `app.runtime.tsx` (`runtime.entry`) for shared client context.
 
 Not required: `islands.ts`, `client/entry.tsx`, hand-written registries, document slot ids.
 
-See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-demo).
+See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-starter).
 
 This repo looks like:
 
@@ -88,14 +88,12 @@ This repo looks like:
 nest.react.json                 # layout, optional runtime, island globs, client.styles
 src/
   core/                         # framework (treat as the future package)
-  demo/                         # sample app only
-    layout.tsx
-    layout.css                  # listed in client.styles
-    app.runtime.tsx             # optional ClientRuntime
-    islands/*.island.tsx
-    pages/*.page.tsx
-    services/
-  app.controller.ts             # still owns HTML routes
+  layout.tsx
+  assets/                       # global CSS and images
+  runtime/                      # ClientRuntime + theme context
+  welcome/                      # module, controller, service, page, islands, load-keys
+  note/
+  pulse/
   app.module.ts
   main.ts                       # NestFactory + listen
 .nest-react/generated/          # entry, registries, server-boot (build:client)
@@ -104,7 +102,7 @@ public/nest-react/              # hashed runtime, CSS, and assets
 
 `src/core` is the package/framework layer.
 
-`src/demo` is one way to organize an app that consumes that layer.
+`welcome` / `note` / `pulse` are starter features. Delete a folder and drop its module from `AppModule` when you replace it.
 
 ## Core APIs
 
@@ -154,15 +152,15 @@ Marks load keys stale after a commit. The browser runtime refreshes those keys w
 Registers a client island during server render.
 
 ```tsx
-import { GreetingEditor } from './islands/GreetingEditor.island';
+import { NoteEditor } from './islands/NoteEditor.island';
 
 <Island
   mode="hydrate"
-  name={GreetingEditor}
+  name={NoteEditor}
   props={{
-    initialMessage: greeting,
-    loadKey: greetingLoad.key,
-    updateGreeting: updateGreetingCommit.ref,
+    initialText: note,
+    loadKey: noteLoad.key,
+    saveNote: saveNoteCommit.ref,
   }}
 />
 ```
@@ -170,7 +168,7 @@ import { GreetingEditor } from './islands/GreetingEditor.island';
 - `mode="mount"` (default): empty `<div id="nr-i0">`. The client portals the component in.
 - `mode="hydrate"`: the island is SSR’d into that host (wrapped in `ClientRuntime` so context matches), then hydrated on first load.
 
-Pass the island component as `name` (for example `GreetingEditor` from `GreetingEditor.island.tsx`). String names still work as an escape hatch. The registry key stays the discovered export name.
+Pass the island component as `name` (for example `NoteEditor` from `NoteEditor.island.tsx`). String names still work as an escape hatch. The registry key stays the discovered export name.
 
 ### `NestReactModule.forRoot()`
 
@@ -196,15 +194,15 @@ Read refreshed server data, pending state, and mutations through `/_nr`.
 
 Export `ClientRuntime` from the optional file named in `nest.react.json` → `runtime.entry`. `NestReactModule` registers it from generated code. A first app can omit `runtime.entry`; the bundler emits a pass-through wrapper.
 
-Hydrate-mode islands get their own React root on the host node (so SSR HTML can be hydrated). Context still matches because the same `ClientRuntime` wraps each island; session-like state that must survive multiple roots should live in a module store behind that provider, as the demo does.
+Hydrate-mode islands get their own React root on the host node (so SSR HTML can be hydrated). Context still matches because the same `ClientRuntime` wraps each island; theme-like state that must survive multiple roots should live in a module store behind that provider, as `useTheme()` does.
 
-## Demo Routes
+## Starter Routes
 
 | Route | What it shows |
 | --- | --- |
-| `/` | Server greeting plus a `hydrate` `GreetingEditor` island |
-| `/users` | Server user list plus a `hydrate` `UserCreator` island |
-| `/dashboard` | Server summary cards plus a `mount` `DashboardControls` island (streaming shell) |
+| `/` | Tagline `now Nest can react` plus a `hydrate` theme-toggle island |
+| `/note` | In-memory note plus a `hydrate` editor island |
+| `/pulse` | Beat count plus a `mount` beat island (streaming shell) |
 
 ## Build Scripts
 
@@ -216,12 +214,12 @@ npm run build:all
 npm run view:dev        # esbuild watch + Nest watch + browser HMR
 ```
 
-`view:dev` (also `start:dev`) watches client islands and the Nest server together. Island/runtime/CSS edits Fast Refresh in the browser without wiping `useState` or the session store. Page, layout, and Nest service edits trigger a full document reload once Nest is back up. Production `build:client` still emits hashed filenames and does not include the HMR client.
+`view:dev` (also `start:dev`) watches client islands and the Nest server together. Island/runtime/CSS edits Fast Refresh in the browser without wiping `useState` or the theme store. Page, layout, and Nest service edits trigger a full document reload once Nest is back up. Production `build:client` still emits hashed filenames and does not include the HMR client.
 
 ## How The Request Flow Works
 
-1. Browser requests a page such as `/users`.
-2. Nest routes the request to `AppController`.
+1. Browser requests a page such as `/note`.
+2. Nest routes the request to that feature’s controller.
 3. The controller calls `renderPage(...)`.
 4. The server page calls `setLayoutMeta`, `load()`, and `Island`.
 5. `renderPage` wraps the page in `layout.tsx` and injects `#nr-runtime`, `#nr-document`, and `nr-manifest`.
