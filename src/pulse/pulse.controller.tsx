@@ -11,8 +11,8 @@ export class PulseController {
   @Header('content-type', 'text/html')
   index() {
     return renderPage(
-      PulsePage,
-      { status: this.pulse.getStatus() },
+      <PulsePage status={this.pulse.getStatus()} />,
+
       { mode: 'static' },
     );
   }
