@@ -1,8 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { ModuleRef } from '@nestjs/core';
 
 type FrontendContext = {
-  moduleRef: ModuleRef;
   renderState?: FrontendRenderState;
 };
 
@@ -16,7 +14,6 @@ export type IslandManifestEntry = {
 export type IslandRenderMode = 'mount' | 'hydrate';
 
 export type FrontendRenderState = {
-  loadResults: Map<string, unknown>;
   islands: IslandManifestEntry[];
   nextIslandId: number;
   layoutMeta: LayoutMeta;
@@ -31,33 +28,16 @@ export type LayoutMeta = {
 };
 
 const storage = new AsyncLocalStorage<FrontendContext>();
-let rootModuleRef: ModuleRef | undefined;
-
-export function initializeFrontendDI(ref: ModuleRef) {
-  rootModuleRef = ref;
-}
-
-export function getFrontendModuleRef() {
-  const moduleRef = storage.getStore()?.moduleRef ?? rootModuleRef;
-
-  if (!moduleRef) {
-    throw new Error('Frontend DI has not been initialized.');
-  }
-
-  return moduleRef;
-}
 
 export function runWithFrontendContext<T>(
-  moduleRef: ModuleRef,
   renderState: FrontendRenderState | undefined,
   callback: () => T,
 ) {
-  return storage.run({ moduleRef, renderState }, callback);
+  return storage.run({ renderState }, callback);
 }
 
 export function createRenderState(): FrontendRenderState {
   return {
-    loadResults: new Map<string, unknown>(),
     islands: [],
     nextIslandId: 0,
     layoutMeta: {},
@@ -83,14 +63,6 @@ export function getLayoutMeta() {
 
 export function useLayoutMeta() {
   return getLayoutMeta();
-}
-
-export function recordLoadResult(key: string, value: unknown) {
-  storage.getStore()?.renderState?.loadResults.set(key, value);
-}
-
-export function getLoadResults() {
-  return storage.getStore()?.renderState?.loadResults;
 }
 
 export function registerIsland(

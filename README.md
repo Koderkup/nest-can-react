@@ -9,15 +9,11 @@ Current status: this is a working architecture demo, not a production-ready npm 
 ## What It Provides
 
 - Server-rendered React pages handled by Nest controllers.
-- Nest dependency injection from server React through `inject()`.
-- Server-side data reads with `load()`.
-- Server-side mutations with `commit()`.
-- Key-based refresh with `revalidate()`.
+- Controllers load data with Nest DI and pass props into `renderPage`.
 - Client React islands with two modes: `mount` (empty host, client render) and `hydrate` (SSR HTML, then hydrate).
 - Shared client React context through an app `ClientRuntime` wrapper (`useTheme()` in the starter).
-- React client hooks: `useLoad()`, `useCommit()`, and `usePendingLoad()`.
+- Islands talk to Nest with ordinary `fetch` to feature routes.
 - Client-side navigation that swaps `#nr-document` without a full reload.
-- A package-owned internal transport through `NestReactModule`.
 - Manifest-based island mounting with no user-authored `data-nest-*` attributes.
 - esbuild client bundling with per-island code splitting, CSS, and hashed static assets (no Vite, no webpack).
 - A disposable starter with Welcome, Note, and Pulse feature folders.
@@ -28,38 +24,49 @@ Nest handles the application.
 
 React handles the UI.
 
-Server React can access Nest providers:
+Controllers load data and pass it into the page:
+
+```ts
+@Get()
+index() {
+  return renderPage(NotePage, { text: this.notes.getText() }, { mode: 'hydrated' });
+}
+```
+
+TSX controllers can pass an element instead:
 
 ```tsx
-import { UserCreator } from './islands/UserCreator.island';
+return renderPage(<NotePage text={text} />, { mode: 'hydrated' });
+```
 
-export const usersLoad = load('users:list', async () => {
-  return inject<UsersService>(UsersService).findAll();
-});
-
-export default async function UsersPage() {
-  const users = await usersLoad();
-
+```tsx
+export default function NotePage({ text }: { text: string }) {
   return (
-    <Island
-      mode="hydrate"
-      name={UserCreator}
-      props={{ initialUsers: users }}
-    />
+    <Island mode="hydrate" name={NoteEditor} props={{ text }} />
   );
 }
 ```
 
-Client React islands handle browser interactivity:
+Client islands mutate through Nest HTTP:
 
 ```tsx
-function UserCreator({ createUser }: Props) {
-  const commit = useCommit(createUser);
+function NoteEditor({ text }: { text: string }) {
+  const [value, setValue] = useState(text);
+
+  async function save() {
+    const response = await fetch('/note', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: value }),
+    });
+    const result = await response.json();
+    setValue(result.text);
+  }
 
   return (
-    <form onSubmit={(event) => commit.fromSubmitEvent(event)}>
-      <input name="name" />
-      <button>Create user</button>
+    <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
+      <textarea value={value} onChange={(event) => setValue(event.target.value)} />
+      <button>Save</button>
     </form>
   );
 }
@@ -67,7 +74,7 @@ function UserCreator({ createUser }: Props) {
 
 ## Folder Structure: What Matters
 
-**You do not need to copy this repo’s feature folders.** The package owns client boot, island registration, static `/assets`, DI init, and `#nr-runtime` / `#nr-document`.
+**You do not need to copy this repo’s feature folders.** The package owns client boot, island registration, static `/assets`, and `#nr-runtime` / `#nr-document`.
 
 Required app files:
 
@@ -106,9 +113,21 @@ public/nest-react/              # hashed runtime, CSS, and assets
 
 ## Core APIs
 
-### `renderPage(Page, moduleRef, options?)`
+### `renderPage(Page, props, options?)` / `renderPage(<Page />, options?)`
 
-Renders a server React page inside a Nest-aware context.
+Renders a server React page. The controller loads data; the page only receives props.
+
+`.ts` controller (the package calls `createElement`):
+
+```ts
+return renderPage(NotePage, { text }, { mode: 'hydrated' });
+```
+
+`.tsx` controller:
+
+```tsx
+return renderPage(<NotePage text={text} />, { mode: 'hydrated' });
+```
 
 Modes:
 
@@ -116,7 +135,7 @@ Modes:
 - `hydrated` — `renderToString`
 - `streaming` — pipeable stream into an Express `Response`
 
-It collects load results and island descriptors, then injects:
+It collects island descriptors, then injects:
 
 - stylesheet `<link>` tags for global CSS and this page’s islands
 - modulepreload hints for the runtime and current-page islands
@@ -124,28 +143,6 @@ It collects load results and island descriptors, then injects:
 - `<script type="module" src="/assets/nest-react/runtime-….js"></script>`
 
 The runtime URL comes from `public/nest-react/manifest.json` after `npm run build:client`.
-
-### `inject(token)`
-
-Resolves a Nest provider from the current frontend render/commit context.
-
-```ts
-const users = inject<UsersService>(UsersService);
-```
-
-Current limitation: this is not fully request-scoped yet.
-
-### `load(key, handler)`
-
-Declares a server-side read. Calling the returned function runs the handler and records the result in the page manifest.
-
-### `commit(id, handler)`
-
-Declares a server-side mutation. Pass `commit.ref` into islands, not URLs.
-
-### `revalidate(...keys)`
-
-Marks load keys stale after a commit. The browser runtime refreshes those keys without reloading the page.
 
 ### `Island`
 
@@ -157,11 +154,7 @@ import { NoteEditor } from './islands/NoteEditor.island';
 <Island
   mode="hydrate"
   name={NoteEditor}
-  props={{
-    initialText: note,
-    loadKey: noteLoad.key,
-    saveNote: saveNoteCommit.ref,
-  }}
+  props={{ text }}
 />
 ```
 
@@ -172,23 +165,13 @@ Pass the island component as `name` (for example `NoteEditor` from `NoteEditor.i
 
 ### `NestReactModule.forRoot()`
 
-Registers the internal transport, initializes frontend DI, serves `public/` at `/assets/`, and loads generated island/runtime/layout registration.
-
-```txt
-POST /_nr/commit
-POST /_nr/loads
-GET  /_nr/loads/:key
-```
+Serves `public/` at `/assets/` and loads generated island/runtime/layout registration. Mutations are ordinary Nest `@Post` routes on your feature controllers, not a package RPC.
 
 ### `setLayoutMeta` / `useLayoutMeta`
 
 Pages call `setLayoutMeta({ title, eyebrow, description, active })`. The shared layout reads it with `useLayoutMeta()`. Do not put `#nr-runtime` or `#nr-document` in the layout; `renderPage` injects those slots.
 
 ## Client APIs
-
-### `useLoad(key)` / `usePendingLoad(key)` / `useCommit(ref)`
-
-Read refreshed server data, pending state, and mutations through `/_nr`.
 
 ### Shared runtime context
 
@@ -202,7 +185,7 @@ Hydrate-mode islands get their own React root on the host node (so SSR HTML can 
 | --- | --- |
 | `/` | Tagline `now Nest can react` plus a `hydrate` theme-toggle island |
 | `/note` | In-memory note plus a `hydrate` editor island |
-| `/pulse` | Beat count plus a `mount` beat island (streaming shell) |
+| `/pulse` | Beat count plus a `mount` beat island |
 
 ## Build Scripts
 
@@ -221,20 +204,18 @@ npm run view:dev        # esbuild watch + Nest watch + browser HMR
 1. Browser requests a page such as `/note`.
 2. Nest routes the request to that feature’s controller.
 3. The controller calls `renderPage(...)`.
-4. The server page calls `setLayoutMeta`, `load()`, and `Island`.
+4. The server page calls `setLayoutMeta` and `Island`.
 5. `renderPage` wraps the page in `layout.tsx` and injects `#nr-runtime`, `#nr-document`, and `nr-manifest`.
 6. The browser loads the hashed runtime module.
 7. `installClientRuntime` preloads this page’s island chunks.
 8. `hydrate` islands hydrate their SSR markup; `mount` islands portal into empty hosts.
-9. `useCommit()` posts to `/_nr/commit`; `revalidate()` refreshes `/_nr/loads`.
+9. Islands `fetch` feature routes (for example `POST /note`). Guards on those routes are Nest’s.
 10. Client navigation swaps `#nr-document` and restores `#nr-manifest` (script tags are not preserved by `innerHTML`).
 
 ## Current Limitations
 
 - Not an npm package yet; `src/core` is in-repo.
-- No full request-scoped provider support.
-- Internal transport has no CSRF protection; commit refs are not signed.
-- Input validation and error serialization are minimal.
+- Island `fetch` routes need the same Nest guards/CSRF you would put on any JSON API.
 - No PostCSS, Tailwind, CSS modules on server pages, or Vite `?url` / `?raw`.
 - No true React Server Components Flight protocol.
 - Test coverage for core behavior is still thin.

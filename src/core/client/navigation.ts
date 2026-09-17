@@ -46,10 +46,6 @@ export function installNavigation(options: NavigationOptions) {
   window.addEventListener('popstate', () => {
     void restoreHistoryEntry(window.location.href, options);
   });
-
-  window.addEventListener('nr:loads-refreshed', () => {
-    invalidateSnapshots();
-  });
 }
 
 async function navigate(
@@ -160,11 +156,6 @@ function writeManifest(text: string) {
   }
 
   script.textContent = text;
-}
-
-function invalidateSnapshots() {
-  pageCache.clear();
-  pageCache.set(currentUrl, takeSnapshot());
 }
 
 function getDocumentSlot() {

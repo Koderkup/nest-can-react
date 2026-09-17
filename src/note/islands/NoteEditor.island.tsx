@@ -1,41 +1,45 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useCommit, useLoad, usePendingLoad } from '../../core/client/hooks';
-import { CommitRef } from '../../core/client/runtime';
+import React, { useState } from 'react';
 
 type NoteEditorProps = {
-  initialText: string;
-  loadKey: string;
-  saveNote: CommitRef;
+  text: string;
 };
 
-export function NoteEditor({
-  initialText,
-  loadKey,
-  saveNote,
-}: NoteEditorProps) {
-  const serverText = useLoad<string>(loadKey) ?? initialText;
-  const refreshing = usePendingLoad(loadKey);
+export function NoteEditor({ text: initialText }: NoteEditorProps) {
   const [text, setText] = useState(initialText);
-  const save = useCommit<{ text: string }>(saveNote);
-  const previousServerText = useRef(serverText);
-
-  useEffect(() => {
-    if (previousServerText.current === serverText) {
-      return;
-    }
-
-    previousServerText.current = serverText;
-    setText(serverText);
-  }, [serverText]);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   return (
     <section className="island-card">
-      <span className="pill">useLoad + useCommit</span>
+      <span className="pill">fetch POST /note</span>
       <form
         className="form-grid"
         onSubmit={(event) => {
           event.preventDefault();
-          void save.execute({ text });
+          setPending(true);
+          setError(null);
+
+          void fetch('/note', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ text }),
+          })
+            .then(async (response) => {
+              if (!response.ok) {
+                throw new Error('Save failed.');
+              }
+
+              const result = (await response.json()) as { text: string };
+              setText(result.text);
+            })
+            .catch((cause) => {
+              setError(
+                cause instanceof Error ? cause : new Error('Save failed.'),
+              );
+            })
+            .finally(() => {
+              setPending(false);
+            });
         }}
       >
         <label className="field">
@@ -45,12 +49,11 @@ export function NoteEditor({
             onChange={(event) => setText(event.target.value)}
           />
         </label>
-        <button disabled={save.pending} type="submit">
-          {save.pending ? 'Saving...' : 'Save'}
+        <button disabled={pending} type="submit">
+          {pending ? 'Saving...' : 'Save'}
         </button>
       </form>
-      {refreshing ? <p className="status">Refreshing server data...</p> : null}
-      {save.error ? <p className="error">{save.error.message}</p> : null}
+      {error ? <p className="error">{error.message}</p> : null}
     </section>
   );
 }

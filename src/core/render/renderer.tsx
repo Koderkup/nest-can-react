@@ -1,10 +1,14 @@
-import React from 'react';
+import React, {
+  ComponentType,
+  isValidElement,
+  ReactElement,
+  ReactNode,
+} from 'react';
 import {
   renderToPipeableStream,
   renderToStaticMarkup,
   renderToString,
 } from 'react-dom/server';
-import { ModuleRef } from '@nestjs/core';
 import { Response } from 'express';
 import { createRenderState, runWithFrontendContext } from '../data/context';
 import DefaultLayout from './default-layout';
@@ -22,8 +26,6 @@ import {
 } from './runtime-html';
 import { createManifest, createRuntimeParts } from './runtime-parts';
 
-type ServerPage = () => React.ReactNode | Promise<React.ReactNode>;
-
 export type RenderMode = 'static' | 'hydrated' | 'streaming';
 
 export type RenderPageOptions =
@@ -36,50 +38,98 @@ export type RenderPageOptions =
     };
 
 export async function renderPage(
-  Page: ServerPage,
-  moduleRef: ModuleRef,
-  options?:
-    Extract<RenderPageOptions, { mode?: 'static' }> | { mode: 'hydrated' },
+  page: ReactElement,
+  options?: Extract<RenderPageOptions, { mode?: 'static' }> | { mode: 'hydrated' },
 ): Promise<string>;
 export async function renderPage(
-  Page: ServerPage,
-  moduleRef: ModuleRef,
+  page: ReactElement,
+  options: Extract<RenderPageOptions, { mode: 'streaming' }>,
+): Promise<void>;
+export async function renderPage<P extends object>(
+  Page: ComponentType<P>,
+  props: P,
+  options?: Extract<RenderPageOptions, { mode?: 'static' }> | { mode: 'hydrated' },
+): Promise<string>;
+export async function renderPage<P extends object>(
+  Page: ComponentType<P>,
+  props: P,
   options: Extract<RenderPageOptions, { mode: 'streaming' }>,
 ): Promise<void>;
 export async function renderPage(
-  Page: ServerPage,
-  moduleRef: ModuleRef,
-  options: RenderPageOptions = { mode: 'static' },
+  pageOrType: ReactElement | ComponentType<any>,
+  propsOrOptions?: object,
+  maybeOptions?: RenderPageOptions,
 ) {
+  const options = resolveOptions(pageOrType, propsOrOptions, maybeOptions);
+
   if (options.mode === 'streaming') {
-    return renderStreamingPage(Page, moduleRef, options);
+    return renderStreamingPage(pageOrType, propsOrOptions, options);
   }
 
   if (options.mode === 'hydrated') {
-    return renderBufferedPage(Page, moduleRef, 'hydrated', renderToString);
+    return renderBufferedPage(
+      pageOrType,
+      propsOrOptions,
+      'hydrated',
+      renderToString,
+    );
   }
 
-  return renderBufferedPage(Page, moduleRef, 'static', renderToStaticMarkup);
+  return renderBufferedPage(
+    pageOrType,
+    propsOrOptions,
+    'static',
+    renderToStaticMarkup,
+  );
+}
+
+function resolveOptions(
+  pageOrType: ReactElement | ComponentType<any>,
+  propsOrOptions?: object,
+  maybeOptions?: RenderPageOptions,
+): RenderPageOptions {
+  if (isValidElement(pageOrType)) {
+    return (propsOrOptions as RenderPageOptions | undefined) ?? { mode: 'static' };
+  }
+
+  return maybeOptions ?? { mode: 'static' };
+}
+
+function resolvePageNode(
+  pageOrType: ReactElement | ComponentType<any>,
+  propsOrOptions?: object,
+): ReactNode {
+  if (isValidElement(pageOrType)) {
+    return invokePageType(pageOrType.type, pageOrType.props as object);
+  }
+
+  return invokePageType(pageOrType, propsOrOptions ?? {});
+}
+
+function invokePageType(type: unknown, props: object): ReactNode {
+  if (typeof type !== 'function') {
+    throw new Error(
+      'renderPage expected a function component or <Page {...props} />.',
+    );
+  }
+
+  return (type as (props: object) => ReactNode)(props);
 }
 
 async function renderBufferedPage(
-  Page: ServerPage,
-  moduleRef: ModuleRef,
+  pageOrType: ReactElement | ComponentType<any>,
+  propsOrOptions: object | undefined,
   mode: RenderMode,
-  render: (node: React.ReactNode) => string,
+  render: (node: ReactNode) => string,
 ) {
   const renderState = createRenderState();
 
   try {
-    const markup = await runWithFrontendContext(
-      moduleRef,
-      renderState,
-      async () => {
-        const page = await Page();
-        const Layout = getLayout() ?? DefaultLayout;
-        return '<!DOCTYPE html>' + render(<Layout>{page}</Layout>);
-      },
-    );
+    const markup = await runWithFrontendContext(renderState, () => {
+      const page = resolvePageNode(pageOrType, propsOrOptions);
+      const Layout = getLayout() ?? DefaultLayout;
+      return '<!DOCTYPE html>' + render(<Layout>{page}</Layout>);
+    });
 
     return injectRuntime(markup, createManifest(mode, renderState));
   } catch (error) {
@@ -88,15 +138,15 @@ async function renderBufferedPage(
 }
 
 async function renderStreamingPage(
-  Page: ServerPage,
-  moduleRef: ModuleRef,
+  pageOrType: ReactElement | ComponentType<any>,
+  propsOrOptions: object | undefined,
   options: Extract<RenderPageOptions, { mode: 'streaming' }>,
 ) {
   const renderState = createRenderState();
 
   try {
-    await runWithFrontendContext(moduleRef, renderState, async () => {
-      const page = await Page();
+    await runWithFrontendContext(renderState, async () => {
+      const page = resolvePageNode(pageOrType, propsOrOptions);
       const Layout = getLayout() ?? DefaultLayout;
       const documentTree = <Layout>{page}</Layout>;
 

@@ -1,16 +1,8 @@
 import React from 'react';
-import { inject, Island, load, setLayoutMeta } from '../core';
+import { Island, setLayoutMeta } from '../core';
 import { ThemeToggle } from './islands/ThemeToggle.island';
-import { loadKeys } from './load-keys';
-import { WelcomeService } from './welcome.service';
 
-export const taglineLoad = load(loadKeys.tagline, () => {
-  return inject<WelcomeService>(WelcomeService).getTagline();
-});
-
-export default async function WelcomePage() {
-  const tagline = await taglineLoad();
-
+export default function WelcomePage({ tagline }: { tagline: string }) {
   setLayoutMeta({
     active: 'welcome',
     description:
@@ -25,8 +17,8 @@ export default async function WelcomePage() {
         <span className="pill">Server rendered</span>
         <p className="metric">{tagline}</p>
         <p className="muted">
-          This string comes from WelcomeService through Nest DI. Safe to delete
-          this feature folder.
+          This string comes from WelcomeService in the controller. Safe to
+          delete this feature folder.
         </p>
       </section>
 

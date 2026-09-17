@@ -5,15 +5,12 @@ import {
   MiddlewareConsumer,
   Module,
   NestModule,
-  OnModuleInit,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_FILTER, ModuleRef } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
 import express, { NextFunction, Request, Response } from 'express';
 import { configureNestReact, NestReactOptions } from '../assets/client-assets';
-import { initializeFrontendDI } from '../data/context';
 import { ClientHookOnServerFilter } from './dev-hook-error.filter';
-import { NestReactController } from './nest-react.controller';
 import '../../../.nest-react/generated/server-boot.js';
 
 const publicDir = join(process.cwd(), 'public');
@@ -41,18 +38,13 @@ function serveNestReactAssets(req: Request, res: Response, next: NextFunction) {
   });
 }
 
-@Module({
-  controllers: [NestReactController],
-})
-export class NestReactModule implements NestModule, OnModuleInit {
-  constructor(private readonly moduleRef: ModuleRef) {}
-
+@Module({})
+export class NestReactModule implements NestModule {
   static forRoot(options: NestReactOptions = {}): DynamicModule {
     configureNestReact(options);
 
     return {
       module: NestReactModule,
-      controllers: [NestReactController],
       providers: [
         {
           provide: APP_FILTER,
@@ -60,10 +52,6 @@ export class NestReactModule implements NestModule, OnModuleInit {
         },
       ],
     };
-  }
-
-  onModuleInit() {
-    initializeFrontendDI(this.moduleRef);
   }
 
   configure(consumer: MiddlewareConsumer) {

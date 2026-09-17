@@ -130,7 +130,7 @@ export function renderDevHookErrorPage(error: ClientHookOnServerError) {
       <div class="split">
         <div>
           <strong>Pages</strong>
-          <span>Load data, compose HTML, and pass props. Nest DI and <code>load()</code> live here.</span>
+          <span>Controllers load data and pass props. Pages compose HTML.</span>
         </div>
         <div>
           <strong>Islands</strong>

@@ -17,7 +17,7 @@ That means:
 - Nest DI owns services and application state.
 - React server pages compose HTML.
 - Client islands add focused browser interactivity.
-- Client islands mutate by calling server `commit()` refs.
+- Client islands mutate by `fetch`ing Nest feature routes.
 - Shared client UI state uses React context via `ClientRuntime` (see islands below).
 
 Application folder layout is **not** part of this contract. `src/welcome`, `src/note`, and `src/pulse` are a sample. Required wiring is `nest.react.json`, `layout.tsx`, `*.island.tsx`, and `NestReactModule.forRoot()`. Details: [Creating Your First App](first-app.md#folder-structure-is-not-the-starter).
@@ -30,34 +30,26 @@ src/core/
   nest/                  # Nest wiring
   render/                # SSR document
   island/                # server Island + registry
-  data/                  # load / commit / DI context
+  data/                  # render ALS, layout meta, island ids
   assets/                # static + SSR asset URLs
   errors/                # client-hook-on-server error page
   client/
-    hooks.ts
     mount.tsx            # installClientRuntime, hydrate vs portal
     navigation.ts        # SPA swap of #nr-document
-    runtime.ts           # manifest, load refresh, commit fetch
+    runtime.ts           # island manifest
     styles.ts            # ensure stylesheet links on SPA navigation
   build/                 # esbuild client bundler
 ```
 
 ## Render Context
 
-`context.ts` tracks the active Nest `ModuleRef`, load results, and island entries (`id`, `name`, `mode`, `props`). `renderPage()` runs the page inside `AsyncLocalStorage` so `inject()` and `Island` work without threading services through every component.
-
-## Dependency Injection
-
-```ts
-inject<T>(token): T
-```
-
-Resolves from the active Nest module context. Not fully request-scoped yet.
+`context.ts` tracks island entries (`id`, `name`, `mode`, `props`) and layout meta. `renderPage()` runs the page inside `AsyncLocalStorage` so `Island` and `setLayoutMeta` work during SSR.
 
 ## Server Rendering
 
 ```ts
-renderPage(Page, moduleRef, options?)
+renderPage(Page, props, options?)
+renderPage(<Page {...props} />, options?)
 ```
 
 Options:
@@ -71,18 +63,12 @@ Options:
 - stylesheet `<link>` tags for `client.styles` and the current page’s island CSS
 - `#nr-runtime` — empty host for the shared client runtime root
 - `#nr-document` — page body that client navigation replaces
-- `#nr-manifest` — JSON loads + islands
+- `#nr-manifest` — JSON islands
 - hashed runtime `<script type="module">` and island `modulepreload` hints
 
 Asset URLs come from `public/nest-react/manifest.json` (written by `npm run build:client`).
 
-## `load()` / `commit()` / `revalidate()`
-
-- `load(key, handler)` — server read; result is stored in the page manifest.
-- `commit(id, handler)` — server mutation; pass `commit.ref` into islands.
-- `revalidate(...keys)` — after a commit, the client refreshes those keys via `POST /_nr/loads`.
-
-Load keys should be stable and specific (`home:greeting`, `users:list`).
+Controllers own data. Pages are views. Islands `fetch` the same Nest app.
 
 ## `Island`
 
@@ -118,7 +104,7 @@ Do not portal into a hydrate host that still contains SSR markup: `createPortal`
 
 Hydrate islands are separate roots (required to attach to existing DOM). React context does not cross roots by itself. The starter’s `useTheme()` still feels like context: the provider is the API, and the theme lives in a module store plus `useSyncExternalStore` so every root reads the same value.
 
-Portal keys are `island.id` only. Including the runtime `version` in the key remounts islands on every load refresh.
+Portal keys are `island.id` only.
 
 ## Client Navigation
 
@@ -128,25 +114,9 @@ Portal keys are `island.id` only. Including the runtime `version` in the key rem
 
 Before swapping the document, hydrate-mode roots are unmounted so React does not own detached nodes.
 
-## Client Hooks
+## Islands And Nest HTTP
 
-`src/core/client/hooks.ts`:
-
-- `useLoad(key)` — manifest data; updates after refresh
-- `usePendingLoad(key)` — refresh in flight
-- `useCommit(ref)` — `execute`, `fromSubmitEvent`, `pending`, `error`
-
-Islands must not submit forms natively if they use `useCommit` (call `preventDefault`).
-
-## Internal Transport
-
-```txt
-POST /_nr/commit
-POST /_nr/loads
-GET  /_nr/loads/:key
-```
-
-Registered by `NestReactModule`. Application controllers stay on user-facing routes.
+Islands are React. They `fetch` your feature controllers (`POST /note`, `POST /pulse/beat`). Put guards and pipes on those methods.
 
 ## Client Bundle
 
@@ -196,7 +166,7 @@ Output:
 
 ## Current Performance Behavior
 
-- Server `load()` runs only for the page being rendered.
+- The controller runs data loading only for the page being rendered.
 - With `codeSplitting: true`, only the current page’s island chunks are preloaded.
 - `view:dev` watches client chunks and Fast Refresh islands; page/layout/service edits full-reload.
 
@@ -212,16 +182,13 @@ Supported:
 
 Not implemented: PostCSS, Tailwind, Vite `?url` / `?raw`, CSS modules in server pages.
 
-## Server HTML vs Island HTML After Commit
+## Server HTML vs Island HTML After Save
 
-A heading rendered **outside** an island is static until the next document render (full load or a future fragment refresh). The same value **inside** an island updates through `useLoad()` after `revalidate()`.
-
-That is intentional with the current primitives.
+A heading rendered **outside** an island is static until the next document render. The same value **inside** an island updates from the `fetch` JSON response (`useState`).
 
 ## Production Readiness Checklist
 
-- request-scoped providers
-- signed commit refs and CSRF protection
+- CSRF / guards on island `POST` routes
 - input validation and structured errors
 - PostCSS / Tailwind / asset query suffixes
 - tests for mount vs hydrate and SPA manifest restore

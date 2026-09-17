@@ -34,7 +34,6 @@ The package generates client entry, registries, and `server-boot.ts`. It injects
 
 - this repo’s `welcome/` / `note/` / `pulse/` folder names
 - `*.page.tsx` filenames
-- `load-keys.ts`
 - `runtime.entry` / `app.runtime.tsx` (pass-through `ClientRuntime` if omitted)
 - `client.entry` (override generated boot)
 
@@ -53,7 +52,6 @@ src/
     welcome.controller.ts
     welcome.service.ts
     welcome.page.tsx
-    load-keys.ts
     islands/ThemeToggle.island.tsx
 public/nest-react/
 ```
@@ -100,7 +98,7 @@ import { WelcomeModule } from './welcome/welcome.module';
 export class AppModule {}
 ```
 
-This registers the internal transport (`/_nr/commit`, `/_nr/loads`), frontend DI, static files at `/assets/`, and generated island/layout registration.
+This registers static files at `/assets/` and generated island/layout registration.
 
 ## 2. Nest Bootstrap
 
@@ -116,7 +114,7 @@ async function bootstrap() {
 bootstrap();
 ```
 
-You do not import island registries or call `initializeFrontendDI` / `useStaticAssets`. `NestReactModule.forRoot()` owns that.
+You do not import island registries or call `useStaticAssets`. `NestReactModule.forRoot()` owns that.
 
 Run `npm run build:client` before the first server start so `.nest-react/generated` exists.
 
@@ -167,43 +165,20 @@ export default function Layout({ children }: { children: ReactNode }) {
 }
 ```
 
-Pages set chrome via `setLayoutMeta` and return only the page body:
+Pages set chrome via `setLayoutMeta` and return only the page body. Data comes from the controller as props:
 
 ```tsx
 import React from 'react';
-import { commit, inject, Island, load, revalidate, setLayoutMeta } from './core';
-import { GreetingEditor } from './islands/GreetingEditor.island';
-import { GreetingService } from './greeting.service';
+import { Island, setLayoutMeta } from './core';
+import { NoteEditor } from './islands/NoteEditor.island';
 
-export const greetingLoad = load('home:greeting', async () => {
-  return inject<GreetingService>(GreetingService).sayHello();
-});
-
-export const updateGreetingCommit = commit(
-  'greeting.update',
-  async (input: { message?: string }) => {
-    inject<GreetingService>(GreetingService).setGreeting(input.message ?? '');
-    return revalidate('home:greeting');
-  },
-);
-
-export default async function HomePage() {
-  const greeting = await greetingLoad();
-
-  setLayoutMeta({ title: 'Home' });
+export default function NotePage({ text }: { text: string }) {
+  setLayoutMeta({ title: 'Note' });
 
   return (
     <>
-      <p>{greeting}</p>
-      <Island
-        mode="hydrate"
-        name={GreetingEditor}
-        props={{
-          initialMessage: greeting,
-          loadKey: greetingLoad.key,
-          updateGreeting: updateGreetingCommit.ref,
-        }}
-      />
+      <p>{text}</p>
+      <Island mode="hydrate" name={NoteEditor} props={{ text }} />
     </>
   );
 }
@@ -216,22 +191,35 @@ Pass the island component as `name` so the editor can jump to it. String names s
 
 ## 5. Render From A Controller
 
-```ts
-import { Controller, Get, Header } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
-import HomePage from './home';
-import { renderPage } from './core';
+`.ts` (Nest-looking). The package creates the element:
 
-@Controller()
-export class AppController {
-  constructor(private readonly moduleRef: ModuleRef) {}
+```ts
+import { Body, Controller, Get, Header, Post } from '@nestjs/common';
+import NotePage from './note.page';
+import { renderPage } from './core';
+import { NoteService } from './note.service';
+
+@Controller('note')
+export class NoteController {
+  constructor(private readonly notes: NoteService) {}
 
   @Get()
   @Header('content-type', 'text/html')
-  home() {
-    return renderPage(HomePage, this.moduleRef);
+  index() {
+    return renderPage(NotePage, { text: this.notes.getText() }, { mode: 'hydrated' });
+  }
+
+  @Post()
+  save(@Body() body: { text?: string }) {
+    return { text: this.notes.save(body.text ?? '') };
   }
 }
+```
+
+`.tsx` if you prefer JSX in the handler:
+
+```tsx
+return renderPage(<NotePage text={text} />, { mode: 'hydrated' });
 ```
 
 ## 6. Create A Client Island
@@ -239,50 +227,41 @@ export class AppController {
 File name: `note-editor.island.tsx` **or** `NoteEditor.island.tsx`. Import the discovered export and pass it to `<Island name={NoteEditor} />`. This starter uses PascalCase filenames (`NoteEditor.island.tsx` → `NoteEditor`).
 
 ```tsx
-import React, { useEffect, useState } from 'react';
-import { useCommit, useLoad, usePendingLoad } from './core/client/hooks';
-import { CommitRef } from './core/client/runtime';
-import './GreetingEditor.css';
+import React, { useState } from 'react';
 
 type Props = {
-  initialMessage: string;
-  loadKey: string;
-  updateGreeting: CommitRef;
+  text: string;
 };
 
-export function GreetingEditor({
-  initialMessage,
-  loadKey,
-  updateGreeting,
-}: Props) {
-  const serverMessage = useLoad<string>(loadKey) ?? initialMessage;
-  const refreshing = usePendingLoad(loadKey);
-  const [message, setMessage] = useState(initialMessage);
-  const saveGreeting = useCommit<{ message: string }>(updateGreeting);
-
-  useEffect(() => {
-    setMessage(serverMessage);
-  }, [serverMessage]);
+export function NoteEditor({ text: initialText }: Props) {
+  const [text, setText] = useState(initialText);
+  const [pending, setPending] = useState(false);
 
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        void saveGreeting.execute({ message });
+        setPending(true);
+        void fetch('/note', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ text }),
+        })
+          .then((response) => response.json())
+          .then((result: { text: string }) => setText(result.text))
+          .finally(() => setPending(false));
       }}
     >
-      <p>{serverMessage}</p>
-      <input value={message} onChange={(event) => setMessage(event.target.value)} />
-      <button disabled={saveGreeting.pending} type="submit">
+      <textarea value={text} onChange={(event) => setText(event.target.value)} />
+      <button disabled={pending} type="submit">
         Save
       </button>
-      {refreshing ? <small>Refreshing...</small> : null}
     </form>
   );
 }
 ```
 
-Always `preventDefault` on island forms. Without it, the browser does a full submit and you lose the no-reload `commit()` path.
+Always `preventDefault` on island forms if you `fetch`. Put `@UseGuards` on the Nest `POST` the same as any API.
 
 ## 7. Optional Client Runtime
 
@@ -306,15 +285,12 @@ Output:
 public/nest-react/         # runtime.js in dev, runtime-[hash].js in production
 ```
 
-## What Happens After A Commit
+## What Happens After A Save
 
-1. The island calls `useCommit().execute(...)`.
-2. The browser posts to `/_nr/commit`.
-3. The server `commit()` runs in Nest context and returns `revalidate(...)`.
-4. The runtime refreshes those load keys via `/_nr/loads`.
-5. `useLoad()` updates. The page does not reload.
-
-The large server-rendered heading **outside** the island will not change until the next full document render. Put UI that should update after `commit()` inside the island (or refresh the document later).
+1. The island `fetch`es `POST /note`.
+2. Nest runs the feature controller (guards, pipes, service).
+3. JSON comes back; the island `useState` updates.
+4. Headings **outside** the island stay as they were until the next document render.
 
 ## Best Practices
 
@@ -323,12 +299,11 @@ The large server-rendered heading **outside** the island will not change until t
 - Put chrome in `layout.tsx`; put page body in the page module.
 - Do not author `#nr-runtime` / `#nr-document`.
 - Use `hydrate` when the island should be visible before JS; use `mount` for controls that can appear after JS.
-- Pass `commit.ref` to islands, not transport URLs.
+- Pass UI data as island props; mutate through Nest routes, not a package RPC.
 - Keep business logic in Nest providers.
 
 ## Current Limitations
 
-- Request-scoped Nest providers still need hardening.
-- Commit refs are not signed; CSRF is not implemented.
+- Guard island `POST` routes like any Nest API (CSRF if you use cookies).
 - No PostCSS, Tailwind, or Vite `?url` / `?raw`.
 - CSS modules work in client islands, not in server pages.

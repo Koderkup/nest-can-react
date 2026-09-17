@@ -56,8 +56,6 @@ export function createManifest(
 ) {
   return {
     mode,
-    transportPath: '/_nr',
-    loads: Object.fromEntries(renderState.loadResults),
     islands: renderState.islands,
   };
 }

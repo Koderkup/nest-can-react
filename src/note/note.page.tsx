@@ -1,24 +1,8 @@
 import React from 'react';
-import { commit, inject, Island, load, revalidate, setLayoutMeta } from '../core';
+import { Island, setLayoutMeta } from '../core';
 import { NoteEditor } from './islands/NoteEditor.island';
-import { loadKeys } from './load-keys';
-import { NoteService } from './note.service';
 
-export const noteLoad = load(loadKeys.text, () => {
-  return inject<NoteService>(NoteService).getText();
-});
-
-export const saveNoteCommit = commit(
-  'note.save',
-  async (input: { text?: string }) => {
-    inject<NoteService>(NoteService).save(input.text ?? '');
-    return revalidate(loadKeys.text);
-  },
-);
-
-export default async function NotePage() {
-  const text = await noteLoad();
-
+export default function NotePage({ text }: { text: string }) {
   setLayoutMeta({
     active: 'note',
     description:
@@ -35,15 +19,7 @@ export default async function NotePage() {
       </section>
 
       <section className="card span-7">
-        <Island
-          mode="hydrate"
-          name={NoteEditor}
-          props={{
-            initialText: text,
-            loadKey: noteLoad.key,
-            saveNote: saveNoteCommit.ref,
-          }}
-        />
+        <Island mode="hydrate" name={NoteEditor} props={{ text }} />
       </section>
     </>
   );

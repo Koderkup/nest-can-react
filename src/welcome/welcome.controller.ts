@@ -1,15 +1,19 @@
 import { Controller, Get, Header } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import { renderPage } from '../core';
 import WelcomePage from './welcome.page';
+import { WelcomeService } from './welcome.service';
 
 @Controller()
 export class WelcomeController {
-  constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly welcome: WelcomeService) {}
 
   @Get()
   @Header('content-type', 'text/html')
   index() {
-    return renderPage(WelcomePage, this.moduleRef, { mode: 'static' });
+    return renderPage(
+      WelcomePage,
+      { tagline: this.welcome.getTagline() },
+      { mode: 'static' },
+    );
   }
 }
