@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useCommit } from '../../core/client/use-commit';
 import { useTheme } from '../../runtime/theme';
 import type { PulseStatus } from '../pulse-status';
 
@@ -6,43 +7,20 @@ type PulseBeatProps = {
   status: PulseStatus;
 };
 
-export function PulseBeat({ status: initialStatus }: PulseBeatProps) {
-  const [status, setStatus] = useState(initialStatus);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export function PulseBeat({ status }: PulseBeatProps) {
+  const { commit, pending, error } = useCommit('/pulse/beat');
   const { theme } = useTheme();
 
   return (
     <section className="island-card stack">
-      <span className="pill">fetch POST /pulse/beat</span>
+      <span className="pill">useCommit POST /pulse/beat</span>
       <p className="muted">
         Beats: {status.beats}. Theme from context: {theme}.
       </p>
       <button
         disabled={pending}
         onClick={() => {
-          setPending(true);
-          setError(null);
-
-          void fetch('/pulse/beat', {
-            method: 'POST',
-            headers: { accept: 'application/json' },
-          })
-            .then(async (response) => {
-              if (!response.ok) {
-                throw new Error('Beat failed.');
-              }
-
-              setStatus((await response.json()) as PulseStatus);
-            })
-            .catch((cause) => {
-              setError(
-                cause instanceof Error ? cause : new Error('Beat failed.'),
-              );
-            })
-            .finally(() => {
-              setPending(false);
-            });
+          void commit().catch(() => undefined);
         }}
         type="button"
       >

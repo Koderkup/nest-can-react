@@ -228,6 +228,7 @@ File name: `note-editor.island.tsx` **or** `NoteEditor.island.tsx`. Import the d
 
 ```tsx
 import React, { useState } from 'react';
+import { useCommit } from '../core/client/use-commit';
 
 type Props = {
   text: string;
@@ -235,21 +236,13 @@ type Props = {
 
 export function NoteEditor({ text: initialText }: Props) {
   const [text, setText] = useState(initialText);
-  const [pending, setPending] = useState(false);
+  const { commit, pending } = useCommit('/note');
 
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        setPending(true);
-        void fetch('/note', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ text }),
-        })
-          .then((response) => response.json())
-          .then((result: { text: string }) => setText(result.text))
-          .finally(() => setPending(false));
+        void commit({ text });
       }}
     >
       <textarea value={text} onChange={(event) => setText(event.target.value)} />
@@ -261,7 +254,7 @@ export function NoteEditor({ text: initialText }: Props) {
 }
 ```
 
-Always `preventDefault` on island forms if you `fetch`. Put `@UseGuards` on the Nest `POST` the same as any API.
+`useCommit` POSTs JSON, then **revalidates the current document HTML** (same URL, no full reload, island hosts stay mounted). Pass `{ revalidate: false }` when the mutation should not refresh the page. Always `preventDefault` on island forms. Put `@UseGuards` on the Nest `POST` the same as any API.
 
 ## 7. Optional Client Runtime
 
@@ -287,10 +280,10 @@ public/nest-react/         # runtime.js in dev, runtime-[hash].js in production
 
 ## What Happens After A Save
 
-1. The island `fetch`es `POST /note`.
+1. The island calls `useCommit` (`POST /note`).
 2. Nest runs the feature controller (guards, pipes, service).
-3. JSON comes back; the island `useState` updates.
-4. Headings **outside** the island stay as they were until the next document render.
+3. JSON comes back.
+4. By default the client re-GETs the current URL and patches `#nr-document` (server-rendered text outside the island updates). Client JS is not reloaded.
 
 ## Best Practices
 
@@ -299,7 +292,7 @@ public/nest-react/         # runtime.js in dev, runtime-[hash].js in production
 - Put chrome in `layout.tsx`; put page body in the page module.
 - Do not author `#nr-runtime` / `#nr-document`.
 - Use `hydrate` when the island should be visible before JS; use `mount` for controls that can appear after JS.
-- Pass UI data as island props; mutate through Nest routes, not a package RPC.
+- Pass UI data as island props; mutate with `useCommit` (or a guarded Nest `POST`).
 - Keep business logic in Nest providers.
 
 ## Current Limitations

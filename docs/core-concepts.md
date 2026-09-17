@@ -112,11 +112,15 @@ Portal keys are `island.id` only.
 
 `innerHTML` does **not** keep `<script id="nr-manifest">`. The navigator copies manifest text from the parsed response and writes it back before `reloadManifest()`.
 
-Before swapping the document, hydrate-mode roots are unmounted so React does not own detached nodes.
+Before swapping the document on a **route change**, hydrate-mode roots are unmounted so React does not own detached nodes.
+
+`refresh()` re-GETs the **current** URL with no history change and **keeps** island hosts (`#nr-i*`) so island React state survives. Scroll is not reset.
 
 ## Islands And Nest HTTP
 
-Islands are React. They `fetch` your feature controllers (`POST /note`, `POST /pulse/beat`). Put guards and pipes on those methods.
+Islands are React. Mutate with `useCommit` from `src/core/client/use-commit.ts` (`POST /note`, `POST /pulse/beat`). Put guards and pipes on those methods.
+
+`useCommit(url)` defaults to `revalidate: true`: after a successful POST it calls `refresh()` so server HTML on this page updates without a full reload. Pass `{ revalidate: false }` to skip. `state` is `idle | submitting | revalidating`.
 
 ## Client Bundle
 
@@ -184,7 +188,7 @@ Not implemented: PostCSS, Tailwind, Vite `?url` / `?raw`, CSS modules in server 
 
 ## Server HTML vs Island HTML After Save
 
-A heading rendered **outside** an island is static until the next document render. The same value **inside** an island updates from the `fetch` JSON response (`useState`).
+A heading rendered **outside** an island stays static until the document is rendered again. `useCommit` does that by default (`refresh()`), so the Pulse beats card updates after `POST /pulse/beat` without wrapping it in an `Island`. Use `{ revalidate: false }` when you only want the JSON in the island.
 
 ## Production Readiness Checklist
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCommit } from '../../core/client/use-commit';
 
 type NoteEditorProps = {
   text: string;
@@ -6,40 +7,16 @@ type NoteEditorProps = {
 
 export function NoteEditor({ text: initialText }: NoteEditorProps) {
   const [text, setText] = useState(initialText);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const { commit, pending, error } = useCommit('/note');
 
   return (
     <section className="island-card">
-      <span className="pill">fetch POST /note</span>
+      <span className="pill">useCommit POST /note</span>
       <form
         className="form-grid"
         onSubmit={(event) => {
           event.preventDefault();
-          setPending(true);
-          setError(null);
-
-          void fetch('/note', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ text }),
-          })
-            .then(async (response) => {
-              if (!response.ok) {
-                throw new Error('Save failed.');
-              }
-
-              const result = (await response.json()) as { text: string };
-              setText(result.text);
-            })
-            .catch((cause) => {
-              setError(
-                cause instanceof Error ? cause : new Error('Save failed.'),
-              );
-            })
-            .finally(() => {
-              setPending(false);
-            });
+          void commit({ text }).catch(() => undefined);
         }}
       >
         <label className="field">

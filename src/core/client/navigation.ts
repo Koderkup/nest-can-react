@@ -14,18 +14,46 @@ type PageSnapshot = {
   scrollY: number;
 };
 
-let installed = false;
-let currentUrl = window.location.href;
-const pageCache = new Map<string, PageSnapshot>();
+type ApplyMode = 'replace' | 'revalidate';
+
+type NavigationStore = {
+  currentUrl: string;
+  inFlightRefresh: Promise<void> | undefined;
+  installed: boolean;
+  options: NavigationOptions | undefined;
+  pageCache: Map<string, PageSnapshot>;
+};
+
+function getNavigationStore(): NavigationStore {
+  const globalState = globalThis as typeof globalThis & {
+    __NR_NAVIGATION_STORE__?: NavigationStore;
+  };
+
+  if (!globalState.__NR_NAVIGATION_STORE__) {
+    globalState.__NR_NAVIGATION_STORE__ = {
+      currentUrl: '',
+      inFlightRefresh: undefined,
+      installed: false,
+      options: undefined,
+      pageCache: new Map(),
+    };
+  }
+
+  return globalState.__NR_NAVIGATION_STORE__;
+}
 
 export function installNavigation(options: NavigationOptions) {
-  if (installed) {
+  const navigationStore = getNavigationStore();
+  navigationStore.options = options;
+  navigationStore.currentUrl = window.location.href;
+
+  if (navigationStore.installed) {
     return;
   }
 
-  installed = true;
-  pageCache.set(currentUrl, takeSnapshot());
-  window.history.replaceState({ nr: true }, '', currentUrl);
+  navigationStore.installed = true;
+  navigationStore.pageCache.set(navigationStore.currentUrl, takeSnapshot());
+  window.history.replaceState({ nr: true }, '', navigationStore.currentUrl);
 
   document.addEventListener('click', async (event) => {
     const link = getAnchor(event.target);
@@ -48,20 +76,50 @@ export function installNavigation(options: NavigationOptions) {
   });
 }
 
+export function refresh() {
+  const navigationStore = getNavigationStore();
+
+  if (!navigationStore.options) {
+    return Promise.reject(new Error('Navigation is not installed.'));
+  }
+
+  if (navigationStore.inFlightRefresh) {
+    return navigationStore.inFlightRefresh;
+  }
+
+  const options = navigationStore.options;
+  navigationStore.inFlightRefresh = revalidateCurrent(options).finally(() => {
+    navigationStore.inFlightRefresh = undefined;
+  });
+
+  return navigationStore.inFlightRefresh;
+}
+
+async function revalidateCurrent(options: NavigationOptions) {
+  const navigationStore = getNavigationStore();
+  const href = window.location.href;
+  navigationStore.pageCache.delete(href);
+  const snapshot = await fetchSnapshot(href);
+  navigationStore.pageCache.set(href, snapshot);
+  applySnapshot(snapshot, options, 'revalidate');
+  navigationStore.currentUrl = href;
+}
+
 async function navigate(
   href: string,
   options: NavigationOptions,
   historyMode: 'push' | 'replace' | 'none',
   useCache: boolean,
 ) {
-  pageCache.set(currentUrl, takeSnapshot());
+  const navigationStore = getNavigationStore();
+  navigationStore.pageCache.set(navigationStore.currentUrl, takeSnapshot());
   const snapshot =
-    useCache && pageCache.has(href)
-      ? pageCache.get(href)!
+    useCache && navigationStore.pageCache.has(href)
+      ? navigationStore.pageCache.get(href)!
       : await fetchSnapshot(href);
 
-  pageCache.set(href, snapshot);
-  applySnapshot(snapshot, options);
+  navigationStore.pageCache.set(href, snapshot);
+  applySnapshot(snapshot, options, 'replace');
 
   if (historyMode === 'push') {
     window.history.pushState({ nr: true }, '', href);
@@ -71,7 +129,7 @@ async function navigate(
     window.history.replaceState({ nr: true }, '', href);
   }
 
-  currentUrl = href;
+  navigationStore.currentUrl = href;
   window.scrollTo(snapshot.scrollX, snapshot.scrollY);
 }
 
@@ -116,7 +174,11 @@ async function fetchSnapshot(href: string): Promise<PageSnapshot> {
   };
 }
 
-function applySnapshot(snapshot: PageSnapshot, options: NavigationOptions) {
+function applySnapshot(
+  snapshot: PageSnapshot,
+  options: NavigationOptions,
+  mode: ApplyMode,
+) {
   const slot = getDocumentSlot();
 
   if (!slot) {
@@ -125,11 +187,39 @@ function applySnapshot(snapshot: PageSnapshot, options: NavigationOptions) {
   }
 
   document.title = snapshot.title;
-  unmountHydrateIslands();
-  slot.innerHTML = snapshot.document;
+
+  if (mode === 'revalidate') {
+    restoreIslandHosts(slot, snapshot.document);
+  } else {
+    unmountHydrateIslands();
+    slot.innerHTML = snapshot.document;
+  }
+
   writeManifest(snapshot.manifest);
   ensureStylesheets(snapshot.stylesheets);
   options.onPageChanged();
+}
+
+function restoreIslandHosts(slot: Element, nextHtml: string) {
+  const saved = new Map<string, Element>();
+
+  slot.querySelectorAll('[id^="nr-i"]').forEach((element) => {
+    saved.set(element.id, element);
+  });
+
+  saved.forEach((element) => {
+    element.remove();
+  });
+
+  slot.innerHTML = nextHtml;
+
+  saved.forEach((node, id) => {
+    const placeholder = document.getElementById(id);
+
+    if (placeholder && placeholder !== node) {
+      placeholder.replaceWith(node);
+    }
+  });
 }
 
 function takeSnapshot(): PageSnapshot {
@@ -151,7 +241,6 @@ function writeManifest(text: string) {
   if (!script) {
     script = document.createElement('script');
     script.id = 'nr-manifest';
-    // script.type = 'application/json';
     document.body.appendChild(script);
   }
 
@@ -190,7 +279,7 @@ function shouldUseBrowserNavigation(
     event.altKey ||
     (link.target.length > 0 && link.target !== '_self') ||
     link.hasAttribute('download') ||
-    nextUrl.origin !== window.location.origin ||
+    nextUrl.origin !== currentUrl.origin ||
     isHashOnlyNavigation
   );
 }
