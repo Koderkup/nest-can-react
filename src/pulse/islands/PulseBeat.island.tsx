@@ -19,6 +19,7 @@ export function PulseBeat({
   const refreshing = usePendingLoad(loadKey);
   const beat = useCommit<Record<string, never>>(beatPulse);
   const { theme } = useTheme();
+  
 
   return (
     <section className="island-card stack">

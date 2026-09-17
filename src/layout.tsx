@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import favicon from './assets/favicon.svg';
 import { NestLink, useLayoutMeta } from './core';
 
+
 const navItems = [
   { id: 'welcome', to: '/', label: 'Welcome' },
   { id: 'note', to: '/note', label: 'Note' },
