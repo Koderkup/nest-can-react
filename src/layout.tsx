@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import favicon from './assets/favicon.svg';
+import { favicon, logo } from './assets/brand';
 import { NestLink, useLayoutMeta } from './core';
 
 
@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html>
       <head>
         <title>{`${title} | Nest React`}</title>
-        <link rel="icon" href={favicon} type="image/svg+xml" />
+        <link rel="icon" href={favicon} type="image/png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
 
@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="app-shell">
           <header className="topbar">
             <NestLink className="brand" to="/">
-              <span className="brand-mark">NR</span>
+              <img alt="" className="brand-mark" src={logo} />
               <span>
                 <strong>Nest React</strong>
                 <small>Starter UI — safe to delete</small>

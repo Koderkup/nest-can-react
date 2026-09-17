@@ -51,16 +51,17 @@ select {
 }
 
 .brand-mark {
-  align-items: center;
-  background: var(--accent);
-  border-radius: 14px;
-  color: #fff;
-  display: inline-flex;
-  font-weight: 800;
-  height: 42px;
-  justify-content: center;
-  letter-spacing: -0.06em;
-  width: 42px;
+  display: block;
+  flex-shrink: 0;
+  height: 44px;
+  object-fit: contain;
+  width: 44px;
+}
+
+html {
+  /* Keep layout chrome images in the client asset graph. */
+  --nr-logo: url('./logo.png');
+  --nr-favicon: url('./favicon.png');
 }
 
 .brand small {

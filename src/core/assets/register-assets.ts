@@ -43,7 +43,6 @@ function registerAssetLoaders() {
     return;
   }
 
-  const assetUrls = loadAssetUrls();
   const originalLoad = nodeModule._load.bind(nodeModule);
 
   nodeModule._load = function loadAssetOrModule(
@@ -65,7 +64,7 @@ function registerAssetLoaders() {
       ? join(dirname(parent.filename), request)
       : request;
 
-    return lookupAssetUrl(filename, assetUrls);
+    return lookupAssetUrl(filename, loadAssetUrls());
   };
 
   globalState[registered] = true;
