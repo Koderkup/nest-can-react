@@ -1,5 +1,6 @@
 import React, { FormEvent, useState } from 'react';
 import { NestLink } from '../../core/render/link';
+import { navigateTo } from '../../core/client/navigation';
 import { useCommit } from '../../core/client/use-commit';
 
 const AUTH_TOKEN_KEY = 'nest-learning.auth.token';
@@ -33,7 +34,9 @@ export function LoginForm() {
             .then((result) => {
               if (result?.token) {
                 localStorage.setItem(AUTH_TOKEN_KEY, result.token);
-                window.location.href = '/auth/profile';
+                void navigateTo('/auth/profile').catch(() => {
+                  window.location.assign('/auth/profile');
+                });
               }
             })
             .catch(() => undefined);

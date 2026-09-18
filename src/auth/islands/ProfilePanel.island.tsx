@@ -1,99 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { NestLink } from '../../core/render/link';
+import React from 'react';
+import { navigateTo } from '../../core/client/navigation';
+import type { ProfileUser } from '../auth.types';
 
 const AUTH_TOKEN_KEY = 'nest-learning.auth.token';
 
-type ProfileUser = {
-  userId: number;
-  email: string;
-  role: string;
+type ProfilePanelProps = {
+  user: ProfileUser;
 };
 
-type ProfileState =
-  | { status: 'loading' }
-  | { status: 'guest' }
-  | { status: 'ready'; user: ProfileUser }
-  | { status: 'error'; message: string };
-
-export function ProfilePanel() {
-  const [state, setState] = useState<ProfileState>({ status: 'loading' });
-
-  useEffect(() => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
-    if (!token) {
-      setState({ status: 'guest' });
-      return;
-    }
-
-    void fetch('/auth/me', {
-      headers: {
-        accept: 'application/json',
-        authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-          throw new Error('Session expired. Please log in again.');
-        }
-
-        const payload = (await response.json()) as { user: ProfileUser };
-        setState({ status: 'ready', user: payload.user });
-      })
-      .catch((cause: unknown) => {
-        setState({
-          status: 'error',
-          message:
-            cause instanceof Error ? cause.message : 'Could not load profile.',
-        });
+export function ProfilePanel({ user }: ProfilePanelProps) {
+  async function signOut() {
+    try {
+      await fetch('/auth/logout', {
+        credentials: 'include',
+        method: 'POST',
+        headers: { accept: 'application/json' },
       });
-  }, []);
-
-  function signOut() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    window.location.href = '/auth/login';
-  }
-
-  if (state.status === 'loading') {
-    return (
-      <section className="island-card">
-        <span className="pill">GET /auth/me</span>
-        <p className="muted">Loading profile…</p>
-      </section>
-    );
-  }
-
-  if (state.status === 'guest') {
-    return (
-      <section className="island-card">
-        <span className="pill">Not signed in</span>
-        <p className="muted">
-          <NestLink to="/auth/login">Log in</NestLink> to view your profile.
-        </p>
-      </section>
-    );
-  }
-
-  if (state.status === 'error') {
-    return (
-      <section className="island-card">
-        <span className="pill">Profile</span>
-        <p className="error">{state.message}</p>
-        <NestLink to="/auth/login">Go to login</NestLink>
-      </section>
-    );
+    } catch {
+      // still redirect
+    } finally {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      void navigateTo('/auth/login').catch(() => {
+        window.location.assign('/auth/login');
+      });
+    }
   }
 
   return (
     <section className="island-card">
-      <span className="pill">Signed in</span>
+      <span className="pill">Hydrated from server props</span>
       <ul className="muted">
-        <li>User id: {state.user.userId}</li>
-        <li>Email: {state.user.email}</li>
-        <li>Role: {state.user.role}</li>
+        <li>User id: {user.userId}</li>
+        <li>Email: {user.email}</li>
+        <li>Role: {user.role}</li>
       </ul>
-      <button className="secondary" onClick={signOut} type="button">
+      <button className="secondary" onClick={() => void signOut()} type="button">
         Sign out
       </button>
     </section>

@@ -33,7 +33,11 @@ export function useCommit<T = unknown>(
         const headers: Record<string, string> = {
           accept: 'application/json',
         };
-        const request: RequestInit = { method, headers };
+        const request: RequestInit = {
+          credentials: 'include',
+          method,
+          headers,
+        };
 
         if (body !== undefined) {
           headers['content-type'] = 'application/json';

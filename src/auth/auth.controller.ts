@@ -5,12 +5,15 @@ import {
   Header,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { renderPage } from '../core';
+import { clearAuthCookie, setAuthCookie } from './auth-token.utils';
 import { AuthService } from './auth.service';
+import type { ProfileUser } from './auth.types';
 import { CreateUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
 import LoginPage from './login.page';
@@ -18,11 +21,7 @@ import ProfilePage from './profile.page';
 import RegisterPage from './register.page';
 
 type JwtRequest = Request & {
-  user?: {
-    userId: number;
-    email: string;
-    role: string;
-  };
+  user?: ProfileUser;
 };
 
 @Controller('auth')
@@ -41,10 +40,15 @@ export class AuthController {
     return renderPage(RegisterPage, {}, { mode: 'hydrated' });
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   @Header('content-type', 'text/html')
-  profilePage() {
-    return renderPage(ProfilePage, {}, { mode: 'hydrated' });
+  profilePage(@Req() req: JwtRequest) {
+    return renderPage(
+      ProfilePage,
+      { user: req.user! },
+      { mode: 'hydrated' },
+    );
   }
 
   @Post('register')
@@ -53,13 +57,20 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() loginUserDto: LoginUserDto) {
-    return this.authService.login(loginUserDto);
+  login(
+    @Body() loginUserDto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = this.authService.login(loginUserDto);
+    setAuthCookie(res, result.token);
+
+    return result;
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  getProfile(@Req() req: JwtRequest) {
-    return { user: req.user };
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    clearAuthCookie(res);
+
+    return { ok: true as const };
   }
 }

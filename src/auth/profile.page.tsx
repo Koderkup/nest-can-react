@@ -1,11 +1,12 @@
 import React from 'react';
 import { Island, setLayoutMeta } from '../core';
+import type { ProfileUser } from './auth.types';
 import { ProfilePanel } from './islands/ProfilePanel.island';
 
-export default function ProfilePage() {
+export default function ProfilePage({ user }: { user: ProfileUser }) {
   setLayoutMeta({
     active: 'profile',
-    description: 'Your session and JWT-protected profile data.',
+    description: 'Loaded on the server after JWT guard — no extra profile API route.',
     eyebrow: 'Auth',
     title: 'Profile',
   });
@@ -13,15 +14,14 @@ export default function ProfilePage() {
   return (
     <>
       <section className="card span-5">
-        <span className="pill">Protected</span>
+        <span className="pill">Server</span>
         <p className="muted">
-          This page loads on the server; the island calls{' '}
-          <code>GET /auth/me</code> with your Bearer token.
+          Signed in as <strong>{user.email}</strong> ({user.role}).
         </p>
       </section>
 
       <section className="card span-7">
-        <Island mode="hydrate" name={ProfilePanel} props={{}} />
+        <Island mode="mount" name={ProfilePanel} props={{ user }} />
       </section>
     </>
   );

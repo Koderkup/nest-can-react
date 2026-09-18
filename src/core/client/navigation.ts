@@ -76,6 +76,17 @@ export function installNavigation(options: NavigationOptions) {
   });
 }
 
+export function navigateTo(href: string) {
+  const navigationStore = getNavigationStore();
+
+  if (!navigationStore.options) {
+    window.location.assign(href);
+    return Promise.resolve();
+  }
+
+  return navigate(href, navigationStore.options, 'push', false);
+}
+
 export function refresh() {
   const navigationStore = getNavigationStore();
 
@@ -99,10 +110,10 @@ async function revalidateCurrent(options: NavigationOptions) {
   const navigationStore = getNavigationStore();
   const href = window.location.href;
   navigationStore.pageCache.delete(href);
-  const snapshot = await fetchSnapshot(href);
-  navigationStore.pageCache.set(href, snapshot);
+  const { snapshot, finalUrl } = await fetchSnapshot(href);
+  navigationStore.pageCache.set(finalUrl, snapshot);
   applySnapshot(snapshot, options, 'revalidate');
-  navigationStore.currentUrl = href;
+  navigationStore.currentUrl = finalUrl;
 }
 
 async function navigate(
@@ -113,23 +124,29 @@ async function navigate(
 ) {
   const navigationStore = getNavigationStore();
   navigationStore.pageCache.set(navigationStore.currentUrl, takeSnapshot());
-  const snapshot =
-    useCache && navigationStore.pageCache.has(href)
-      ? navigationStore.pageCache.get(href)!
-      : await fetchSnapshot(href);
+  let snapshot: PageSnapshot;
+  let finalUrl = href;
 
-  navigationStore.pageCache.set(href, snapshot);
+  if (useCache && navigationStore.pageCache.has(href)) {
+    snapshot = navigationStore.pageCache.get(href)!;
+  } else {
+    const fetched = await fetchSnapshot(href);
+    snapshot = fetched.snapshot;
+    finalUrl = fetched.finalUrl;
+  }
+
+  navigationStore.pageCache.set(finalUrl, snapshot);
   applySnapshot(snapshot, options, 'replace');
 
   if (historyMode === 'push') {
-    window.history.pushState({ nr: true }, '', href);
+    window.history.pushState({ nr: true }, '', finalUrl);
   }
 
   if (historyMode === 'replace') {
-    window.history.replaceState({ nr: true }, '', href);
+    window.history.replaceState({ nr: true }, '', finalUrl);
   }
 
-  navigationStore.currentUrl = href;
+  navigationStore.currentUrl = finalUrl;
   window.scrollTo(snapshot.scrollX, snapshot.scrollY);
 }
 
@@ -141,8 +158,15 @@ async function restoreHistoryEntry(href: string, options: NavigationOptions) {
   }
 }
 
-async function fetchSnapshot(href: string): Promise<PageSnapshot> {
+type FetchSnapshotResult = {
+  snapshot: PageSnapshot;
+  finalUrl: string;
+};
+
+async function fetchSnapshot(href: string): Promise<FetchSnapshotResult> {
   const response = await fetch(href, {
+    credentials: 'include',
+    redirect: 'follow',
     headers: {
       accept: 'text/html',
       'x-nr-navigation': '1',
@@ -165,12 +189,15 @@ async function fetchSnapshot(href: string): Promise<PageSnapshot> {
   }
 
   return {
-    title: nextDocument.title,
-    document: nextSlot.innerHTML,
-    manifest: nextManifest.textContent,
-    stylesheets: collectStylesheetHrefs(nextDocument),
-    scrollX: 0,
-    scrollY: 0,
+    finalUrl: response.url,
+    snapshot: {
+      title: nextDocument.title,
+      document: nextSlot.innerHTML,
+      manifest: nextManifest.textContent,
+      stylesheets: collectStylesheetHrefs(nextDocument),
+      scrollX: 0,
+      scrollY: 0,
+    },
   };
 }
 
