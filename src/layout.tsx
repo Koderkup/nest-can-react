@@ -7,7 +7,6 @@ const navItems = [
   { id: 'welcome', to: '/', label: 'Welcome' },
   { id: 'note', to: '/note', label: 'Note' },
   { id: 'pulse', to: '/pulse', label: 'Pulse' },
-  { id: 'auth', to: '/auth', label: 'Auth' },
 ] as const;
 
 export default function Layout({ children }: { children: ReactNode }) {
