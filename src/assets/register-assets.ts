@@ -99,7 +99,7 @@ function isLocalAssetRequest(request: string) {
 }
 
 function loadAssetUrls() {
-  const path = join(process.cwd(), '.nest-react/generated/asset-urls.json');
+  const path = join(process.cwd(), '.nest-can-react/generated/asset-urls.json');
 
   if (!existsSync(path)) {
     return {};

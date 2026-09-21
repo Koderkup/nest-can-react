@@ -18,8 +18,8 @@ export type ClientAssetsManifest = {
 };
 
 const defaultOptions: Required<NestReactOptions> = {
-  assetManifestPath: 'public/nest-react/manifest.json',
-  publicPath: '/assets/nest-react',
+  assetManifestPath: 'public/nest-can-react/manifest.json',
+  publicPath: '/assets/nest-can-react',
 };
 
 let options = defaultOptions;

@@ -34,7 +34,7 @@ export async function installClientRuntime(
 
   if (!host) {
     throw new Error(
-      'Missing #nr-runtime host for the Nest React client runtime.',
+      'Missing #nr-runtime host for the Nest Can React client runtime.',
     );
   }
 

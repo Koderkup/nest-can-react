@@ -30,14 +30,14 @@ type NodeModuleWithExtensions = typeof Module & {
 };
 
 export function loadGeneratedServerBoot() {
-  const generatedDir = join(process.cwd(), '.nest-react/generated');
+  const generatedDir = join(process.cwd(), '.nest-can-react/generated');
   const bootPath = ['server-boot.js', 'server-boot.ts']
     .map((name) => join(generatedDir, name))
     .find((path) => existsSync(path));
 
   if (!bootPath) {
     throw new Error(
-      `Nest React generated boot file was not found in ${generatedDir}. Run \`nest-react build\` first.`,
+      `Nest Can React generated boot file was not found in ${generatedDir}. Run \`nest-can-react build\` first.`,
     );
   }
 

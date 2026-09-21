@@ -3,15 +3,15 @@ import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const defaultConfig = {
-  outDir: 'public/nest-react',
-  publicPath: '/assets/nest-react',
+  outDir: 'public/nest-can-react',
+  publicPath: '/assets/nest-can-react',
   codeSplitting: true,
   styles: [],
   islands: {
     include: ['src/**/*.island.tsx'],
     exclude: ['src/**/*.test.tsx', 'src/**/*.spec.tsx'],
   },
-  generatedDir: '.nest-react/generated',
+  generatedDir: '.nest-can-react/generated',
   runtimeEntry: 'src/app.runtime.tsx',
   layoutEntry: undefined,
 };
@@ -27,7 +27,7 @@ export async function loadConfig(rootDir, overrides) {
     return normalizeConfig({ ...fileConfig, ...overrides });
   }
 
-  const mjsConfigPath = resolve(rootDir, 'nest-react.config.mjs');
+  const mjsConfigPath = resolve(rootDir, 'nest-can-react.config.mjs');
 
   if (!existsSync(mjsConfigPath)) {
     return normalizeConfig({ ...defaultConfig, ...overrides });

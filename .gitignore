@@ -18,7 +18,7 @@ npm-debug.log*
 .temp
 .tmp
 *.tgz
-.nest-react
+.nest-can-react
 
 # coverage
 /coverage

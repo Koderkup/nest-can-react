@@ -35,7 +35,7 @@ const client = await watchNestReactClient(
         metafile,
         previousOutputFiles,
         {
-          outdir: resolve(rootDir, 'public/nest-react'),
+          outdir: resolve(rootDir, 'public/nest-can-react'),
           publicPath: manifest.publicPath,
           rootDir,
         },
@@ -44,11 +44,11 @@ const client = await watchNestReactClient(
 
       if (!seenFirstClientBuild) {
         seenFirstClientBuild = true;
-        console.log('[nest-react] client rebuilt');
+        console.log('[nest-can-react] client rebuilt');
         return;
       }
 
-      console.log('[nest-react] client rebuilt');
+      console.log('[nest-can-react] client rebuilt');
       broadcast({ type: 'clear-error' });
 
       if (lastChange === 'server') {
@@ -62,7 +62,7 @@ const client = await watchNestReactClient(
         return;
       }
 
-      console.log('[nest-react] Fast Refresh', modules);
+      console.log('[nest-can-react] Fast Refresh', modules);
       broadcast({
         type: 'client-update',
         css: manifest.css ?? [],
@@ -73,7 +73,7 @@ const client = await watchNestReactClient(
     },
     onError(error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('[nest-react] client build failed\n' + message);
+      console.error('[nest-can-react] client build failed\n' + message);
       broadcast({ type: 'error', message });
     },
   },
@@ -86,7 +86,7 @@ const server = startProxy(publicPort, nestPort);
 watchSourceFiles();
 watchConfigFile();
 
-console.log(`[nest-react] dev server http://localhost:${publicPort}`);
+console.log(`[nest-can-react] dev server http://localhost:${publicPort}`);
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
@@ -129,7 +129,7 @@ function startNest() {
       return;
     }
 
-    console.error(`[nest-react] Nest exited with code ${code}`);
+    console.error(`[nest-can-react] Nest exited with code ${code}`);
   });
 
   return child;
@@ -201,7 +201,7 @@ async function refreshIslandGraph() {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[nest-react] island graph update failed\n' + message);
+    console.error('[nest-can-react] island graph update failed\n' + message);
     broadcast({ type: 'error', message });
   }
 }

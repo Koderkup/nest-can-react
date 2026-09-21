@@ -1,7 +1,7 @@
 {
-  "name": "nest-react",
+  "name": "nest-can-react",
   "version": "0.1.0",
-  "description": "NestJS-native React rendering with islands",
+  "description": "Add React pages and islands to an existing NestJS app",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,7 +32,7 @@
     }
   },
   "bin": {
-    "nest-react": "./bin/nest-react.mjs"
+    "nest-can-react": "./bin/nest-can-react.mjs"
   },
   "files": [
     "dist",

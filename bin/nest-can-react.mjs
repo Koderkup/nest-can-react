@@ -21,9 +21,9 @@ if (command === 'dev') {
   await initStarter(process.argv.slice(3));
 } else {
   console.log(`Usage:
-  nest-react init [dir] [--force]
-  nest-react dev
-  nest-react build [--no-code-splitting]
+  nest-can-react init [dir] [--force]
+  nest-can-react dev
+  nest-can-react build [--no-code-splitting]
 `);
   process.exit(command ? 1 : 0);
 }

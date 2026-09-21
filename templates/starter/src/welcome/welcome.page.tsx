@@ -1,5 +1,5 @@
 import React from 'react';
-import { Island, setLayoutMeta } from 'nest-react';
+import { Island, setLayoutMeta } from 'nest-can-react';
 import { ArchitectureMap } from './islands/ArchitectureMap.island';
 import { WelcomePageData } from './welcome.types';
 

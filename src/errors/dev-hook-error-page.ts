@@ -10,7 +10,7 @@ export function renderDevHookErrorPage(error: ClientHookOnServerError) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(hook)} was supposed to land on an island | Nest React</title>
+  <title>${escapeHtml(hook)} was supposed to land on an island | Nest Can React</title>
   <style>
     :root {
       color-scheme: dark;

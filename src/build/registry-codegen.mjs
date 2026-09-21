@@ -72,7 +72,7 @@ function createClientEntry({ hmr = false }) {
 
   return [
     'import "./client-styles.js";',
-    `import { ${clientImports} } from "nest-react/client";`,
+    `import { ${clientImports} } from "nest-can-react/client";`,
     'import { registry } from "./client-registry.js";',
     'import { ClientRuntime } from "./client-runtime.js";',
     '',
@@ -100,7 +100,7 @@ function createServerBoot() {
     '  registerClientRuntime,',
     '  registerIslandComponents,',
     '  registerLayout,',
-    '} from "nest-react/register";',
+    '} from "nest-can-react/register";',
     'import { ClientRuntime } from "./client-runtime.js";',
     'import { registry } from "./server-registry.js";',
     'import Layout from "./server-layout.js";',
@@ -114,7 +114,7 @@ function createServerBoot() {
 
 function createServerLayoutModule({ generatedDir, rootDir, layoutEntry }) {
   if (!layoutEntry) {
-    return 'export { default } from "nest-react/layout";\n';
+    return 'export { default } from "nest-can-react/layout";\n';
   }
 
   const layoutPath = resolve(rootDir, layoutEntry);
@@ -163,7 +163,7 @@ function createClientRegistry({ generatedDir, islands }) {
     .join('\n');
 
   return [
-    'import type { IslandClientRegistry } from "nest-react/client";',
+    'import type { IslandClientRegistry } from "nest-can-react/client";',
     '',
     'export const registry = {',
     entries,

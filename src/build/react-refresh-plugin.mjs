@@ -48,7 +48,7 @@ function shouldSkipRefreshFile(file) {
 
   return (
     path.includes('/node_modules/') ||
-    path.includes('/.nest-react/') ||
+    path.includes('/.nest-can-react/') ||
     path.endsWith('/client/hmr.ts') ||
     path.endsWith('/client/refresh-runtime.ts') ||
     /\.page\.[jt]sx$/.test(path)

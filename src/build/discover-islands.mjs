@@ -36,7 +36,7 @@ export async function discoverIslands(rootDir, config) {
 async function walk(rootDir) {
   const ignoredDirectories = new Set([
     '.git',
-    '.nest-react',
+    '.nest-can-react',
     'dist',
     'node_modules',
     'public',

@@ -1,15 +1,15 @@
 import React, { ReactNode } from 'react';
 import { favicon } from './assets/brand';
-import { NestLink, useLayoutMeta } from 'nest-react';
+import { NestLink, useLayoutMeta } from 'nest-can-react';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const meta = useLayoutMeta();
-  const title = typeof meta.title === 'string' ? meta.title : 'Nest React';
+  const title = typeof meta.title === 'string' ? meta.title : 'Nest Can React';
 
   return (
     <html lang="en">
       <head>
-        <title>{`${title} | Nest React`}</title>
+        <title>{`${title} | Nest Can React`}</title>
         <link href={favicon} rel="icon" type="image/png" />
         <meta content="width=device-width, initial-scale=1" name="viewport" />
         <link href="https://fonts.googleapis.com" rel="preconnect" />
@@ -34,7 +34,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="shell site-header__bar">
               <NestLink className="brand" to="/welcome">
                 <span aria-hidden="true" className="brand-mark" />
-                <span className="brand-name">Nest React</span>
+                <span className="brand-name">Nest Can React</span>
               </NestLink>
 
               <a

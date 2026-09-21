@@ -5,8 +5,8 @@
     "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
   },
   "client": {
-    "outDir": "public/nest-react",
-    "publicPath": "/assets/nest-react",
+    "outDir": "public/nest-can-react",
+    "publicPath": "/assets/nest-can-react",
     "codeSplitting": true,
     "styles": ["src/assets/layout.css"]
   }

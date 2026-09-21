@@ -32,7 +32,7 @@ export function installHmr() {
     try {
       void handleMessage(JSON.parse(event.data) as HmrMessage);
     } catch (error) {
-      console.error('[nest-react] Failed to apply HMR payload.', error);
+      console.error('[nest-can-react] Failed to apply HMR payload.', error);
     }
   };
 }
@@ -63,7 +63,7 @@ async function handleMessage(message: HmrMessage) {
   try {
     await applyClientUpdate(message);
   } catch (error) {
-    console.error('[nest-react] Fast Refresh failed; reloading.', error);
+    console.error('[nest-can-react] Fast Refresh failed; reloading.', error);
     window.location.reload();
   }
 }

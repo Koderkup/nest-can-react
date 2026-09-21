@@ -7,7 +7,7 @@ export function classifyChange(file, rootDir) {
     path.includes('/node_modules/') ||
     path.includes('/dist/') ||
     path.includes('/public/') ||
-    path.includes('/.nest-react/') ||
+    path.includes('/.nest-can-react/') ||
     path.includes('/.git/') ||
     /\.d\.ts$/.test(path) ||
     /\.map$/.test(path)
