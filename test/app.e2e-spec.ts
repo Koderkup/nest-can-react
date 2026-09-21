@@ -23,6 +23,21 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
+  it('/welcome (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/welcome')
+      .expect(200)
+      .expect((response) => {
+        if (!response.text.includes('Now Nest can react')) {
+          throw new Error('Expected welcome tagline in HTML');
+        }
+
+        if (!response.text.includes('Nest owns')) {
+          throw new Error('Expected welcome headline in HTML');
+        }
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

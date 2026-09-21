@@ -1,4 +1,5 @@
 {
+  "layout": "src/layout.tsx",
   "islands": {
     "include": ["src/**/*.island.tsx"],
     "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
@@ -6,6 +7,7 @@
   "client": {
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
-    "codeSplitting": true
+    "codeSplitting": true,
+    "styles": ["src/assets/layout.css"]
   }
 }
