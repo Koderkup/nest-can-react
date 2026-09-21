@@ -21,7 +21,7 @@ export default function ProfilePage({ user }: { user: ProfileUser }) {
       </section>
 
       <section className="card span-7">
-        <Island mode="mount" name={ProfilePanel} props={{ user }} />
+        <Island mode="hydrate" name={ProfilePanel} props={{ user }} />
       </section>
     </>
   );
