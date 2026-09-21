@@ -1,5 +1,5 @@
 import { Controller, Get, Header } from '@nestjs/common';
-import { renderPage } from '../core';
+import { renderPage } from 'nest-react';
 import WelcomePage from './welcome.page';
 import { WelcomeService } from './welcome.service';
 

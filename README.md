@@ -92,24 +92,22 @@ See [Creating Your First App](docs/first-app.md#folder-structure-is-not-the-star
 This repo looks like:
 
 ```txt
-nest.react.json                 # layout, optional runtime, island globs, client.styles
+packages/nest-react/            # publishable package + CLI
+  templates/starter/            # copied by `nest-react init`
 src/
-  core/                         # framework (treat as the future package)
   layout.tsx
-  assets/                       # global CSS and images
-  runtime/                      # ClientRuntime + theme context
-  welcome/                      # module, controller, service, page, islands, load-keys
-  note/
-  pulse/
+  assets/
+  welcome/
   app.module.ts
-  main.ts                       # NestFactory + listen
-.nest-react/generated/          # entry, registries, server-boot (build:client)
-public/nest-react/              # hashed runtime, CSS, and assets
+  main.ts
+nest.react.json
+.nest-react/generated/
+public/nest-react/
 ```
 
-`src/core` is the package/framework layer.
+Import the runtime from `nest-react`. Scaffold a new app with `npx nest-react init my-app`.
 
-`welcome` / `note` / `pulse` are starter features. Delete a folder and drop its module from `AppModule` when you replace it.
+`welcome` is the playground starter feature.
 
 ## Core APIs
 
@@ -191,10 +189,10 @@ Hydrate-mode islands get their own React root on the host node (so SSR HTML can 
 
 ```bash
 npm install
-npm run build:client    # islands, runtime, public/nest-react (hashed, production)
+npm run build:client    # nest-react build
 npm run build           # Nest server
 npm run build:all
-npm run view:dev        # esbuild watch + Nest watch + browser HMR
+npm run view:dev        # nest-react dev
 ```
 
 `view:dev` (also `start:dev`) watches client islands and the Nest server together. Island/runtime/CSS edits Fast Refresh in the browser without wiping `useState` or the theme store. Page, layout, and Nest service edits trigger a full document reload once Nest is back up. Production `build:client` still emits hashed filenames and does not include the HMR client.
@@ -214,7 +212,6 @@ npm run view:dev        # esbuild watch + Nest watch + browser HMR
 
 ## Current Limitations
 
-- Not an npm package yet; `src/core` is in-repo.
 - Island `fetch` routes need the same Nest guards/CSRF you would put on any JSON API.
 - No PostCSS, Tailwind, CSS modules on server pages, or Vite `?url` / `?raw`.
 - No true React Server Components Flight protocol.

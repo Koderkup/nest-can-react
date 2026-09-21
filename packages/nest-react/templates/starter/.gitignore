@@ -1,0 +1,9 @@
+# compiled output
+/dist
+/node_modules
+/.nest-react
+/public
+
+.env
+.env.*
+.DS_Store
