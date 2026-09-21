@@ -1,95 +1,64 @@
-# Creating Your First App
+# Creating your first app
 
-This guide builds a small page with server data and a client island on the current Nest React prototype.
+Nest owns the app. React owns the UI. Controllers load data with Nest DI and pass it into `renderPage`. Islands talk back over ordinary Nest HTTP.
 
-The core idea:
+## Scaffold
 
-```txt
-Nest owns the app.
-React owns the UI.
-Server React can use Nest DI.
-Client React talks back through commit refs.
+```bash
+npx nest-react init my-app
+cd my-app
+npm install
+npm run view:dev
 ```
 
-## Folder Structure Is Not The Starter
+Or clone [nest-react-template](https://github.com/acefolioDev/nest-react-template).
 
-**You do not have to mirror `src/welcome`, `src/note`, or `src/pulse`.** Those folders are how *this repository* organizes a disposable sample. The builder never looks for those names.
+You do not copy framework source into the app. Import `nest-react`.
 
-Copy the **roles** below, not the demo folder names.
-
-### Required (the framework looks for these)
+## What the framework looks for
 
 | Role | What it is | How you point at it |
 | --- | --- | --- |
-| Config | Island globs, output dir, optional runtime, layout | `nest.react.json` |
+| Config | Island globs, output dir, layout, styles | `nest.react.json` |
 | Layout | Document chrome (`<html>` / nav / `{children}`) | `layout` |
-| Island files | Browser components | `*.island.tsx` matching `islands.include` |
-| Nest wiring | Transport, DI, `/assets`, generated boot | `NestReactModule.forRoot()` |
+| Islands | Browser components | `*.island.tsx` matching `islands.include` |
+| Nest wiring | Assets, generated boot | `NestReactModule.forRoot()` |
 
-Island **file name** matters: `NoteEditor.island.tsx` must export `NoteEditor`, and `<Island name={NoteEditor} />` must pass that same component. The **directory** does not.
+Island **file name** matters: `ArchitectureMap.island.tsx` must export `ArchitectureMap`, and `<Island name={ArchitectureMap} />` must pass that component. The directory name does not.
 
-The package generates client entry, registries, and `server-boot.ts`. It injects `#nr-runtime` and `#nr-document`. Do not author those files or slot ids.
+`nest-react` generates client entry, registries, and `server-boot.ts`. It injects `#nr-runtime` and `#nr-document`. Do not author those files.
 
-### Optional
-
-- this repo’s `welcome/` / `note/` / `pulse/` folder names
-- `*.page.tsx` filenames
-- `runtime.entry` / `app.runtime.tsx` (pass-through `ClientRuntime` if omitted)
-- `client.entry` (override generated boot)
-
-A first app can be:
-
-```txt
-nest.react.json
-src/
-  core/
-  main.ts
-  app.module.ts
-  layout.tsx
-  assets/layout.css
-  welcome/
-    welcome.module.ts
-    welcome.controller.ts
-    welcome.service.ts
-    welcome.page.tsx
-    islands/ThemeToggle.island.tsx
-public/nest-react/
-```
-
-Example `nest.react.json`:
+## Example `nest.react.json`
 
 ```json
 {
   "layout": "src/layout.tsx",
+  "islands": {
+    "include": ["src/**/*.island.tsx"],
+    "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
+  },
   "client": {
     "outDir": "public/nest-react",
     "publicPath": "/assets/nest-react",
     "codeSplitting": true,
     "styles": ["src/assets/layout.css"]
-  },
-  "islands": {
-    "include": ["src/**/*.island.tsx"],
-    "exclude": ["src/**/*.test.tsx", "src/**/*.spec.tsx"]
   }
 }
 ```
 
-`publicPath` must match how Nest serves `public/` (this demo uses `prefix: '/assets/'`, so files in `public/nest-react/` are `/assets/nest-react/...`).
+`publicPath` must match how Nest serves `public/` (`/assets/` prefix → files in `public/nest-react/` are `/assets/nest-react/...`).
 
-List global CSS in `client.styles`. The bundler emits hashed stylesheets and `renderPage` injects `<link rel="stylesheet">` into `<head>`, so first paint does not wait for JS. Do not `import` CSS from `layout.tsx` or other server files.
-
-Islands can import CSS and assets:
+List global CSS in `client.styles`. Do not import CSS from `layout.tsx` or other server files. Islands may import their own CSS:
 
 ```tsx
-import './NoteEditor.css';
-import mark from '../assets/mark.svg';
+import './ArchitectureMap.css';
 ```
 
-## 1. Import The Core Module
+## 1. Import the module
 
 ```ts
 import { Module } from '@nestjs/common';
-import { NestReactModule } from './core';
+import { NestReactModule } from 'nest-react';
 import { WelcomeModule } from './welcome/welcome.module';
 
 @Module({
@@ -98,9 +67,7 @@ import { WelcomeModule } from './welcome/welcome.module';
 export class AppModule {}
 ```
 
-This registers static files at `/assets/` and generated island/layout registration.
-
-## 2. Nest Bootstrap
+## 2. Bootstrap Nest
 
 ```ts
 import { NestFactory } from '@nestjs/core';
@@ -108,68 +75,54 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
+  await app.listen(process.env.PORT ?? 3000);
 }
 
-bootstrap();
+void bootstrap();
 ```
 
-You do not import island registries or call `useStaticAssets`. `NestReactModule.forRoot()` owns that.
+Run `npm run build:client` (`nest-react build`) before the first production start so `.nest-react/generated` exists. `npm run view:dev` does that for you.
 
-Run `npm run build:client` before the first server start so `.nest-react/generated` exists.
+## 3. Nest service
 
-## 3. Create A Nest Service
-
-Ordinary Nest. The React layer does not replace modules or DI.
+Ordinary Nest. React does not replace modules or DI.
 
 ```ts
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class GreetingService {
-  private greeting = 'Hello from Nest DI';
-
   sayHello() {
-    return this.greeting;
-  }
-
-  setGreeting(greeting: string) {
-    this.greeting = greeting;
-    return this.greeting;
+    return 'Hello from Nest DI';
   }
 }
 ```
 
-## 4. Create A Layout And A Server Page
+## 4. Layout and page
 
 `layout.tsx` owns `<html>` chrome. Do not add `#nr-runtime` or `#nr-document`.
 
 ```tsx
 import React, { ReactNode } from 'react';
-import { useLayoutMeta } from './core';
+import { useLayoutMeta } from 'nest-react';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const meta = useLayoutMeta();
 
   return (
-    <html>
+    <html lang="en">
       <head>
         <title>{meta.title ?? 'Home'}</title>
       </head>
-      <body>
-        <h1>{meta.title}</h1>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
 ```
 
-Pages set chrome via `setLayoutMeta` and return only the page body. Data comes from the controller as props:
-
 ```tsx
 import React from 'react';
-import { Island, setLayoutMeta } from './core';
+import { Island, setLayoutMeta } from 'nest-react';
 import { NoteEditor } from './islands/NoteEditor.island';
 
 export default function NotePage({ text }: { text: string }) {
@@ -184,19 +137,15 @@ export default function NotePage({ text }: { text: string }) {
 }
 ```
 
-- `mode="hydrate"`: HTML for the island is rendered on the server, then hydrated.
+- `mode="hydrate"`: island HTML is rendered on the server, then hydrated.
 - `mode="mount"`: empty host; the client renders into it.
 
-Pass the island component as `name` so the editor can jump to it. String names still work as an escape hatch.
-
-## 5. Render From A Controller
-
-`.ts` (Nest-looking). The package creates the element:
+## 5. Render from a controller
 
 ```ts
 import { Body, Controller, Get, Header, Post } from '@nestjs/common';
+import { renderPage } from 'nest-react';
 import NotePage from './note.page';
-import { renderPage } from './core';
 import { NoteService } from './note.service';
 
 @Controller('note')
@@ -216,25 +165,19 @@ export class NoteController {
 }
 ```
 
-`.tsx` if you prefer JSX in the handler:
+TSX controllers can pass an element:
 
 ```tsx
 return renderPage(<NotePage text={text} />, { mode: 'hydrated' });
 ```
 
-## 6. Create A Client Island
-
-File name: `note-editor.island.tsx` **or** `NoteEditor.island.tsx`. Import the discovered export and pass it to `<Island name={NoteEditor} />`. This starter uses PascalCase filenames (`NoteEditor.island.tsx` → `NoteEditor`).
+## 6. Client island
 
 ```tsx
 import React, { useState } from 'react';
-import { useCommit } from '../core/client/use-commit';
+import { useCommit } from 'nest-react/client';
 
-type Props = {
-  text: string;
-};
-
-export function NoteEditor({ text: initialText }: Props) {
+export function NoteEditor({ text: initialText }: { text: string }) {
   const [text, setText] = useState(initialText);
   const { commit, pending } = useCommit('/note');
 
@@ -254,49 +197,26 @@ export function NoteEditor({ text: initialText }: Props) {
 }
 ```
 
-`useCommit` POSTs JSON, then **revalidates the current document HTML** (same URL, no full reload, island hosts stay mounted). Pass `{ revalidate: false }` when the mutation should not refresh the page. Always `preventDefault` on island forms. Put `@UseGuards` on the Nest `POST` the same as any API.
+`useCommit` POSTs JSON, then revalidates the current document (same URL, no full reload). Pass `{ revalidate: false }` to skip. Guard the Nest `POST` like any API.
 
-## 7. Optional Client Runtime
-
-`build:client` writes `.nest-react/generated/` (client entry, registries, `server-boot.ts`, layout re-export). `NestReactModule` loads `server-boot.ts`. You do not write `islands.ts` or `client/entry.tsx`.
-
-Shared client context is optional. Point `runtime.entry` at a module that exports `ClientRuntime`. If omitted, the bundler emits a pass-through. This starter’s `useTheme()` lives in `src/runtime/`.
-
-## 8. Build And Run
+## 7. Build and run
 
 ```bash
 npm run build:client
 npm run view:dev
 ```
 
-Open `http://localhost:3000`. Island and runtime edits Fast Refresh in the open browser. Page, layout, and Nest service edits reload the document automatically.
+| Output | What it is |
+| --- | --- |
+| `.nest-react/generated/` | Boot, registries, layout, client entry |
+| `public/nest-react/` | Runtime JS, CSS, chunks, `manifest.json` |
 
-Output:
+Island and CSS edits Fast Refresh. Page, layout, and Nest service edits reload the document.
 
-```txt
-.nest-react/generated/     # boot, registries, layout, client-styles
-public/nest-react/         # runtime.js in dev, runtime-[hash].js in production
-```
+## Best practices
 
-## What Happens After A Save
-
-1. The island calls `useCommit` (`POST /note`).
-2. Nest runs the feature controller (guards, pipes, service).
-3. JSON comes back.
-4. By default the client re-GETs the current URL and patches `#nr-document` (server-rendered text outside the island updates). Client JS is not reloaded.
-
-## Best Practices
-
-- Keep framework code in `src/core`; keep *your* app anywhere else.
-- Do not treat `src/welcome`, `src/note`, or `src/pulse` as a required skeleton.
+- Import the framework from `nest-react`, never copy package source into the app.
 - Put chrome in `layout.tsx`; put page body in the page module.
-- Do not author `#nr-runtime` / `#nr-document`.
-- Use `hydrate` when the island should be visible before JS; use `mount` for controls that can appear after JS.
-- Pass UI data as island props; mutate with `useCommit` (or a guarded Nest `POST`).
+- Use `hydrate` when the island should be visible before JS; use `mount` for controls that can wait.
+- Pass UI data as island props; mutate with `useCommit` or a guarded Nest `POST`.
 - Keep business logic in Nest providers.
-
-## Current Limitations
-
-- Guard island `POST` routes like any Nest API (CSRF if you use cookies).
-- No PostCSS, Tailwind, or Vite `?url` / `?raw`.
-- CSS modules work in client islands, not in server pages.
