@@ -31,7 +31,8 @@ export async function renderHTML(
       nonce: options.nonce,
       formState: options.formState,
     });
-  } catch {
+  } catch (error) {
+    console.error('nest-can-react: SSR failed', error);
     status = 500;
     htmlStream = await renderToReadableStream(
       <html lang="en">

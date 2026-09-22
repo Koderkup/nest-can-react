@@ -15,6 +15,10 @@ export function createRspackConfigs({
   const { ServerPlugin, ClientPlugin } = createPlugins();
   const isDev = mode === 'development';
   const publicPath = `${config.publicPath}/`;
+  const reactAlias = {
+    react: path.join(config.rootDir, 'node_modules/react'),
+    'react-dom': path.join(config.rootDir, 'node_modules/react-dom'),
+  };
 
   function createRscRule({ refresh }) {
     return {
@@ -89,6 +93,7 @@ export function createRspackConfigs({
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
+      alias: reactAlias,
     },
     module: {
       rules: [clientRscRule, cssRule, assetRule],
@@ -167,6 +172,12 @@ export function createRspackConfigs({
           layer: Layers.ssr,
         },
         {
+          issuerLayer: Layers.ssr,
+          resolve: {
+            alias: reactAlias,
+          },
+        },
+        {
           resource: entries.rscEntry,
           layer: Layers.rsc,
           resolve: {
@@ -215,12 +226,15 @@ export function createRspackConfigs({
           return callback();
         }
 
-        // Share Nest process module instance for layout meta ALS, etc.
-        if (
-          request === 'nest-can-react' ||
-          request.startsWith('nest-can-react/')
-        ) {
+        // Share Nest process module instance for layout meta ALS.
+        // nest-can-react/client must be bundled so hooks use the same React
+        // as the SSR/client layer (externals would load a second copy).
+        if (request === 'nest-can-react') {
           return callback(null, `commonjs ${request}`);
+        }
+
+        if (request.startsWith('nest-can-react/')) {
+          return callback();
         }
 
         if (

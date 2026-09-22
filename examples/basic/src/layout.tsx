@@ -1,6 +1,7 @@
-import React, { ReactNode } from 'react';
-import { favicon } from './assets/brand';
-import { NestLink } from 'nest-can-react';
+import React, { ReactNode } from "react";
+import { favicon } from "./assets/brand";
+import { NestLink } from "nest-can-react";
+import { ThemeProvider } from "./ThemeContext";
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
@@ -29,24 +30,32 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <header className="site-header">
             <div className="shell site-header__bar">
-              <NestLink className="brand" to="/welcome">
+              <NestLink className="brand" to="/notes">
                 <span aria-hidden="true" className="brand-mark" />
                 <span className="brand-name">Nest Can React</span>
               </NestLink>
 
-              <a
-                className="text-link"
-                href="https://docs.nestjs.com"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Nest docs
-              </a>
+              <nav aria-label="Primary" className="site-nav">
+                <NestLink className="nav-link" to="/notes">
+                  Notes
+                </NestLink>
+                <NestLink className="nav-link" to="/welcome">
+                  Architecture
+                </NestLink>
+                <a
+                  className="text-link"
+                  href="https://docs.nestjs.com"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Nest docs
+                </a>
+              </nav>
             </div>
           </header>
 
           <main className="app-main" id="content">
-            {children}
+            <ThemeProvider>{children}</ThemeProvider>
           </main>
         </div>
       </body>

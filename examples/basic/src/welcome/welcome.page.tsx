@@ -1,10 +1,11 @@
+'use server-entry';
 
-
+import React from 'react';
+import { NestLink } from 'nest-can-react';
 import { ArchitectureMap } from './ArchitectureMap';
 import { WelcomePageData } from './welcome.types';
 
 export default function WelcomePage(data: WelcomePageData) {
-
   return (
     <>
       <title>Welcome | Nest Can React</title>
@@ -25,6 +26,11 @@ export default function WelcomePage(data: WelcomePageData) {
               guards, and data. Client components are islands of interactivity —
               marked with <code>use client</code>.
             </p>
+            <div className="hero__actions">
+              <NestLink className="button button-primary" to="/notes">
+                Open the notes app
+              </NestLink>
+            </div>
           </div>
 
           <div className="hero__visual">

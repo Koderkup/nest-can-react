@@ -90,7 +90,9 @@ img {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -256,6 +258,18 @@ input {
   padding-block: var(--space-4);
 }
 
+@media (max-width: 640px) {
+  .site-header__bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .site-nav {
+    justify-content: flex-start;
+  }
+}
+
 .brand {
   align-items: center;
   color: var(--text-primary);
@@ -289,6 +303,25 @@ input {
 .brand-name {
   font: 500 1rem / 1 var(--font-sans);
   letter-spacing: -0.02em;
+}
+
+.site-nav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  justify-content: flex-end;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  font: 500 1rem / 1 var(--font-sans);
+  padding: 0.75rem 0.35rem;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
 }
 
 .favicon-asset {
@@ -357,6 +390,13 @@ input {
   color: var(--text-secondary);
   margin: 0;
   max-width: 52ch;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 .hero__visual {

@@ -7,6 +7,6 @@
   "client": {
     "outDir": "public/nest-can-react",
     "publicPath": "/assets/nest-can-react",
-    "styles": ["src/assets/layout.css"]
+    "styles": ["src/assets/layout.css", "src/notes/notes.css"]
   }
 }
