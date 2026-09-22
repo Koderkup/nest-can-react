@@ -13,6 +13,8 @@ Install into an existing Nest app with `npm install nest-can-react` and `npx nes
 
 ## Public API
 
+What each export is for: [Package APIs](api.md).
+
 From `nest-can-react`:
 
 - `NestReactModule`

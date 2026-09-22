@@ -74,3 +74,4 @@ import { useCommit, refresh, navigateTo } from 'nest-can-react/client';
 
 - [Creating your first app](docs/first-app.md)
 - [Core concepts](docs/core-concepts.md)
+- [Package APIs](docs/api.md)

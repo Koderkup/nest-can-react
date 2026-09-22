@@ -164,3 +164,5 @@ npm run view:dev
 - Default to Server Components; add `'use client'` only where you need browser APIs or state.
 - Pass serializable props from controllers into pages.
 - Use Nest POST routes for mutations, not ad-hoc bypasses around guards.
+
+What each export is for: [Package APIs](api.md).
