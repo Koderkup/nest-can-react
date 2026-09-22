@@ -25,6 +25,14 @@ function broadcast(message) {
   }
 }
 
+let liveReloadTimer;
+function scheduleLiveReload() {
+  clearTimeout(liveReloadTimer);
+  liveReloadTimer = setTimeout(() => {
+    broadcast({ type: 'live-reload' });
+  }, 120);
+}
+
 const hmrHttp = createServer();
 const wss = new WebSocketServer({ server: hmrHttp });
 
@@ -50,6 +58,7 @@ const serverCompiler = rspack(serverConfig);
 const clientCompiler = rspack(clientConfig);
 
 let serverInitialCompileDone = false;
+let clientInitialCompileDone = false;
 
 const waitForServer = new Promise((resolve, reject) => {
   serverCompiler.watch({ aggregateTimeout: 200 }, (error, stats) => {
@@ -74,6 +83,7 @@ const waitForServer = new Promise((resolve, reject) => {
 
     if (serverInitialCompileDone) {
       broadcast({ type: 'rsc-update' });
+      scheduleLiveReload();
     } else {
       serverInitialCompileDone = true;
       resolve();
@@ -88,6 +98,12 @@ clientCompiler.hooks.done.tap('nest-can-react-client-manifest', (stats) => {
   }
 
   void writeClientManifest(stats, config);
+
+  if (clientInitialCompileDone) {
+    scheduleLiveReload();
+  } else {
+    clientInitialCompileDone = true;
+  }
 });
 
 const devServer = new RspackDevServer(clientConfig.devServer, clientCompiler);

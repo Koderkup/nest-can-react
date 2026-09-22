@@ -218,10 +218,10 @@ import { bootClient } from './client-boot';
 import { connectHmr } from './hmr-bridge';
 ${runtimeImport ? `import { ClientRuntime } from ${JSON.stringify(runtimeImport)};` : 'const ClientRuntime = undefined;'}
 
+connectHmr(${JSON.stringify(hmrPort)});
+
 void bootClient({
   Runtime: ClientRuntime,
-}).then(() => {
-  connectHmr(${JSON.stringify(hmrPort)});
 });
 `;
 }
@@ -257,7 +257,10 @@ export function connectHmr(port = ${hmrPort}) {
         const message = JSON.parse(String(event.data)) as HmrMessage;
         if (message.type === 'rsc-update') {
           window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
-        } else if (message.type === 'client-reload') {
+        } else if (
+          message.type === 'live-reload' ||
+          message.type === 'client-reload'
+        ) {
           window.location.reload();
         }
       } catch {

@@ -171,11 +171,17 @@ export async function handleRequest({
     temporaryReferences,
   });
 
+  const devCacheHeaders =
+    process.env.NEST_CAN_REACT_DEV === '1'
+      ? ({ 'cache-control': 'no-store' } as const)
+      : {};
+
   if (renderRequest.isRsc) {
     const flightResponse = new Response(rscStream, {
       status: actionStatus ?? statusCode ?? 200,
       headers: {
         'content-type': 'text/x-component;charset=utf-8',
+        ...devCacheHeaders,
       },
     });
     await webResponseToNode(flightResponse, response);
@@ -191,6 +197,7 @@ export async function handleRequest({
     status: ssrResult.status ?? statusCode ?? 200,
     headers: {
       'content-type': 'text/html;charset=utf-8',
+      ...devCacheHeaders,
     },
   });
 

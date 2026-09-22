@@ -1,4 +1,10 @@
-import React, { ComponentType, ReactNode, useEffect, useState } from 'react';
+import React, {
+  ComponentType,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import {
   createFromFetch,
@@ -13,43 +19,49 @@ type BootOptions = {
 };
 
 export async function bootClient({ Runtime }: BootOptions = {}) {
-  let setPayload: ((value: RscPayload) => void) | undefined;
-
   const initialPayload = await createFromReadableStream<RscPayload>(rscStream);
 
   function BrowserRoot() {
     const [payload, setPayloadState] = useState(initialPayload);
 
-    useEffect(() => {
-      setPayload = (value) => {
-        React.startTransition(() => {
-          setPayloadState(value);
-        });
-      };
-    }, []);
-
-    useEffect(() => {
-      return listenNavigation(() => {
-        void fetchRscPayload();
+    const applyPayload = useCallback((value: RscPayload) => {
+      React.startTransition(() => {
+        setPayloadState(value);
       });
     }, []);
 
+    const fetchRscPayload = useCallback(async () => {
+      const renderRequest = createRscRenderRequest(window.location.href);
+      const response = await fetch(renderRequest);
+
+      if (!response.ok) {
+        throw new Error(`RSC refetch failed (${response.status}).`);
+      }
+
+      const nextPayload = await createFromFetch<RscPayload>(response);
+      applyPayload(nextPayload);
+    }, [applyPayload]);
+
+    useEffect(() => {
+      return listenNavigation(() => {
+        void fetchRscPayload().catch(() => {
+          window.location.reload();
+        });
+      });
+    }, [fetchRscPayload]);
+
     useEffect(() => {
       const onRscUpdate = () => {
-        void fetchRscPayload();
+        void fetchRscPayload().catch(() => {
+          window.location.reload();
+        });
       };
       window.addEventListener('ncr:rsc-update', onRscUpdate);
       return () => window.removeEventListener('ncr:rsc-update', onRscUpdate);
-    }, []);
+    }, [fetchRscPayload]);
 
     const tree = payload.root;
     return Runtime ? <Runtime>{tree}</Runtime> : tree;
-  }
-
-  async function fetchRscPayload() {
-    const renderRequest = createRscRenderRequest(window.location.href);
-    const payload = await createFromFetch<RscPayload>(fetch(renderRequest));
-    setPayload?.(payload);
   }
 
   const browserRoot = (
@@ -125,7 +137,7 @@ declare global {
   interface ImportMeta {
     webpackHot?: {
       accept: (cb?: () => void) => void;
-      on: (event: string, cb: () => void) => void;
+      on?: (event: string, cb: () => void) => void;
     };
   }
 }

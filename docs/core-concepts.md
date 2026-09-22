@@ -65,8 +65,8 @@ public/nest-can-react/       # browser assets
 
 - Rspack watches the RSC graph; the client graph runs on `@rspack/dev-server` with React Refresh (`clientDevPort`, default `9102`, assets still written under `public/nest-can-react` for Nest to serve)
 - Nest runs with `--watch`
-- After each successful server rebuild, a websocket on `hmrPort` (default `9101`) sends `rsc-update` so the browser re-fetches Flight without a full reload
-- `'use client'` modules hot-update through the dev-server HMR websocket on `clientDevPort`
+- After each successful rebuild, the websocket on `hmrPort` (default `9101`) triggers a Flight refetch and then a debounced full-page reload so you always see changes (Fast Refresh alone is unreliable with `hydrateRoot(document)`)
+- The client dev-server on `clientDevPort` (default `9102`) still builds assets and can apply module hot updates before the reload runs
 
 ## Security
 

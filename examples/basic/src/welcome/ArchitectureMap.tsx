@@ -29,7 +29,7 @@ export function ArchitectureMap({ edges, nodes }: ArchitectureMapProps) {
 
   return (
     <div className="architecture-map">
-      <p className="architecture-map__label technical">Module graphhhh</p>
+      <p className="architecture-map__label technical">Module graph</p>
       <div className="architecture-map__stage">
         <svg
           aria-hidden="true"

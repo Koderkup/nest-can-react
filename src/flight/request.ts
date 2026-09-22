@@ -29,6 +29,7 @@ export function createRscRenderRequest(
     headers,
     body: action?.body,
     credentials: 'include',
+    cache: 'no-store',
   });
 }
 
