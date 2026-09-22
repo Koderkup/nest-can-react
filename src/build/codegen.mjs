@@ -109,7 +109,8 @@ export async function generateFlightEntries({ config, pages }) {
 }
 
 function createRscEntry({ layoutImport, hmrPort }) {
-  return `import type { IncomingMessage, ServerResponse } from 'node:http';
+  return `import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import type { ServerEntry } from 'react-server-dom-rspack/server.node';
 import { runWithLayoutMeta } from 'nest-can-react';
@@ -118,6 +119,40 @@ import { pages, type PageName } from './pages';
 import { handleRequest, type NestRenderOptions } from './handle-request';
 
 export type { PageName };
+
+type ClientManifest = {
+  entryCssFiles?: string[];
+};
+
+function loadClientManifest(): ClientManifest {
+  const manifestPath = join(
+    process.cwd(),
+    '.nest-can-react/server/client-manifest.json',
+  );
+
+  try {
+    return JSON.parse(readFileSync(manifestPath, 'utf8')) as ClientManifest;
+  } catch {
+    return { entryCssFiles: [] };
+  }
+}
+
+function mergeStylesheetHrefs(...groups: (string[] | undefined)[]) {
+  const seen = new Set<string>();
+  const hrefs: string[] = [];
+
+  for (const group of groups) {
+    for (const href of group ?? []) {
+      if (seen.has(href)) {
+        continue;
+      }
+      seen.add(href);
+      hrefs.push(href);
+    }
+  }
+
+  return hrefs;
+}
 
 export async function renderNestPage(
   pageName: string,
@@ -133,10 +168,14 @@ export async function renderNestPage(
   }
 
   const serverEntry = Page as ServerEntry<typeof Page>;
-  const css =
-    serverEntry.entryCssFiles?.map((href) => (
-      <link key={href} rel="stylesheet" href={href} precedence="default" />
-    )) ?? null;
+  const clientManifest = loadClientManifest();
+  const stylesheetHrefs = mergeStylesheetHrefs(
+    clientManifest.entryCssFiles,
+    serverEntry.entryCssFiles,
+  );
+  const css = stylesheetHrefs.map((href) => (
+    <link key={href} rel="stylesheet" href={href} precedence="default" />
+  ));
 
   await runWithLayoutMeta(async () => {
     const root = (

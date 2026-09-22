@@ -5,6 +5,7 @@ import rspack from '@rspack/core';
 import { generateFlightEntries } from './codegen.mjs';
 import { discoverPages } from './discover-pages.mjs';
 import { loadConfig } from './load-config.mjs';
+import { writeClientManifest } from './client-manifest.mjs';
 import { createRspackConfigs } from './rspack-config.mjs';
 
 const rootDir = process.cwd();
@@ -59,6 +60,7 @@ await new Promise((resolve, reject) => {
       console.error(stats.toString({ colors: true }));
     } else if (stats) {
       console.log(stats.toString({ colors: true, preset: 'minimal' }));
+      void writeClientManifest(stats, config);
     }
 
     resolve();

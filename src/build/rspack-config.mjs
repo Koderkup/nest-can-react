@@ -15,34 +15,41 @@ export function createRspackConfigs({
   const isDev = mode === 'development';
   const publicPath = `${config.publicPath}/`;
 
-  const rscRule = {
-    test: /\.(?:js|mjs|cjs|jsx|ts|tsx)$/,
-    exclude: /node_modules[\\/](?!nest-can-react|rsc-html-stream|react-server-dom-rspack)/,
-    use: {
-      loader: 'builtin:swc-loader',
-      options: {
-        jsc: {
-          parser: {
-            syntax: 'typescript',
-            tsx: true,
-            decorators: true,
-          },
-          transform: {
-            react: {
-              runtime: 'automatic',
-              development: isDev,
-              refresh: isDev,
+  function createRscRule({ refresh }) {
+    return {
+      test: /\.(?:js|mjs|cjs|jsx|ts|tsx)$/,
+      exclude:
+        /node_modules[\\/](?!nest-can-react|rsc-html-stream|react-server-dom-rspack)/,
+      use: {
+        loader: 'builtin:swc-loader',
+        options: {
+          jsc: {
+            parser: {
+              syntax: 'typescript',
+              tsx: true,
+              decorators: true,
             },
-            legacyDecorator: true,
-            decoratorMetadata: true,
+            transform: {
+              react: {
+                runtime: 'automatic',
+                development: isDev,
+                refresh,
+              },
+              legacyDecorator: true,
+              decoratorMetadata: true,
+            },
           },
-        },
-        rspackExperiments: {
-          reactServerComponents: true,
+          rspackExperiments: {
+            reactServerComponents: true,
+          },
         },
       },
-    },
-  };
+    };
+  }
+
+  // React Refresh globals exist only in the client bundle.
+  const clientRscRule = createRscRule({ refresh: isDev });
+  const serverRscRule = createRscRule({ refresh: false });
 
   const assetRule = {
     test: /\.(png|jpe?g|gif|svg|webp|woff2?|ttf|eot)$/i,
@@ -80,7 +87,7 @@ export function createRspackConfigs({
       extensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
     },
     module: {
-      rules: [rscRule, cssRule, assetRule],
+      rules: [clientRscRule, cssRule, assetRule],
     },
     plugins: [
       new ClientPlugin(),
@@ -142,7 +149,7 @@ export function createRspackConfigs({
             conditionNames: ['react-server', '...'],
           },
         },
-        rscRule,
+        serverRscRule,
         cssRule,
         assetRule,
       ],
@@ -151,8 +158,7 @@ export function createRspackConfigs({
       new ServerPlugin({
         onServerComponentChanges,
       }),
-      isDev && new rspack.HotModuleReplacementPlugin(),
-    ].filter(Boolean),
+    ],
     experiments: {
       css: true,
       layers: true,

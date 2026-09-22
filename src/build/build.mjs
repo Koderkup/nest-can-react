@@ -4,6 +4,7 @@ import rspack from '@rspack/core';
 import { generateFlightEntries } from './codegen.mjs';
 import { discoverPages } from './discover-pages.mjs';
 import { loadConfig } from './load-config.mjs';
+import { writeClientManifest } from './client-manifest.mjs';
 import { createRspackConfigs } from './rspack-config.mjs';
 
 export async function buildNestReact({ rootDir = process.cwd(), mode = 'production' } = {}) {
@@ -30,7 +31,7 @@ export async function buildNestReact({ rootDir = process.cwd(), mode = 'producti
 
   await new Promise((resolve, reject) => {
     compiler.run((error, stats) => {
-      compiler.close((closeError) => {
+      compiler.close(async (closeError) => {
         if (error || closeError) {
           reject(error ?? closeError);
           return;
@@ -44,6 +45,7 @@ export async function buildNestReact({ rootDir = process.cwd(), mode = 'producti
 
         if (stats) {
           console.log(stats.toString({ colors: true, preset: 'minimal' }));
+          await writeClientManifest(stats, config);
         }
 
         resolve();
