@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@rspack/core": "^2.2.6",
+    "@rspack/dev-server": "^2.2.1",
     "@rspack/plugin-react-refresh": "^1.4.3",
     "express": "^5.1.0",
     "react-refresh": "^0.17.0",

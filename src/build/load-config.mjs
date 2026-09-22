@@ -15,6 +15,7 @@ const defaultConfig = {
   layoutEntry: 'src/layout.tsx',
   runtimeEntry: 'src/app.runtime.tsx',
   hmrPort: 9101,
+  clientDevPort: 9102,
 };
 
 export async function loadConfig(rootDir, overrides = {}) {
@@ -74,6 +75,9 @@ function normalizeConfig(config, rootDir) {
         defaultConfig.runtimeEntry,
     ),
     hmrPort: Number(config.hmrPort ?? defaultConfig.hmrPort),
+    clientDevPort: Number(
+      config.clientDevPort ?? defaultConfig.clientDevPort,
+    ),
   };
 }
 

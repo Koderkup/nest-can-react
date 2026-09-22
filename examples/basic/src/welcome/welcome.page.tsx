@@ -1,4 +1,3 @@
-'use server-entry';
 
 import React from 'react';
 import { ArchitectureMap } from './ArchitectureMap';

@@ -257,6 +257,8 @@ export function connectHmr(port = ${hmrPort}) {
         const message = JSON.parse(String(event.data)) as HmrMessage;
         if (message.type === 'rsc-update') {
           window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
+        } else if (message.type === 'client-reload') {
+          window.location.reload();
         }
       } catch {
         // ignore malformed payloads

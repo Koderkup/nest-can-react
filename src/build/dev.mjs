@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { WebSocketServer } from 'ws';
 import rspack from '@rspack/core';
+import { RspackDevServer } from '@rspack/dev-server';
 import { generateFlightEntries } from './codegen.mjs';
 import { discoverPages } from './discover-pages.mjs';
 import { loadConfig } from './load-config.mjs';
@@ -15,8 +16,8 @@ const entries = await generateFlightEntries({ config, pages });
 
 const clients = new Set();
 
-function broadcastRscUpdate() {
-  const payload = JSON.stringify({ type: 'rsc-update' });
+function broadcast(message) {
+  const payload = JSON.stringify(message);
   for (const client of clients) {
     if (client.readyState === 1) {
       client.send(payload);
@@ -36,36 +37,68 @@ await new Promise((resolve) => {
   hmrHttp.listen(config.hmrPort, resolve);
 });
 
-console.log(`nest-can-react: RSC HMR websocket on :${config.hmrPort}`);
+console.log(`nest-can-react: RSC refresh websocket on :${config.hmrPort}`);
 
-const configs = createRspackConfigs({
+const [clientConfig, serverConfig] = createRspackConfigs({
   config,
   entries,
   mode: 'development',
-  onServerComponentChanges() {
-    broadcastRscUpdate();
-  },
+  clientDevServer: { port: config.clientDevPort },
 });
 
-const compiler = rspack(configs);
+const serverCompiler = rspack(serverConfig);
+const clientCompiler = rspack(clientConfig);
 
-await new Promise((resolve, reject) => {
-  compiler.watch({ aggregateTimeout: 200 }, (error, stats) => {
+let serverInitialCompileDone = false;
+
+const waitForServer = new Promise((resolve, reject) => {
+  serverCompiler.watch({ aggregateTimeout: 200 }, (error, stats) => {
     if (error) {
-      reject(error);
+      if (!serverInitialCompileDone) {
+        reject(error);
+      }
       return;
     }
 
     if (stats?.hasErrors()) {
       console.error(stats.toString({ colors: true }));
-    } else if (stats) {
-      console.log(stats.toString({ colors: true, preset: 'minimal' }));
-      void writeClientManifest(stats, config);
+      if (!serverInitialCompileDone) {
+        reject(new Error('Server RSC compilation failed.'));
+      }
+      return;
     }
 
-    resolve();
+    if (stats) {
+      console.log(stats.toString({ colors: true, preset: 'minimal' }));
+    }
+
+    if (serverInitialCompileDone) {
+      broadcast({ type: 'rsc-update' });
+    } else {
+      serverInitialCompileDone = true;
+      resolve();
+    }
   });
 });
+
+clientCompiler.hooks.done.tap('nest-can-react-client-manifest', (stats) => {
+  if (stats.hasErrors()) {
+    console.error(stats.toString({ colors: true }));
+    return;
+  }
+
+  void writeClientManifest(stats, config);
+});
+
+const devServer = new RspackDevServer(clientConfig.devServer, clientCompiler);
+
+const waitForClient = devServer.start().then(() => {
+  console.log(
+    `nest-can-react: client Fast Refresh (Rspack HMR) on :${config.clientDevPort}`,
+  );
+});
+
+await Promise.all([waitForServer, waitForClient]);
 
 const nestBin = process.env.NEST_BIN ?? 'npx';
 const nestArgs =
@@ -89,6 +122,7 @@ nest.on('exit', (code) => {
 
 process.on('SIGINT', () => {
   nest.kill('SIGINT');
+  void devServer.stop();
   hmrHttp.close();
   process.exit(0);
 });

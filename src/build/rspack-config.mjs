@@ -10,6 +10,7 @@ export function createRspackConfigs({
   entries,
   mode = 'production',
   onServerComponentChanges,
+  clientDevServer,
 }) {
   const { ServerPlugin, ClientPlugin } = createPlugins();
   const isDev = mode === 'development';
@@ -66,6 +67,9 @@ export function createRspackConfigs({
     type: 'css',
   };
 
+  const clientDevHost = clientDevServer?.host ?? '127.0.0.1';
+  const clientDevPort = clientDevServer?.port;
+
   const clientConfig = {
     name: 'client',
     mode,
@@ -81,7 +85,7 @@ export function createRspackConfigs({
       filename: isDev ? '[name].js' : '[name].[contenthash:8].js',
       chunkFilename: isDev ? '[name].js' : '[name].[contenthash:8].js',
       cssFilename: isDev ? '[name].css' : '[name].[contenthash:8].css',
-      clean: true,
+      clean: !clientDevServer,
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
@@ -102,6 +106,32 @@ export function createRspackConfigs({
     },
     devtool: isDev ? 'cheap-module-source-map' : 'source-map',
     stats: 'errors-warnings',
+    ...(clientDevPort != null
+      ? {
+          devServer: {
+            hot: true,
+            liveReload: false,
+            host: clientDevHost,
+            port: clientDevPort,
+            devMiddleware: {
+              writeToDisk: (filePath) => {
+                const normalized = filePath.replace(/\\/g, '/');
+                const outDir = config.outDir.replace(/\\/g, '/');
+                return normalized.includes(outDir);
+              },
+            },
+            client: {
+              webSocketURL: {
+                protocol: 'ws',
+                hostname: clientDevHost,
+                port: clientDevPort,
+                pathname: '/ws',
+              },
+              logging: 'warn',
+            },
+          },
+        }
+      : {}),
   };
 
   const serverConfig = {
@@ -155,9 +185,11 @@ export function createRspackConfigs({
       ],
     },
     plugins: [
-      new ServerPlugin({
-        onServerComponentChanges,
-      }),
+      new ServerPlugin(
+        onServerComponentChanges
+          ? { onServerComponentChanges }
+          : undefined,
+      ),
     ],
     experiments: {
       css: true,
