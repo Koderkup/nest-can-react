@@ -1,9 +1,10 @@
 
-import React from 'react';
+
 import { ArchitectureMap } from './ArchitectureMap';
 import { WelcomePageData } from './welcome.types';
 
 export default function WelcomePage(data: WelcomePageData) {
+
   return (
     <>
       <title>Welcome | Nest Can React</title>
