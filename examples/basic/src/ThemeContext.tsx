@@ -1,33 +1,73 @@
-"use client";
+'use client';
+
 import {
   createContext,
   useContext,
+  useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
-} from "react";
+} from 'react';
 
-type Theme = "light" | "dark";
+export type Theme = 'light' | 'dark';
+
+const STORAGE_KEY = 'ncr-theme';
 
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined
-);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+function readStoredTheme(): Theme {
+  if (typeof window === 'undefined') {
+    return 'dark';
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark') {
+      return stored;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return window.matchMedia('(prefers-color-scheme: light)').matches
+    ? 'light'
+    : 'dark';
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+}
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  useLayoutEffect(() => {
+    setTheme(readStoredTheme());
+  }, []);
+
+  useLayoutEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch {
+      /* ignore */
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((currentTheme) =>
-      currentTheme === "light" ? "dark" : "light"
-    );
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'));
   };
 
   return (
@@ -41,7 +81,7 @@ export function useTheme() {
   const context = useContext(ThemeContext);
 
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
 
   return context;

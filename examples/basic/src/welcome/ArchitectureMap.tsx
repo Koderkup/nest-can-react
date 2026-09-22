@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArchitectureEdge, ArchitectureNode } from './welcome.types';
 import './ArchitectureMap.css';
-import { useTheme } from '../ThemeContext';
 
 type ArchitectureMapProps = {
   edges: ArchitectureEdge[];
@@ -12,7 +11,7 @@ type ArchitectureMapProps = {
 
 export function ArchitectureMap({ edges, nodes }: ArchitectureMapProps) {
   const [activeId, setActiveId] = useState(nodes[0]?.id ?? '');
-  const { theme, toggleTheme } = useTheme();
+
   const connected = useMemo(() => {
     const ids = new Set<string>([activeId]);
 
@@ -30,9 +29,7 @@ export function ArchitectureMap({ edges, nodes }: ArchitectureMapProps) {
 
   return (
     <div className="architecture-map">
-      <button onClick={toggleTheme}>Toggle Theme</button>
-      <p>Current theme: {theme}</p>
-      <p className="architecture-map__label technical">Module graph </p>
+      <p className="architecture-map__label technical">Module graph</p>
       <div className="architecture-map__stage">
         <svg
           aria-hidden="true"

@@ -3,7 +3,6 @@
 import React, { FormEvent, useState } from 'react';
 import { navigateTo, useCommit } from 'nest-can-react/client';
 import { Author, Note } from './notes.types';
-import { useTheme } from '../ThemeContext';
 
 type NoteComposerProps = {
   authors: Author[];
@@ -16,7 +15,7 @@ export function NoteComposer({ authors }: NoteComposerProps) {
   const { commit, pending, error } = useCommit<Note>('/notes', {
     revalidate: false,
   });
-  const { theme, toggleTheme } = useTheme();
+  
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,8 +29,6 @@ export function NoteComposer({ authors }: NoteComposerProps) {
   return (
     <form className="note-panel note-form" onSubmit={onSubmit}>
       <p className="technical note-panel__label">New note</p>
-      <button onClick={toggleTheme}>Toggle Theme</button>
-      <p>Current theme: {theme}</p>
       <label className="note-field">
         <span className="label">Title</span>
         <input
