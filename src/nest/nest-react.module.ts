@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { Server } from 'node:http';
 import {
   DynamicModule,
   MiddlewareConsumer,
@@ -7,6 +8,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import express, { NextFunction, Request, Response } from 'express';
+import { attachDevHmrProxiesFromEnv } from './dev-hmr-proxy';
 
 export type NestReactOptions = {
   /** Absolute path to client assets directory. Default: `<cwd>/public/nest-can-react` */
@@ -29,6 +31,8 @@ export class NestReactModule implements NestModule {
       options.publicPath ?? DEFAULT_PUBLIC_PATH,
     );
 
+    attachToListeningHttpServers();
+
     return {
       module: NestReactModule,
     };
@@ -47,6 +51,8 @@ export class NestReactModule implements NestModule {
 
     consumer
       .apply((req: Request, res: Response, next: NextFunction) => {
+        attachDevHmrProxiesFromRequest(req);
+
         const originalUrl = req.originalUrl.split('?')[0];
 
         if (!originalUrl.startsWith(prefix)) {
@@ -66,6 +72,56 @@ export class NestReactModule implements NestModule {
         method: RequestMethod.GET,
       });
   }
+}
+
+function attachToListeningHttpServers() {
+  if (process.env.NEST_CAN_REACT_DEV !== '1') {
+    return;
+  }
+
+  const tryAttach = () => {
+    const handles =
+      (
+        process as typeof process & {
+          _getActiveHandles?: () => unknown[];
+        }
+      )._getActiveHandles?.() ?? [];
+
+    let attached = false;
+
+    for (const handle of handles) {
+      if (handle instanceof Server && handle.listening) {
+        attachDevHmrProxiesFromEnv(handle);
+        attached = true;
+      }
+    }
+
+    return attached;
+  };
+
+  if (tryAttach()) {
+    return;
+  }
+
+  const timer = setInterval(() => {
+    if (tryAttach()) {
+      clearInterval(timer);
+    }
+  }, 25);
+
+  timer.unref?.();
+  setTimeout(() => clearInterval(timer), 15_000).unref?.();
+}
+
+function attachDevHmrProxiesFromRequest(req: Request) {
+  const server = (req.socket as typeof req.socket & { server?: Server })
+    .server;
+
+  if (!server) {
+    return;
+  }
+
+  attachDevHmrProxiesFromEnv(server);
 }
 
 function normalizePublicPath(publicPath: string) {

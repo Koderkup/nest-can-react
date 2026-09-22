@@ -67,7 +67,7 @@ import { useCommit, refresh, navigateTo } from 'nest-can-react/client';
 | Command | What it does |
 | --- | --- |
 | `nest-can-react init [dir]` | Add the welcome starter to an existing Nest app |
-| `nest-can-react dev` | RSC watch + client dev-server (Fast Refresh) + Nest watch + RSC refresh websocket |
+| `nest-can-react dev` | Push-only HMR: Fast Refresh for client/CSS, Flight refetch for RSC, guarded full reload when an update cannot be applied |
 | `nest-can-react build` | Production RSC/SSR/client assets |
 
 ## Docs

@@ -61,12 +61,16 @@ public/nest-can-react/       # browser assets
 
 ## HMR
 
-`nest-can-react dev`:
+`nest-can-react dev` (push-only — no polling):
 
-- Rspack watches the RSC graph; the client graph runs on `@rspack/dev-server` with React Refresh (`clientDevPort`, default `9102`, assets still written under `public/nest-can-react` for Nest to serve)
-- Nest runs with `--watch`
-- After each successful rebuild, the websocket on `hmrPort` (default `9101`) triggers a Flight refetch and then a debounced full-page reload so you always see changes (Fast Refresh alone is unreliable with `hydrateRoot(document)`)
-- The client dev-server on `clientDevPort` (default `9102`) still builds assets and can apply module hot updates before the reload runs
+- **Same-origin WebSockets** on your Nest port (e.g. `3000`):
+  - `/__nest_can_react/hmr` — RSC hub (`hello`, `building`, `rsc-update`, `build-error`, `build-ok`). Server UI changes refetch Flight for the current URL. Failed compiles show an overlay and recover on the next successful build.
+  - `/__nest_can_react/rspack-hmr` — proxied to the client dev-server for **Fast Refresh** and CSS HMR. If Fast Refresh cannot apply an update, the page does a guarded full reload.
+- Internal hubs: RSC on `hmrPort` (default `9101`), Rspack Fast Refresh on `clientDevPort` (default `9102`); `NestReactModule` attaches upgrade proxies at Nest bootstrap when `NEST_CAN_REACT_DEV=1`. Fast Refresh talks to the client compiler websocket; RSC signals stay same-origin on the Nest port.
+- Nest `--watch` uses **`tsconfig.build.json`** (`.ts` only) and ignores `**/*.tsx` / `**/*.css` — UI edits do **not** restart Nest
+- Change Nest routes/guards/DI in `.controller.ts` / `.service.ts` → Nest restarts, the HMR socket reconnects, and the current page refetches Flight
+- **State:** `'use client'` islands keep React state across Fast Refresh and across a safe RSC refetch. A full reload is used only when an update cannot be applied safely (declined HMR, runtime error recovery, or a reload loop-guarded failure)
+- Adding or removing `*.page.tsx` files regenerates entries without restarting `nest-can-react dev`
 
 ## Security
 

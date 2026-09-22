@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { toPosixPath } from './load-config.mjs';
@@ -9,6 +9,7 @@ const flightTemplates = join(packageRoot, 'src/flight');
 
 export async function generateFlightEntries({ config, pages }) {
   await mkdir(config.generatedDir, { recursive: true });
+  await removeStaleGeneratedFiles(config.generatedDir);
 
   const layoutImport = toImportSpecifier(
     config.generatedDir,
@@ -54,12 +55,13 @@ export async function generateFlightEntries({ config, pages }) {
     ].join('\n'),
   );
 
+  const clientManifestRel = toPosixPath(
+    relative(config.rootDir, join(config.serverOutDir, '..', 'client-manifest.json')),
+  );
+
   await writeFileIfChanged(
     join(config.generatedDir, 'entry.rsc.tsx'),
-    createRscEntry({
-      layoutImport,
-      hmrPort: config.hmrPort,
-    }),
+    createRscEntry({ layoutImport, clientManifestRel }),
   );
 
   await writeFileIfChanged(
@@ -69,11 +71,7 @@ export async function generateFlightEntries({ config, pages }) {
 
   await writeFileIfChanged(
     join(config.generatedDir, 'entry.client.tsx'),
-    createClientEntry({
-      runtimeImport,
-      styleImports,
-      hmrPort: config.hmrPort,
-    }),
+    createClientEntry({ runtimeImport, styleImports }),
   );
 
   await writeFileIfChanged(
@@ -97,8 +95,13 @@ export async function generateFlightEntries({ config, pages }) {
   );
 
   await writeFileIfChanged(
-    join(config.generatedDir, 'hmr-bridge.ts'),
-    createHmrBridge(config.hmrPort),
+    join(config.generatedDir, 'dev-hmr-client.ts'),
+    readTemplate('dev-hmr-client.ts'),
+  );
+
+  await writeFileIfChanged(
+    join(config.generatedDir, 'dev-overlay.ts'),
+    readTemplate('dev-overlay.ts'),
   );
 
   return {
@@ -108,7 +111,7 @@ export async function generateFlightEntries({ config, pages }) {
   };
 }
 
-function createRscEntry({ layoutImport, hmrPort }) {
+function createRscEntry({ layoutImport, clientManifestRel }) {
   return `import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import React from 'react';
@@ -122,12 +125,13 @@ export type { PageName };
 
 type ClientManifest = {
   entryCssFiles?: string[];
+  entryJsFiles?: string[];
 };
 
 function loadClientManifest(): ClientManifest {
   const manifestPath = join(
     process.cwd(),
-    '.nest-can-react/server/client-manifest.json',
+    ${JSON.stringify(clientManifestRel)},
   );
 
   try {
@@ -137,7 +141,7 @@ function loadClientManifest(): ClientManifest {
   }
 }
 
-function mergeStylesheetHrefs(...groups: (string[] | undefined)[]) {
+function mergeAssetHrefs(...groups: (string[] | undefined)[]) {
   const seen = new Set<string>();
   const hrefs: string[] = [];
 
@@ -169,9 +173,13 @@ export async function renderNestPage(
 
   const serverEntry = Page as ServerEntry<typeof Page>;
   const clientManifest = loadClientManifest();
-  const stylesheetHrefs = mergeStylesheetHrefs(
+  const stylesheetHrefs = mergeAssetHrefs(
     clientManifest.entryCssFiles,
     serverEntry.entryCssFiles,
+  );
+  const bootstrapScripts = mergeAssetHrefs(
+    clientManifest.entryJsFiles,
+    serverEntry.entryJsFiles,
   );
   const css = stylesheetHrefs.map((href) => (
     <link key={href} rel="stylesheet" href={href} precedence="default" />
@@ -190,7 +198,7 @@ export async function renderNestPage(
     await handleRequest({
       ...options,
       getRoot: () => root,
-      bootstrapScripts: serverEntry.entryJsFiles,
+      bootstrapScripts,
     });
   });
 }
@@ -202,8 +210,6 @@ export function listPages() {
 if (import.meta.webpackHot) {
   import.meta.webpackHot.accept();
 }
-
-export const __NCR_HMR_PORT__ = ${JSON.stringify(hmrPort)};
 `;
 }
 
@@ -212,13 +218,13 @@ function createSsrEntry() {
 `;
 }
 
-function createClientEntry({ runtimeImport, styleImports, hmrPort }) {
+function createClientEntry({ runtimeImport, styleImports }) {
   return `${styleImports}
+import { connectNestCanReactDevHmr } from './dev-hmr-client';
 import { bootClient } from './client-boot';
-import { connectHmr } from './hmr-bridge';
 ${runtimeImport ? `import { ClientRuntime } from ${JSON.stringify(runtimeImport)};` : 'const ClientRuntime = undefined;'}
 
-connectHmr(${JSON.stringify(hmrPort)});
+connectNestCanReactDevHmr();
 
 void bootClient({
   Runtime: ClientRuntime,
@@ -226,58 +232,12 @@ void bootClient({
 `;
 }
 
-function createHmrBridge(hmrPort) {
-  return `type HmrMessage = { type: string };
-
-export function connectHmr(port = ${hmrPort}) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    return;
-  }
-
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const host = window.location.hostname;
-  const url = \`\${protocol}://\${host}:\${port}\`;
-
-  let socket: WebSocket | undefined;
-  let retries = 0;
-
-  const connect = () => {
-    socket = new WebSocket(url);
-
-    socket.addEventListener('open', () => {
-      retries = 0;
-    });
-
-    socket.addEventListener('message', (event) => {
-      try {
-        const message = JSON.parse(String(event.data)) as HmrMessage;
-        if (message.type === 'rsc-update') {
-          window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
-        } else if (
-          message.type === 'live-reload' ||
-          message.type === 'client-reload'
-        ) {
-          window.location.reload();
-        }
-      } catch {
-        // ignore malformed payloads
-      }
-    });
-
-    socket.addEventListener('close', () => {
-      retries += 1;
-      const delay = Math.min(10_000, 500 * retries);
-      window.setTimeout(connect, delay);
-    });
-  };
-
-  connect();
-}
-`;
+async function removeStaleGeneratedFiles(generatedDir) {
+  await Promise.all(
+    ['dev-live-reload.tsx', 'hmr-bridge.ts', 'constants.ts'].map((file) =>
+      rm(join(generatedDir, file), { force: true }),
+    ),
+  );
 }
 
 function readTemplate(name) {

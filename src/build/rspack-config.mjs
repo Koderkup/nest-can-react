@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import rspack, { experiments } from '@rspack/core';
+import { experiments } from '@rspack/core';
 import ReactRefreshPlugin from '@rspack/plugin-react-refresh';
 
 const { createPlugins, Layers } = experiments.rsc;
@@ -95,7 +95,6 @@ export function createRspackConfigs({
     },
     plugins: [
       new ClientPlugin(),
-      isDev && new rspack.HotModuleReplacementPlugin(),
       isDev && new ReactRefreshPlugin(),
     ].filter(Boolean),
     experiments: {
@@ -128,7 +127,9 @@ export function createRspackConfigs({
                 pathname: '/ws',
               },
               logging: 'warn',
+              overlay: true,
             },
+            allowedHosts: 'all',
           },
         }
       : {}),
@@ -150,7 +151,7 @@ export function createRspackConfigs({
       library: {
         type: 'commonjs2',
       },
-      clean: true,
+      clean: !isDev,
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],

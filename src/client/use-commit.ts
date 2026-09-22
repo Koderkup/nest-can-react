@@ -85,8 +85,22 @@ export function useCommit<T = unknown>(
 }
 
 export function refresh() {
-  window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
-  return Promise.resolve();
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    const timeout = window.setTimeout(finish, 8_000);
+
+    function finish() {
+      window.clearTimeout(timeout);
+      window.removeEventListener('ncr:rsc-refresh-done', finish);
+      resolve();
+    }
+
+    window.addEventListener('ncr:rsc-refresh-done', finish, { once: true });
+    window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
+  });
 }
 
 export function navigateTo(href: string) {

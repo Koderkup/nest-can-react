@@ -1,5 +1,5 @@
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { normalizePublicPath } from './load-config.mjs';
 
 function findClientStats(stats) {
@@ -25,6 +25,10 @@ function findClientStats(stats) {
   }
 
   return undefined;
+}
+
+export function getClientManifestPath(config) {
+  return join(config.serverOutDir, '..', 'client-manifest.json');
 }
 
 export function collectClientManifest(stats, publicPath) {
@@ -55,9 +59,8 @@ export function collectClientManifest(stats, publicPath) {
 
 export async function writeClientManifest(stats, config) {
   const manifest = collectClientManifest(stats, config.publicPath);
-  await writeFile(
-    join(config.serverOutDir, 'client-manifest.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  const manifestPath = getClientManifestPath(config);
+  await mkdir(dirname(manifestPath), { recursive: true });
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }
