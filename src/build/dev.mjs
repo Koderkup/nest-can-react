@@ -1,237 +1,92 @@
+import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { watch } from 'node:fs';
-import { join, resolve } from 'node:path';
-import {
-  collectChangedClientModules,
-  watchNestReactClient,
-} from './build-client.mjs';
-import { classifyChange, toPosixPath } from './dev-classify.mjs';
-import { broadcast, startProxy, waitFor, waitForPort } from './dev-proxy.mjs';
+import { WebSocketServer } from 'ws';
+import rspack from '@rspack/core';
+import { generateFlightEntries } from './codegen.mjs';
+import { discoverPages } from './discover-pages.mjs';
+import { loadConfig } from './load-config.mjs';
+import { createRspackConfigs } from './rspack-config.mjs';
 
-const rootDir = resolve(process.cwd());
-const publicPort = Number(process.env.PORT ?? 3000);
-const nestPort = Number(process.env.NEST_REACT_NEST_PORT ?? publicPort + 1);
-let previousOutputFiles = new Set();
-let seenFirstClientBuild = false;
+const rootDir = process.cwd();
+const config = await loadConfig(rootDir, {});
+const pages = await discoverPages(config);
+const entries = await generateFlightEntries({ config, pages });
 
-let lastChange = 'none';
-let forceFullReload = false;
-let nestStartCount = 0;
-let nestError = '';
-let serverReloadTimer;
-let graphDebounceTimer;
-let nestProcess;
+const clients = new Set();
 
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = 'development';
+function broadcastRscUpdate() {
+  const payload = JSON.stringify({ type: 'rsc-update' });
+  for (const client of clients) {
+    if (client.readyState === 1) {
+      client.send(payload);
+    }
+  }
 }
 
-const client = await watchNestReactClient(
-  { rootDir },
-  {
-    onRebuild({ manifest, metafile }) {
-      const outputFiles = new Set(Object.keys(metafile.outputs ?? {}));
-      const modules = collectChangedClientModules(
-        metafile,
-        previousOutputFiles,
-        {
-          outdir: resolve(rootDir, 'public/nest-can-react'),
-          publicPath: manifest.publicPath,
-          rootDir,
-        },
-      );
-      previousOutputFiles = outputFiles;
+const hmrHttp = createServer();
+const wss = new WebSocketServer({ server: hmrHttp });
 
-      if (!seenFirstClientBuild) {
-        seenFirstClientBuild = true;
-        console.log('[nest-can-react] client rebuilt');
-        return;
-      }
+wss.on('connection', (socket) => {
+  clients.add(socket);
+  socket.on('close', () => clients.delete(socket));
+});
 
-      console.log('[nest-can-react] client rebuilt');
-      broadcast({ type: 'clear-error' });
+await new Promise((resolve) => {
+  hmrHttp.listen(config.hmrPort, resolve);
+});
 
-      if (lastChange === 'server') {
-        return;
-      }
+console.log(`nest-can-react: RSC HMR websocket on :${config.hmrPort}`);
 
-      if (forceFullReload) {
-        forceFullReload = false;
-        lastChange = 'none';
-        broadcast({ type: 'full-reload' });
-        return;
-      }
-
-      console.log('[nest-can-react] Fast Refresh', modules);
-      broadcast({
-        type: 'client-update',
-        css: manifest.css ?? [],
-        islandCss: manifest.islandCss ?? {},
-        modules,
-      });
-      lastChange = 'none';
-    },
-    onError(error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[nest-can-react] client build failed\n' + message);
-      broadcast({ type: 'error', message });
-    },
+const configs = createRspackConfigs({
+  config,
+  entries,
+  mode: 'development',
+  onServerComponentChanges() {
+    broadcastRscUpdate();
   },
-);
+});
 
-nestProcess = startNest();
-await waitForPort(nestPort);
-const server = startProxy(publicPort, nestPort);
+const compiler = rspack(configs);
 
-watchSourceFiles();
-watchConfigFile();
-
-console.log(`[nest-can-react] dev server http://localhost:${publicPort}`);
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-function startNest() {
-  const nestBin = resolve(rootDir, 'node_modules/.bin/nest');
-  const child = spawn(nestBin, ['start', '--watch'], {
-    cwd: rootDir,
-    env: {
-      ...process.env,
-      PORT: String(nestPort),
-      NODE_ENV: process.env.NODE_ENV ?? 'development',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
-  child.stdout.on('data', (chunk) => {
-    const text = String(chunk);
-    process.stdout.write(chunk);
-
-    if (text.includes('successfully started')) {
-      nestStartCount += 1;
-      nestError = '';
-      broadcast({ type: 'clear-error' });
-    }
-  });
-
-  child.stderr.on('data', (chunk) => {
-    const text = String(chunk);
-    process.stderr.write(chunk);
-    nestError += text;
-
-    if (/error TS\d+|Found \d+ error/.test(nestError)) {
-      broadcast({ type: 'error', message: nestError.trim() });
-    }
-  });
-
-  child.on('exit', (code, signal) => {
-    if (signal === 'SIGTERM' || signal === 'SIGINT' || code == null) {
+await new Promise((resolve, reject) => {
+  compiler.watch({ aggregateTimeout: 200 }, (error, stats) => {
+    if (error) {
+      reject(error);
       return;
     }
 
-    console.error(`[nest-can-react] Nest exited with code ${code}`);
-  });
-
-  return child;
-}
-
-function watchSourceFiles() {
-  watch(join(rootDir, 'src'), { recursive: true }, (event, filename) => {
-    if (!filename) {
-      return;
+    if (stats?.hasErrors()) {
+      console.error(stats.toString({ colors: true }));
+    } else if (stats) {
+      console.log(stats.toString({ colors: true, preset: 'minimal' }));
     }
 
-    handleFileChange(join(rootDir, 'src', filename), event);
+    resolve();
   });
-}
+});
 
-function watchConfigFile() {
-  watch(join(rootDir, 'nest.react.json'), () => {
-    lastChange = 'server';
-    forceFullReload = true;
-    queueGraphRefresh();
-    scheduleServerReload();
-  });
-}
+const nestBin = process.env.NEST_BIN ?? 'npx';
+const nestArgs =
+  process.env.NEST_ARGS?.split(/\s+/).filter(Boolean) ??
+  ['nest', 'start', '--watch'];
 
-function handleFileChange(file, event = 'change') {
-  const kind = classifyChange(file, rootDir);
+const nest = spawn(nestBin, nestArgs, {
+  cwd: rootDir,
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    NEST_CAN_REACT_DEV: '1',
+    NEST_CAN_REACT_HMR_PORT: String(config.hmrPort),
+  },
+  shell: process.platform === 'win32',
+});
 
-  if (kind === 'ignore') {
-    return;
-  }
+nest.on('exit', (code) => {
+  process.exit(code ?? 0);
+});
 
-  if (kind === 'server') {
-    lastChange = 'server';
-    scheduleServerReload();
-    return;
-  }
-
-  if (kind === 'client-protocol') {
-    lastChange = 'server';
-    forceFullReload = true;
-    scheduleServerReload();
-    return;
-  }
-
-  if (lastChange !== 'server') {
-    lastChange = 'client';
-  }
-
-  if (event === 'rename' && /\.island\.[jt]sx$/.test(toPosixPath(file))) {
-    queueGraphRefresh();
-  }
-}
-
-function queueGraphRefresh() {
-  clearTimeout(graphDebounceTimer);
-  graphDebounceTimer = setTimeout(() => {
-    void refreshIslandGraph();
-  }, 200);
-}
-
-async function refreshIslandGraph() {
-  try {
-    const { graphChanged } = await client.regenerate();
-
-    if (graphChanged) {
-      lastChange = 'server';
-      forceFullReload = true;
-      scheduleServerReload();
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[nest-can-react] island graph update failed\n' + message);
-    broadcast({ type: 'error', message });
-  }
-}
-
-function scheduleServerReload() {
-  clearTimeout(serverReloadTimer);
-  const generation = nestStartCount;
-  serverReloadTimer = setTimeout(async () => {
-    try {
-      await waitFor(() => nestStartCount > generation, 20000);
-      await waitForPort(nestPort);
-      broadcast({ type: 'clear-error' });
-      broadcast({ type: 'server-reload' });
-      lastChange = 'none';
-      forceFullReload = false;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      broadcast({
-        type: 'error',
-        message: nestError.trim() || message,
-      });
-    }
-  }, 400);
-}
-
-async function shutdown() {
-  clearTimeout(serverReloadTimer);
-  clearTimeout(graphDebounceTimer);
-  nestProcess?.kill('SIGTERM');
-  await client.dispose().catch(() => undefined);
-  server.close();
+process.on('SIGINT', () => {
+  nest.kill('SIGINT');
+  hmrHttp.close();
   process.exit(0);
-}
+});

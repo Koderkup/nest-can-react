@@ -98,14 +98,13 @@ async function writeNestReactConfig(targetDir, sourceRoot, force) {
 
   const config = {
     layout: `${sourceRoot}/layout.tsx`,
-    islands: {
-      include: [`${sourceRoot}/**/*.island.tsx`],
+    pages: {
+      include: [`${sourceRoot}/**/*.page.tsx`],
       exclude: [`${sourceRoot}/**/*.test.tsx`, `${sourceRoot}/**/*.spec.tsx`],
     },
     client: {
       outDir: 'public/nest-can-react',
       publicPath: '/assets/nest-can-react',
-      codeSplitting: true,
       styles: [`${sourceRoot}/assets/layout.css`],
     },
   };
@@ -212,8 +211,10 @@ async function patchPackageJson(packagePath, appPackage, version) {
   appPackage.dependencies = {
     ...appPackage.dependencies,
     [PACKAGE_NAME]: `^${version}`,
-    react: appPackage.dependencies?.react ?? '^19.0.0',
-    'react-dom': appPackage.dependencies?.['react-dom'] ?? '^19.0.0',
+    react: appPackage.dependencies?.react ?? '^19.1.0',
+    'react-dom': appPackage.dependencies?.['react-dom'] ?? '^19.1.0',
+    'react-server-dom-rspack':
+      appPackage.dependencies?.['react-server-dom-rspack'] ?? '^0.1.0',
   };
   appPackage.devDependencies = {
     ...appPackage.devDependencies,

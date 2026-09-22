@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { refresh } from './navigation';
 
 export type CommitState = 'idle' | 'submitting' | 'revalidating';
 
@@ -8,6 +7,10 @@ type UseCommitOptions = {
   revalidate?: boolean;
 };
 
+/**
+ * POST JSON to a Nest route. Nest owns auth/guards/validation.
+ * When revalidate is true (default), triggers an RSC refetch via navigation refresh.
+ */
 export function useCommit<T = unknown>(
   url: string,
   options: UseCommitOptions = {},
@@ -79,6 +82,16 @@ export function useCommit<T = unknown>(
     pending: state !== 'idle',
     state,
   };
+}
+
+export function refresh() {
+  window.dispatchEvent(new CustomEvent('ncr:rsc-update'));
+  return Promise.resolve();
+}
+
+export function navigateTo(href: string) {
+  window.history.pushState(null, '', href);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 async function parseJson(response: Response) {

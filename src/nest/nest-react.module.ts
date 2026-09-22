@@ -1,4 +1,3 @@
-import '../assets/register-assets';
 import { join } from 'node:path';
 import {
   DynamicModule,
@@ -7,59 +6,68 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
 import express, { NextFunction, Request, Response } from 'express';
-import { configureNestReact, NestReactOptions } from '../assets/client-assets';
-import { ClientHookOnServerFilter } from './dev-hook-error.filter';
-import { loadGeneratedServerBoot } from './load-generated-boot';
 
-loadGeneratedServerBoot();
+export type NestReactOptions = {
+  /** Absolute path to client assets directory. Default: `<cwd>/public/nest-can-react` */
+  assetsDir?: string;
+  /** URL prefix for assets. Default: `/assets/nest-can-react` */
+  publicPath?: string;
+};
 
-const publicDir = join(process.cwd(), 'public');
-const servePublic = express.static(publicDir, {
-  setHeaders(res) {
-    if (process.env.NODE_ENV !== 'production') {
-      res.setHeader('Cache-Control', 'no-store');
-    }
-  },
-});
-
-function serveNestReactAssets(req: Request, res: Response, next: NextFunction) {
-  const originalUrl = req.originalUrl.split('?')[0];
-
-  if (!originalUrl.startsWith('/assets/')) {
-    return next();
-  }
-
-  const previousUrl = req.url;
-  req.url = originalUrl.slice('/assets'.length) || '/';
-
-  servePublic(req, res, (error) => {
-    req.url = previousUrl;
-    next(error);
-  });
-}
+const DEFAULT_PUBLIC_PATH = '/assets/nest-can-react';
 
 @Module({})
 export class NestReactModule implements NestModule {
+  private static assetsDir = join(process.cwd(), 'public/nest-can-react');
+  private static publicPath = DEFAULT_PUBLIC_PATH;
+
   static forRoot(options: NestReactOptions = {}): DynamicModule {
-    configureNestReact(options);
+    NestReactModule.assetsDir =
+      options.assetsDir ?? join(process.cwd(), 'public/nest-can-react');
+    NestReactModule.publicPath = normalizePublicPath(
+      options.publicPath ?? DEFAULT_PUBLIC_PATH,
+    );
 
     return {
       module: NestReactModule,
-      providers: [
-        {
-          provide: APP_FILTER,
-          useClass: ClientHookOnServerFilter,
-        },
-      ],
     };
   }
 
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(serveNestReactAssets).forRoutes({
-      path: '*path',
-      method: RequestMethod.GET,
+    const serve = express.static(NestReactModule.assetsDir, {
+      setHeaders(res) {
+        if (process.env.NODE_ENV !== 'production') {
+          res.setHeader('Cache-Control', 'no-store');
+        }
+      },
     });
+
+    const prefix = NestReactModule.publicPath;
+
+    consumer
+      .apply((req: Request, res: Response, next: NextFunction) => {
+        const originalUrl = req.originalUrl.split('?')[0];
+
+        if (!originalUrl.startsWith(prefix)) {
+          return next();
+        }
+
+        const previousUrl = req.url;
+        req.url = originalUrl.slice(prefix.length) || '/';
+
+        serve(req, res, (error) => {
+          req.url = previousUrl;
+          next(error);
+        });
+      })
+      .forRoutes({
+        path: '*path',
+        method: RequestMethod.GET,
+      });
   }
+}
+
+function normalizePublicPath(publicPath: string) {
+  return `/${publicPath}`.replace(/\/+/g, '/').replace(/\/$/, '');
 }

@@ -1,23 +1,23 @@
 # nest-can-react
 
-NestJS-native React rendering. Nest owns the application; React renders pages and islands.
+Nest-native **React Server Components** over the **Flight** protocol.
 
-Install it into an **existing NestJS app**, then scaffold the welcome starter:
+Nest owns the application (modules, DI, guards, routing, APIs). React streams Server Component trees; `'use client'` marks interactive islands.
 
 ```bash
 cd my-nest-app
-npm install nest-can-react
+npm install nest-can-react react react-dom react-server-dom-rspack
 npx nest-can-react init
 npm install
 npm run view:dev
 ```
 
-That adds `src/welcome`, `src/layout.tsx`, and `nest.react.json`, wires `NestReactModule` into `AppModule`, and serves **GET /welcome**.
+Open **GET /welcome**. Controllers call `renderPage` and stream HTML + Flight.
 
 ## App imports
 
 ```ts
-import { NestReactModule, renderPage, Island } from 'nest-can-react';
+import { NestReactModule, renderPage } from 'nest-can-react';
 ```
 
 ```ts
@@ -29,20 +29,37 @@ export class AppModule {}
 
 ```ts
 @Get()
-@Header('content-type', 'text/html')
-index() {
-  return renderPage(WelcomePage, this.welcome.getPage(), { mode: 'hydrated' });
+async index(@Req() request: Request, @Res() response: Response) {
+  await renderPage('welcome', this.welcome.getPage(), { request, response });
 }
 ```
 
 ```tsx
-<Island mode="hydrate" name={ArchitectureMap} props={{ nodes, edges }} />
+'use server-entry';
+
+export default function WelcomePage(data) {
+  return (
+    <>
+      <h1>{data.tagline}</h1>
+      <Counter />
+    </>
+  );
+}
 ```
 
-Islands import client helpers from `nest-can-react/client`:
+```tsx
+'use client';
+
+export function Counter() {
+  const [n, setN] = useState(0);
+  return <button onClick={() => setN(n + 1)}>{n}</button>;
+}
+```
+
+Client helpers:
 
 ```ts
-import { useCommit } from 'nest-can-react/client';
+import { useCommit, refresh, navigateTo } from 'nest-can-react/client';
 ```
 
 ## CLI
@@ -50,8 +67,8 @@ import { useCommit } from 'nest-can-react/client';
 | Command | What it does |
 | --- | --- |
 | `nest-can-react init [dir]` | Add the welcome starter to an existing Nest app |
-| `nest-can-react dev` | Client bundler + Nest watch |
-| `nest-can-react build` | Production client assets |
+| `nest-can-react dev` | Rspack watch (RSC + client) + Nest watch + RSC HMR websocket |
+| `nest-can-react build` | Production RSC/SSR/client assets |
 
 ## Docs
 
