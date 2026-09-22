@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useLayoutEffect,
   useState,
   type ReactNode,
@@ -43,6 +42,14 @@ function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
 }
 
+function persistTheme(theme: Theme) {
+  try {
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    /* ignore */
+  }
+}
+
 interface ThemeProviderProps {
   children: ReactNode;
 }
@@ -51,23 +58,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>('dark');
 
   useLayoutEffect(() => {
-    setTheme(readStoredTheme());
+    const stored = readStoredTheme();
+    setTheme(stored);
+    applyTheme(stored);
   }, []);
 
-  useLayoutEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      /* ignore */
-    }
-  }, [theme]);
-
   const toggleTheme = () => {
-    setTheme((current) => (current === 'light' ? 'dark' : 'light'));
+    setTheme((current) => {
+      const next = current === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      persistTheme(next);
+      return next;
+    });
   };
 
   return (
