@@ -30,6 +30,7 @@ export async function initStarter(args) {
   await copyTemplateFiles(targetDir, sourceRoot, force);
   await patchAppModule(join(targetDir, sourceRoot, 'app.module.ts'), force);
   await patchPackageJson(join(targetDir, 'package.json'), appPackage, pkg.version);
+  await patchNestCli(join(targetDir, 'nest-cli.json'), force);
   await patchTsconfig(join(targetDir, 'tsconfig.json'));
   await patchGitignore(join(targetDir, '.gitignore'));
 
@@ -229,6 +230,43 @@ async function patchPackageJson(packagePath, appPackage, version) {
   };
 
   await writeFile(packagePath, `${JSON.stringify(appPackage, null, 2)}\n`);
+}
+
+async function patchNestCli(nestCliPath, force) {
+  const templatePath = join(templateDir, 'nest-cli.json');
+
+  if (!existsSync(templatePath) || !existsSync(nestCliPath)) {
+    return;
+  }
+
+  let nestCli;
+
+  try {
+    nestCli = JSON.parse(await readFile(nestCliPath, 'utf8'));
+  } catch {
+    return;
+  }
+
+  let templateCli;
+
+  try {
+    templateCli = JSON.parse(await readFile(templatePath, 'utf8'));
+  } catch {
+    return;
+  }
+
+  const watchOptions = templateCli.watchOptions;
+
+  if (!watchOptions) {
+    return;
+  }
+
+  if (nestCli.watchOptions && !force) {
+    return;
+  }
+
+  nestCli.watchOptions = watchOptions;
+  await writeFile(nestCliPath, `${JSON.stringify(nestCli, null, 2)}\n`);
 }
 
 async function patchTsconfig(tsconfigPath) {

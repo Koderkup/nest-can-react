@@ -14,6 +14,8 @@ npm run view:dev
 
 Open **GET /welcome**. Controllers call `renderPage` and stream HTML + Flight.
 
+Repository: [github.com/acefolioDev/nest-can-react](https://github.com/acefolioDev/nest-can-react)
+
 ## App imports
 
 ```ts

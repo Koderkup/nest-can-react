@@ -1,16 +1,16 @@
 {
   "name": "nest-can-react",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Nest-native React Server Components over Flight — Nest owns the app, React streams the UI",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/acefolioDev/nest-react.git"
+    "url": "git+https://github.com/acefolioDev/nest-can-react.git"
   },
   "bugs": {
-    "url": "https://github.com/acefolioDev/nest-react/issues"
+    "url": "https://github.com/acefolioDev/nest-can-react/issues"
   },
-  "homepage": "https://github.com/acefolioDev/nest-react#readme",
+  "homepage": "https://github.com/acefolioDev/nest-can-react#readme",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
