@@ -1,6 +1,6 @@
 {
   "name": "nest-can-react",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Nest-native React Server Components over Flight — Nest owns the app, React streams the UI",
   "license": "MIT",
   "repository": {
