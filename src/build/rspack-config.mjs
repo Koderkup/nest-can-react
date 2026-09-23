@@ -152,6 +152,7 @@ export function createRspackConfigs({
     },
     output: {
       path: config.serverOutDir,
+      publicPath,
       filename: 'rsc.js',
       library: {
         type: 'commonjs2',

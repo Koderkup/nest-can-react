@@ -8,6 +8,7 @@ import { discoverPages } from './discover-pages.mjs';
 import { loadConfig } from './load-config.mjs';
 import { writeClientManifest } from './client-manifest.mjs';
 import { createRspackConfigs } from './rspack-config.mjs';
+import { syncServerAssetsToClientOut } from './sync-server-assets.mjs';
 import {
   createCompileGate,
   createDevHmrHub,
@@ -78,6 +79,8 @@ const waitForServer = new Promise((resolve, reject) => {
     if (stats) {
       console.log(stats.toString({ colors: true, preset: 'minimal' }));
     }
+
+    void syncServerAssetsToClientOut(config.serverOutDir, config.outDir);
 
     gate.done('server', { hash: stats?.hash });
 

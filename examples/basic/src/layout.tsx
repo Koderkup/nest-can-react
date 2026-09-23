@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { favicon } from "./assets/brand";
+import { favicon, logo } from "./assets/brand";
 import { NestLink } from "nest-can-react";
 import { ThemeProvider } from './ThemeContext';
 import { ThemeToggle } from './ThemeToggle';
@@ -38,7 +38,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             <header className="site-header">
               <div className="shell site-header__bar">
                 <NestLink className="brand" to="/notes">
-                  <span aria-hidden="true" className="brand-mark" />
+                  <img
+                    alt="Nest Can React"
+                    className="brand-logo"
+                    height={22}
+                    src={logo}
+                    width={22}
+                  />
                   <span className="brand-name">Nest Can React</span>
                 </NestLink>
 

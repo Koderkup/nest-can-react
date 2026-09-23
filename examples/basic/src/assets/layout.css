@@ -317,6 +317,14 @@ textarea {
   color: var(--text-secondary);
 }
 
+.brand-logo {
+  border-radius: var(--radius-panel);
+  flex: 0 0 auto;
+  height: 1.375rem;
+  object-fit: contain;
+  width: 1.375rem;
+}
+
 .brand-mark {
   border: 1.5px solid var(--text-primary);
   flex: 0 0 1.125rem;

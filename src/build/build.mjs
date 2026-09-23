@@ -6,6 +6,7 @@ import { discoverPages } from './discover-pages.mjs';
 import { loadConfig } from './load-config.mjs';
 import { writeClientManifest } from './client-manifest.mjs';
 import { createRspackConfigs } from './rspack-config.mjs';
+import { syncServerAssetsToClientOut } from './sync-server-assets.mjs';
 
 export async function buildNestReact({ rootDir = process.cwd(), mode = 'production' } = {}) {
   const config = await loadConfig(rootDir, {});
@@ -46,6 +47,10 @@ export async function buildNestReact({ rootDir = process.cwd(), mode = 'producti
         if (stats) {
           console.log(stats.toString({ colors: true, preset: 'minimal' }));
           await writeClientManifest(stats, config);
+          await syncServerAssetsToClientOut(
+            config.serverOutDir,
+            config.outDir,
+          );
         }
 
         resolve();
