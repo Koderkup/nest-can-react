@@ -1,16 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Query,
-  Req,
-  Res,
-} from '@nestjs/common';
-import type { Request, Response } from 'express';
-import { renderPage } from 'nest-can-react';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { render } from 'nest-can-react';
+import { NotePage, NotesPage } from '../react-pages';
 import { NotesService } from './notes.service';
 import { NoteDraft } from './notes.types';
 
@@ -19,44 +9,13 @@ export class NotesController {
   constructor(private readonly notes: NotesService) {}
 
   @Get()
-  async index(
-    @Query('q') q: string | undefined,
-    @Query('status') status: string | undefined,
-    @Req() request: Request,
-    @Res() response: Response,
-  ) {
-    await renderPage('notes', this.notes.listPage({ q, status }), {
-      request,
-      response,
-    });
+  index() {
+    return render(NotesPage);
   }
 
   @Get(':id')
-  async show(
-    @Param('id') id: string,
-    @Req() request: Request,
-    @Res() response: Response,
-  ) {
-    try {
-      await renderPage('note', this.notes.detailPage(id), {
-        request,
-        response,
-      });
-    } catch (error) {
-      if (!(error instanceof NotFoundException)) {
-        throw error;
-      }
-
-      await renderPage(
-        'missing',
-        { id, resource: 'Note' },
-        {
-          request,
-          response,
-          statusCode: 404,
-        },
-      );
-    }
+  show() {
+    return render(NotePage);
   }
 
   @Post()

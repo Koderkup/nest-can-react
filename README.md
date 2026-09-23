@@ -12,14 +12,14 @@ npm install
 npm run view:dev
 ```
 
-Open **GET /welcome**. Controllers call `renderPage` and stream HTML + Flight.
+Open **GET /welcome**. Controllers return `render(WelcomePage)`. The page calls `inject()` on the same Nest container.
 
 Repository: [github.com/acefolioDev/nest-can-react](https://github.com/acefolioDev/nest-can-react)
 
 ## App imports
 
 ```ts
-import { NestReactModule, renderPage } from 'nest-can-react';
+import { NestReactModule, render, inject } from 'nest-can-react';
 ```
 
 ```ts
@@ -30,16 +30,22 @@ export class AppModule {}
 ```
 
 ```ts
+import { WelcomePage } from './react-pages';
+
 @Get()
-async index(@Req() request: Request, @Res() response: Response) {
-  await renderPage('welcome', this.welcome.getPage(), { request, response });
+index() {
+  return render(WelcomePage);
 }
 ```
 
 ```tsx
 'use server-entry';
 
-export default function WelcomePage(data) {
+import { inject } from 'nest-can-react';
+import { WelcomeService } from './welcome.service';
+
+export default function WelcomePage() {
+  const data = inject(WelcomeService).getPage();
   return (
     <>
       <h1>{data.tagline}</h1>

@@ -10,6 +10,11 @@ import {
   renderToReadableStream,
   type TemporaryReferenceSet,
 } from 'react-server-dom-rspack/server.node';
+import {
+  attachRenderResponse,
+  getStatusCode,
+  setStatus,
+} from 'nest-can-react';
 import { renderHTML } from './entry.ssr';
 import { parseRenderRequest } from './request';
 
@@ -76,7 +81,7 @@ async function webResponseToNode(
   nodeResponse: ServerResponse,
   statusCode?: number,
 ) {
-  nodeResponse.statusCode = statusCode ?? webResponse.status;
+  nodeResponse.statusCode = getStatusCode() ?? statusCode ?? webResponse.status;
 
   webResponse.headers.forEach((value, key) => {
     if (key.toLowerCase() === 'transfer-encoding') {
@@ -98,6 +103,12 @@ async function webResponseToNode(
       if (done) {
         break;
       }
+      if (!nodeResponse.headersSent) {
+        const liveStatus = getStatusCode();
+        if (liveStatus != null) {
+          nodeResponse.statusCode = liveStatus;
+        }
+      }
       nodeResponse.write(Buffer.from(value));
     }
     nodeResponse.end();
@@ -118,6 +129,12 @@ export async function handleRequest({
   getRoot: () => React.ReactNode;
   bootstrapScripts?: string[];
 }): Promise<void> {
+  attachRenderResponse(response);
+
+  if (typeof statusCode === 'number') {
+    setStatus(statusCode);
+  }
+
   const fallbackUrl = url ?? 'http://localhost/';
   const webRequest = toWebRequest(request, fallbackUrl);
   const renderRequest = parseRenderRequest(webRequest);
@@ -178,7 +195,7 @@ export async function handleRequest({
 
   if (renderRequest.isRsc) {
     const flightResponse = new Response(rscStream, {
-      status: actionStatus ?? statusCode ?? 200,
+      status: actionStatus ?? getStatusCode() ?? statusCode ?? 200,
       headers: {
         'content-type': 'text/x-component;charset=utf-8',
         ...devCacheHeaders,
@@ -194,7 +211,7 @@ export async function handleRequest({
   });
 
   const htmlResponse = new Response(ssrResult.stream, {
-    status: ssrResult.status ?? statusCode ?? 200,
+    status: getStatusCode() ?? ssrResult.status ?? statusCode ?? 200,
     headers: {
       'content-type': 'text/html;charset=utf-8',
       ...devCacheHeaders,

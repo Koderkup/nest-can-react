@@ -2,7 +2,8 @@
 
 Nest remains the application framework. React Server Components are the UI layer. **Flight** is the wire protocol.
 
-- Nest controllers decide which page to stream and load data via DI.
+- Nest controllers decide which page to stream. Guards stay on the controller.
+- Pages load data with `inject(Service)` from the same Nest container. They do not receive view props.
 - Nest modules, guards, pipes, and interceptors own security and HTTP.
 - Pages are **Server Components** (`'use server-entry'` on the page module).
 - Interactive UI is a **`'use client'`** component (the island concept).
@@ -18,9 +19,12 @@ What each export is for: [Package APIs](api.md).
 From `nest-can-react`:
 
 - `NestReactModule`
-- `renderPage(pageName, props, { response, request? })`
+- `render(PageRef)` — controller returns this; `src/react-pages.ts` holds the refs
+- `inject(Service)` / `inject(REQUEST)` — Server Components only
+- `renderPage(pageName, props, { response, request? })` — lower-level stream helper
 - `NestLink`
 - `setLayoutMeta` / `useLayoutMeta` / `getLayoutMeta`
+- `setStatus(code)` — HTTP status while a page is rendering
 
 From `nest-can-react/client`:
 
@@ -31,10 +35,26 @@ From `nest-can-react/client`:
 ## Render
 
 ```ts
-await renderPage('welcome', props, { request, response });
+import { WelcomePage } from './react-pages';
+
+@Get()
+index() {
+  return render(WelcomePage);
+}
 ```
 
-`pageName` matches the `*.page.tsx` basename (`welcome.page.tsx` → `'welcome'`).
+`nest-can-react dev` / `build` writes `src/react-pages.ts`. `welcome.page.tsx` becomes `WelcomePage`. Adding or removing a page rewrites that file and restarts Nest. Editing the page component does not.
+
+```tsx
+'use server-entry';
+
+export default function WelcomePage() {
+  const welcome = inject(WelcomeService);
+  return <h1>{welcome.getPage().tagline}</h1>;
+}
+```
+
+`inject()` reads the Nest container for the current request. `inject(REQUEST)` is the Express request (`params`, `query`). Call it from Server Components during that render, not from `'use client'` islands.
 
 The response is always a stream:
 

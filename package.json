@@ -42,6 +42,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "react": "^19.1.0",
+    "rxjs": "^7.8.1",
     "react-dom": "^19.1.0",
     "react-server-dom-rspack": "^0.1.0"
   },

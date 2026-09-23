@@ -32,7 +32,7 @@ export class WelcomeService {
           x: 24,
           y: 50,
           detail:
-            'GET /welcome lands on WelcomeController. It loads data and streams renderPage over Flight.',
+            'GET /welcome lands on WelcomeController. Guards run first, then render(WelcomePage) streams Flight. The controller does not pass props.',
         },
         {
           id: 'service',
@@ -41,7 +41,7 @@ export class WelcomeService {
           x: 76,
           y: 50,
           detail:
-            'WelcomeService supplies the tagline and module graph through Nest DI.',
+            'WelcomeService is a Nest provider. The page resolves it with inject(), not constructor injection in the controller.',
         },
         {
           id: 'page',
@@ -50,7 +50,7 @@ export class WelcomeService {
           x: 50,
           y: 72,
           detail:
-            'WelcomePage is a Server Component (use server-entry). It streams HTML and embeds client references.',
+            'WelcomePage is a Server Component (use server-entry). It calls inject(WelcomeService) on the Nest container for this request.',
         },
         {
           id: 'client',

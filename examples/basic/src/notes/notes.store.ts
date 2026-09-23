@@ -28,8 +28,8 @@ export class NotesStore {
   readonly notes: Note[] = [
     {
       id: 'note-1',
-      title: 'Load data in the controller',
-      body: 'WelcomePage and NotesPage only receive serializable props. Nest services load the store; renderPage streams the tree.',
+      title: 'Pages inject Nest services',
+      body: 'NotesPage calls inject(NotesService). Guards stay on the controller; the page does not take view props.',
       authorId: 'ada',
       status: 'open',
       pinned: true,

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Response as ExpressResponse } from 'express';
+import { runWithNestContext } from '../nest/inject';
 
 export type RenderPageOptions = {
   response: ServerResponse | ExpressResponse;
@@ -144,6 +145,8 @@ export async function renderPage(
     throw new Error('renderPage requires { response }.');
   }
 
-  const runtime = await loadRuntime();
-  await runtime.renderNestPage(page, props, options);
+  await runWithNestContext({ request: options.request }, async () => {
+    const runtime = await loadRuntime();
+    await runtime.renderNestPage(page, props, options);
+  });
 }

@@ -56,27 +56,23 @@ export class AppModule {}
 
 ## 2. Stream from a controller
 
+`nest-can-react dev` or `build` writes `src/react-pages.ts`. Import the page ref. Do not import the `.tsx` page into the controller.
+
 ```ts
-import { Controller, Get, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
-import { renderPage } from 'nest-can-react';
-import { WelcomeService } from './welcome.service';
+import { Controller, Get } from '@nestjs/common';
+import { render } from 'nest-can-react';
+import { WelcomePage } from '../react-pages';
 
 @Controller('welcome')
 export class WelcomeController {
-  constructor(private readonly welcome: WelcomeService) {}
-
   @Get()
-  async index(@Req() request: Request, @Res() response: Response) {
-    await renderPage('welcome', this.welcome.getPage(), {
-      request,
-      response,
-    });
+  index() {
+    return render(WelcomePage);
   }
 }
 ```
 
-Guards on the controller or route still run before `renderPage`.
+Guards on the controller or route still run before `render()`. The handler does not load view data and does not take `@Req()` / `@Res()`.
 
 ## 3. Layout and page
 
@@ -101,10 +97,18 @@ export default function Layout({ children }: { children: ReactNode }) {
 ```tsx
 'use server-entry';
 
+import { REQUEST } from '@nestjs/core';
+import type { Request } from 'express';
 import React from 'react';
+import { inject } from 'nest-can-react';
 import { NoteEditor } from './NoteEditor';
+import { NotesService } from './notes.service';
 
-export default function NotePage({ text }: { text: string }) {
+export default function NotePage() {
+  const notes = inject(NotesService);
+  const request = inject<Request>(REQUEST);
+  const text = notes.findOne(String(request.params.id)).text;
+
   return (
     <>
       <title>Note</title>
@@ -162,7 +166,7 @@ npm run view:dev
 
 - Keep business logic and auth in Nest providers/guards.
 - Default to Server Components; add `'use client'` only where you need browser APIs or state.
-- Pass serializable props from controllers into pages.
+- Load page data with `inject()`. Leave guards and mutations on the controller.
 - Use Nest POST routes for mutations, not ad-hoc bypasses around guards.
 
 What each export is for: [Package APIs](api.md).

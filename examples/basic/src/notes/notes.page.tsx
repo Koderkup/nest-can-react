@@ -1,13 +1,23 @@
 'use server-entry';
 
+import { REQUEST } from '@nestjs/core';
+import type { Request } from 'express';
 import React from 'react';
-import { NestLink } from 'nest-can-react';
+import { inject, NestLink } from 'nest-can-react';
 import { NoteActions } from './NoteActions';
 import { NoteComposer } from './NoteComposer';
 import { formatWhen, statusHref } from './notes-view';
+import { NotesService } from './notes.service';
 import { NotesListData } from './notes.types';
 
-export default function NotesPage(data: NotesListData) {
+export default function NotesPage() {
+  const notes = inject(NotesService);
+  const request = inject<Request>(REQUEST);
+  const data = notes.listPage({
+    q: queryValue(request.query.q),
+    status: queryValue(request.query.status),
+  });
+
   return (
     <>
       <title>Notes | Nest Can React</title>
@@ -19,9 +29,9 @@ export default function NotesPage(data: NotesListData) {
           </p>
           <h1 className="heading-xl">Notes</h1>
           <p className="body-lg notes-masthead__copy">
-            Authors live in an object. Notes live in an array. Nest DI owns
-            both; this page only renders the snapshot passed from the
-            controller.
+            Authors live in an object. Notes live in an array. This page calls
+            inject(NotesService) on the same Nest container that handled the
+            request.
           </p>
           <dl className="notes-stats">
             <div>
@@ -112,6 +122,10 @@ export default function NotesPage(data: NotesListData) {
       </div>
     </>
   );
+}
+
+function queryValue(value: unknown) {
+  return typeof value === 'string' ? value : undefined;
 }
 
 function FilterLink({

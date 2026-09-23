@@ -5,9 +5,11 @@ Two import surfaces. Server and layout code import from `nest-can-react`. Intera
 ```ts
 import {
   NestReactModule,
-  renderPage,
+  inject,
+  render,
   NestLink,
   setLayoutMeta,
+  setStatus,
   useLayoutMeta,
 } from 'nest-can-react';
 ```
@@ -46,38 +48,107 @@ export class AppModule {}
 
 `publicPath` here and `client.publicPath` in config must match. The module currently assumes **Express**. Fastify is not supported yet.
 
+### `render(page, options?)`
+
+**What it is.** A controller return value. Nest has already run guards. An interceptor streams that page through the layout. The page loads its own data with `inject()`.
+
+**Why use it.** The controller names the screen. It does not query the database and it does not pass props.
+
+```ts
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { render } from 'nest-can-react';
+import { UsersPage } from '../react-pages';
+import { AuthGuard } from './auth.guard';
+
+@Controller('users')
+export class UsersController {
+  @Get()
+  @UseGuards(AuthGuard)
+  index() {
+    return render(UsersPage);
+  }
+}
+```
+
+`UsersPage` comes from `src/react-pages.ts`, which `nest-can-react dev` / `build` writes from `*.page.tsx` files. `src/users/users.page.tsx` becomes `UsersPage` (`createPageRef('users')`). Do not import the `.tsx` module from a controller — Nest would compile the React tree, including `'use client'` islands.
+
+| Option | Required | Role |
+| --- | --- | --- |
+| `statusCode` | no | Starting HTTP status. A page can override it with `setStatus()` |
+| `url` | no | Override the URL used for Flight refetch |
+
+`renderPage(name, props, options)` still streams a named page and can pass props. Prefer `render()` for new screens.
+
+### `inject(token)`
+
+**What it is.** Resolves a provider from the Nest container that is handling this request.
+
+**Why use it.** The page and the controller share one container. There is no second React DI system.
+
+```tsx
+'use server-entry';
+
+import { REQUEST } from '@nestjs/core';
+import type { Request } from 'express';
+import { inject } from 'nest-can-react';
+import { UsersService } from './users.service';
+
+export default async function UsersPage() {
+  const usersService = inject(UsersService);
+  const request = inject<Request>(REQUEST);
+  const users = await usersService.findAll();
+
+  return <UsersList users={users} query={request.query.q} />;
+}
+```
+
+- Call `inject()` during a Server Component render started by `render()` or `renderPage()`.
+- `inject(SomeService)` resolves a singleton with `ModuleRef.get(token, { strict: false })`. The service does not need to be re-exported from its module.
+- `inject(REQUEST)` is the Express request for this render (`params`, `query`). Use that for route and query data.
+- Do not call `inject()` from a `'use client'` island.
+- Request-scoped providers are not constructed here. Read `REQUEST` and pass those values into a singleton service.
+
+The RSC bundle compiles its own copy of a provider class. `inject()` still returns the instance Nest created, matched by class identity or by that class's name when the bundle copy is a different function.
+
+### `setStatus(code)`
+
+**What it is.** Sets the HTTP status for the page currently rendering.
+
+**Why use it.** A missing record can stay inside the page. The controller does not catch it and pick a different page.
+
+```tsx
+setStatus(404);
+return <MissingNote id={id} resource="Note" />;
+```
+
+Call it during the page render, before the document flushes.
+
 ### `renderPage(name, props, options)`
 
-**What it is.** The controller helper that loads a named `*.page.tsx` Server Component, renders it through the layout, and streams HTML + Flight to the response.
+**What it is.** The lower-level helper that loads a named `*.page.tsx` Server Component, renders it through the layout, and streams HTML + Flight to a response you already hold.
 
-**Why use it.** This is how a Nest route becomes a page. You keep auth, validation, and data loading in Nest (constructor DI, guards, services). The page only receives **serializable** props.
+**Why use it.** You already took `@Res()` and want to pass serializable props. New pages should use `render(PageRef)` and `inject()` instead.
 
 ```ts
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { renderPage } from 'nest-can-react';
-import { WelcomeService } from './welcome.service';
 
 @Controller('welcome')
 export class WelcomeController {
-  constructor(private readonly welcome: WelcomeService) {}
-
   @Get()
   async index(@Req() request: Request, @Res() response: Response) {
-    await renderPage('welcome', this.welcome.getPage(), {
-      request,
-      response,
-    });
+    await renderPage('welcome', {}, { request, response });
   }
 }
 ```
 
-`name` is the page id from the file path: `src/welcome/welcome.page.tsx` → `'welcome'`. `src/notes/edit.page.tsx` → `'notes/edit'`.
+`name` is the page id from the file name: `src/welcome/welcome.page.tsx` → `'welcome'`.
 
 | Option | Required | Role |
 | --- | --- | --- |
 | `response` | yes | Stream target (Express `Response` or Node `ServerResponse`) |
-| `request` | no | Used to derive the page URL for Flight refetch |
+| `request` | no | Used to derive the page URL for Flight refetch, and as `inject(REQUEST)` |
 | `url` | no | Override URL when `request` is missing or wrong |
 | `statusCode` | no | HTTP status for the streamed document (errors, 404s) |
 
@@ -137,7 +208,7 @@ export default function Layout({ children }) {
 }
 ```
 
-- Call `setLayoutMeta` only during a Server Component render started by `renderPage`.
+- Call `setLayoutMeta` only during a Server Component render started by `render()` or `renderPage()`.
 - `useLayoutMeta` and `getLayoutMeta` return the same object; prefer `useLayoutMeta` in the layout.
 - `runWithLayoutMeta` wraps that render. The generated Flight entry already calls it — app code should not.
 
@@ -242,7 +313,7 @@ Not an import, but part of the public contract. It tells the CLI which files are
 | Field | Why it exists |
 | --- | --- |
 | `layout` | Single document chrome around every page |
-| `pages.include` / `exclude` | Which `*.page.tsx` files become `renderPage` names |
+| `pages.include` / `exclude` | Which `*.page.tsx` files become pages and `src/react-pages.ts` refs |
 | `client.outDir` | Where Rspack writes browser JS/CSS |
 | `client.publicPath` | URL prefix Nest must serve (match `NestReactModule`) |
 | `client.styles` | Global CSS entries |
@@ -253,6 +324,6 @@ Optional ports if they collide locally: `hmrPort` (default `9101`) and `clientDe
 
 ## What you do not import
 
-Pages, layouts, and `'use client'` components are **conventions**, not package exports. Mark a page with `'use server-entry'` and a `default` export; mark an island with `'use client'`. Controllers pass data in; they do not inject Nest providers into those files.
+Pages, layouts, and `'use client'` components are **conventions**, not package exports. Mark a page with `'use server-entry'` and a `default` export; mark an island with `'use client'`. Controllers return `render(PageRef)`. Pages call `inject()`.
 
-If you need a capability that is not in this list (cookies, sessions, redirects, Fastify), implement it in Nest and pass the result through `renderPage` props or a client `fetch` to a Nest route.
+If you need a capability that is not in this list (cookies, sessions, redirects, Fastify), implement it in Nest. A page can `inject()` that provider, or a client island can `fetch` a Nest route.

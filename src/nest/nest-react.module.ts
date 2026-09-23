@@ -1,14 +1,25 @@
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { Server } from 'node:http';
+import { pathToFileURL } from 'node:url';
 import {
   DynamicModule,
+  Inject,
+  Injectable,
   MiddlewareConsumer,
   Module,
   NestModule,
+  OnApplicationBootstrap,
   RequestMethod,
 } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR, type ModuleRef } from '@nestjs/core';
 import express, { NextFunction, Request, Response } from 'express';
 import { attachDevHmrProxiesFromEnv } from './dev-hmr-proxy';
+import { bindNestContainer } from './inject';
+import {
+  NestRenderInterceptor,
+  ResponseHandledFilter,
+} from './render-interceptor';
 
 export type NestReactOptions = {
   /** Absolute path to client assets directory. Default: `<cwd>/public/nest-can-react` */
@@ -33,8 +44,30 @@ export class NestReactModule implements NestModule {
 
     attachToListeningHttpServers();
 
+    const moduleRef = moduleRefToken();
+
+    @Injectable()
+    class NestContainerBinder implements OnApplicationBootstrap {
+      constructor(@Inject(moduleRef) private readonly ref: ModuleRef) {}
+
+      onApplicationBootstrap() {
+        bindNestContainer(this.ref);
+      }
+    }
+
     return {
       module: NestReactModule,
+      providers: [
+        NestContainerBinder,
+        {
+          provide: APP_INTERCEPTOR,
+          useClass: NestRenderInterceptor,
+        },
+        {
+          provide: APP_FILTER,
+          useClass: ResponseHandledFilter,
+        },
+      ],
     };
   }
 
@@ -72,6 +105,16 @@ export class NestReactModule implements NestModule {
         method: RequestMethod.GET,
       });
   }
+}
+
+function moduleRefToken() {
+  const requireFromApp = createRequire(
+    pathToFileURL(join(process.cwd(), 'package.json')).href,
+  );
+
+  return requireFromApp('@nestjs/core').ModuleRef as new (
+    ...args: never[]
+  ) => ModuleRef;
 }
 
 function attachToListeningHttpServers() {

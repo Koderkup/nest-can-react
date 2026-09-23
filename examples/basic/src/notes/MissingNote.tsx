@@ -1,13 +1,11 @@
-'use server-entry';
-
 import React from 'react';
 import { NestLink } from 'nest-can-react';
 import { MissingPageData } from './notes.types';
 
-export default function MissingPage(data: MissingPageData) {
+export function MissingNote({ id, resource }: MissingPageData) {
   return (
     <>
-      <title>{`${data.resource} not found`}</title>
+      <title>{`${resource} not found`}</title>
       <div className="notes shell">
         <header className="notes-masthead">
           <p className="hero__kicker">
@@ -15,7 +13,7 @@ export default function MissingPage(data: MissingPageData) {
             404
           </p>
           <h1 className="heading-xl">
-            {data.resource} “{data.id}” is not in memory.
+            {resource} “{id}” is not in memory.
           </h1>
           <p className="body-lg notes-masthead__copy">
             The in-memory list has no matching item. It may have been deleted,

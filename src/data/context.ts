@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { ServerResponse } from 'node:http';
 
 export type LayoutMeta = {
   title?: string;
@@ -8,6 +9,8 @@ export type LayoutMeta = {
 
 type Store = {
   layoutMeta: LayoutMeta;
+  statusCode?: number;
+  response?: ServerResponse;
 };
 
 const storage = new AsyncLocalStorage<Store>();
@@ -21,7 +24,7 @@ export function setLayoutMeta(meta: LayoutMeta) {
 
   if (!store) {
     throw new Error(
-      'setLayoutMeta() must run during renderPage (Server Component render).',
+      'setLayoutMeta() must run during a page render (Server Component).',
     );
   }
 
@@ -37,4 +40,34 @@ export function getLayoutMeta() {
 
 export function useLayoutMeta() {
   return getLayoutMeta();
+}
+
+export function setStatus(statusCode: number) {
+  const store = storage.getStore();
+
+  if (!store) {
+    throw new Error(
+      'setStatus() must run during render() (Server Component render).',
+    );
+  }
+
+  store.statusCode = statusCode;
+
+  if (store.response && !store.response.headersSent) {
+    store.response.statusCode = statusCode;
+  }
+}
+
+export function getStatusCode() {
+  return storage.getStore()?.statusCode;
+}
+
+export function attachRenderResponse(response: ServerResponse) {
+  const store = storage.getStore();
+
+  if (!store) {
+    return;
+  }
+
+  store.response = response;
 }

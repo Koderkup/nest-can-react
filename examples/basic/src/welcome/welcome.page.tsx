@@ -1,11 +1,12 @@
 'use server-entry';
 
 import React from 'react';
-import { NestLink } from 'nest-can-react';
+import { inject, NestLink } from 'nest-can-react';
 import { ArchitectureMap } from './ArchitectureMap';
-import { WelcomePageData } from './welcome.types';
+import { WelcomeService } from './welcome.service';
 
-export default function WelcomePage(data: WelcomePageData) {
+export default function WelcomePage() {
+  const data = inject(WelcomeService).getPage();
   return (
     <>
       <title>Welcome | Nest Can React</title>
@@ -22,9 +23,10 @@ export default function WelcomePage(data: WelcomePageData) {
               the runtime.
             </h1>
             <p className="body-lg">
-              React Server Components stream over Flight. Nest owns routing,
-              guards, and data. Client components are islands of interactivity —
-              marked with <code>use client</code>.
+              React Server Components stream over Flight. The controller runs
+              guards, then render(WelcomePage). This page calls inject() on
+              that same Nest container. Client components are islands of
+              interactivity — marked with <code>use client</code>.
             </p>
             <div className="hero__actions">
               <NestLink className="button button-primary" to="/notes">
