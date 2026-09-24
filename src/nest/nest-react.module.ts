@@ -38,6 +38,10 @@ export class NestReactModule implements NestModule {
   private static publicPath = DEFAULT_PUBLIC_PATH;
   private static adapter: 'express' | 'fastify' = 'express';
 
+  static get currentAdapter(): 'express' | 'fastify' {
+    return NestReactModule.adapter;
+  }
+
   static forRoot(options: NestReactOptions = {}): DynamicModule {
     NestReactModule.assetsDir =
       options.assetsDir ?? join(process.cwd(), 'public/nest-can-react');

@@ -13,6 +13,7 @@ import {
 import {
   attachRenderResponse,
   getStatusCode,
+  normalizeHttpResponse,
   setStatus,
 } from 'nest-can-react';
 import { renderHTML } from './entry.ssr';
@@ -25,7 +26,12 @@ export type RscPayload = {
 };
 
 export type NestRenderOptions = {
-  response: ServerResponse;
+  /**
+   * The HTTP response object — either a Node.js `ServerResponse`
+   * (Express) or a Fastify `Reply`.  `handleRequest` normalizes it
+   * to Node.js `ServerResponse` semantics before rendering.
+   */
+  response: unknown;
   request?: IncomingMessage | Request;
   statusCode?: number;
   url?: string;
@@ -129,7 +135,13 @@ export async function handleRequest({
   getRoot: () => React.ReactNode;
   bootstrapScripts?: string[];
 }): Promise<void> {
-  attachRenderResponse(response);
+  // Normalize the platform-specific HTTP response to a Node.js
+  // ServerResponse-compatible object before any setHeader/write/end calls.
+  // Express: already a ServerResponse → returned as-is.
+  // Fastify: unwraps reply.raw → the underlying Node.js ServerResponse.
+  const nodeResponse = normalizeHttpResponse(response);
+
+  attachRenderResponse(nodeResponse);
 
   if (typeof statusCode === 'number') {
     setStatus(statusCode);
@@ -171,9 +183,9 @@ export async function handleRequest({
           formData,
         )) as ReactFormState;
       } catch {
-        response.statusCode = 500;
-        response.setHeader('content-type', 'text/plain;charset=utf-8');
-        response.end('Internal Server Error: server action failed');
+        nodeResponse.statusCode = 500;
+        nodeResponse.setHeader('content-type', 'text/plain;charset=utf-8');
+        nodeResponse.end('Internal Server Error: server action failed');
         return;
       }
     }
@@ -201,7 +213,7 @@ export async function handleRequest({
         ...devCacheHeaders,
       },
     });
-    await webResponseToNode(flightResponse, response);
+    await webResponseToNode(flightResponse, nodeResponse);
     return;
   }
 
@@ -218,5 +230,5 @@ export async function handleRequest({
     },
   });
 
-  await webResponseToNode(htmlResponse, response);
+  await webResponseToNode(htmlResponse, nodeResponse);
 }

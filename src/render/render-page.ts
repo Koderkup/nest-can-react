@@ -1,13 +1,13 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { Response as ExpressResponse } from 'express';
 import { runWithNestContext } from '../nest/inject';
+import type { RenderableResponse } from '../nest/response-utils';
 
 export type RenderPageOptions = {
-  response: ServerResponse | ExpressResponse;
+  response: RenderableResponse;
   request?: IncomingMessage | Request;
   statusCode?: number;
   url?: string;
