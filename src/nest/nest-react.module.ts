@@ -26,6 +26,8 @@ export type NestReactOptions = {
   assetsDir?: string;
   /** URL prefix for assets. Default: `/assets/nest-can-react` */
   publicPath?: string;
+  /** HTTP adapter to use. Default: `'express'` */
+  adapter?: 'express' | 'fastify';
 };
 
 const DEFAULT_PUBLIC_PATH = '/assets/nest-can-react';
@@ -34,6 +36,7 @@ const DEFAULT_PUBLIC_PATH = '/assets/nest-can-react';
 export class NestReactModule implements NestModule {
   private static assetsDir = join(process.cwd(), 'public/nest-can-react');
   private static publicPath = DEFAULT_PUBLIC_PATH;
+  private static adapter: 'express' | 'fastify' = 'express';
 
   static forRoot(options: NestReactOptions = {}): DynamicModule {
     NestReactModule.assetsDir =
@@ -41,6 +44,7 @@ export class NestReactModule implements NestModule {
     NestReactModule.publicPath = normalizePublicPath(
       options.publicPath ?? DEFAULT_PUBLIC_PATH,
     );
+    NestReactModule.adapter = options.adapter ?? 'express';
 
     attachToListeningHttpServers();
 
@@ -55,23 +59,105 @@ export class NestReactModule implements NestModule {
       }
     }
 
+    @Injectable()
+    class FastifySetup implements OnApplicationBootstrap {
+      constructor(
+        @Inject(moduleRef) private readonly ref: ModuleRef,
+      ) {}
+
+      async onApplicationBootstrap() {
+        if (NestReactModule.adapter !== 'fastify') {
+          return;
+        }
+        await this.setupFastify();
+      }
+
+      private async setupFastify() {
+        // @ts-ignore - dynamic require for optional dependency
+        const fastifyStatic = require('@fastify/static').default;
+
+        // HttpAdapterHost is not accessible from user module scope via ModuleRef.get()
+        // Instead, search the NestJS container's internal providers storage
+        const refAny = this.ref as any;
+        let httpAdapter: any;
+
+        const container = refAny.container || refAny._container;
+        if (container) {
+          const internalProviders = (container as any).internalProvidersStorage;
+          if (internalProviders?.hasOwnProperty('_httpAdapter')) {
+            const raw = internalProviders._httpAdapter;
+            if (raw?.instance && typeof raw.instance.register === 'function') {
+              httpAdapter = raw.instance;
+            }
+          }
+          if (!httpAdapter && internalProviders?.hasOwnProperty('_httpAdapterHost')) {
+            const wrapper = internalProviders._httpAdapterHost;
+            if (wrapper?.instance?.httpAdapter) {
+              httpAdapter = wrapper.instance.httpAdapter;
+            }
+          }
+        }
+
+        if (!httpAdapter) {
+          console.warn('nest-can-react: HttpAdapter not available, skipping Fastify static setup');
+          return;
+        }
+
+        const fastify = httpAdapter;
+        const prefix = NestReactModule.publicPath;
+
+        await fastify.register(fastifyStatic, {
+          root: NestReactModule.assetsDir,
+          prefix,
+          decorateReply: true,
+          setHeaders: (reply: any) => {
+            if (process.env.NODE_ENV !== 'production') {
+              reply.header('Cache-Control', 'no-store');
+            }
+          },
+        });
+
+        fastify.addHook('onRequest', async (req: any, reply: any) => {
+          const server = req.raw?.socket?.server;
+          if (server) {
+            attachDevHmrProxiesFromEnv(server);
+          }
+
+          if (req.url.startsWith(NestReactModule.publicPath)) {
+            const filePath = req.url.slice(NestReactModule.publicPath.length) || '/';
+            await reply.sendFile(filePath);
+          }
+        });
+      }
+    }
+
+    const providers: any[] = [
+      NestContainerBinder,
+      {
+        provide: APP_INTERCEPTOR,
+        useClass: NestRenderInterceptor,
+      },
+      {
+        provide: APP_FILTER,
+        useClass: ResponseHandledFilter,
+      },
+    ];
+
+    if (NestReactModule.adapter === 'fastify') {
+      providers.push(FastifySetup);
+    }
+
     return {
       module: NestReactModule,
-      providers: [
-        NestContainerBinder,
-        {
-          provide: APP_INTERCEPTOR,
-          useClass: NestRenderInterceptor,
-        },
-        {
-          provide: APP_FILTER,
-          useClass: ResponseHandledFilter,
-        },
-      ],
+      providers,
     };
   }
 
   configure(consumer: MiddlewareConsumer) {
+    if (NestReactModule.adapter === 'fastify') {
+      return;
+    }
+
     const serve = express.static(NestReactModule.assetsDir, {
       setHeaders(res) {
         if (process.env.NODE_ENV !== 'production') {
