@@ -14,6 +14,11 @@ npm run view:dev
 
 Open **GET /welcome**. Controllers return `render(WelcomePage)`. The page calls `inject()` on the same Nest container.
 
+Full demo apps in this repo:
+
+- [`examples/express`](examples/express) — default (`@nestjs/platform-express`)
+- [`examples/fastify`](examples/fastify) — optional Fastify adapter
+
 Repository: [github.com/acefolioDev/nest-can-react](https://github.com/acefolioDev/nest-can-react)
 
 ## App imports

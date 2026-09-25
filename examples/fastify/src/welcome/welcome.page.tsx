@@ -1,7 +1,7 @@
 'use server-entry';
 
 import React from 'react';
-import { inject } from 'nest-can-react';
+import { inject, NestLink } from 'nest-can-react';
 import { ArchitectureMap } from './ArchitectureMap';
 import { WelcomeService } from './welcome.service';
 
@@ -37,6 +37,11 @@ export default function WelcomePage() {
               that same Nest container. Client components are islands of
               interactivity — marked with <code>use client</code>.
             </p>
+            <div className="hero__actions">
+              <NestLink className="button button-primary" to="/notes">
+                Open the notes app
+              </NestLink>
+            </div>
           </div>
 
           <div className="hero__visual">

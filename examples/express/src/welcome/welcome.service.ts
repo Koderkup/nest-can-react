@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NestReactModule } from 'nest-can-react';
 import { WelcomePageData } from './welcome.types';
 
 @Injectable()
@@ -6,6 +7,7 @@ export class WelcomeService {
   getPage(): WelcomePageData {
     return {
       tagline: 'Now Nest can react',
+      httpAdapter: NestReactModule.currentAdapter,
       nodes: [
         {
           id: 'app',
