@@ -435,6 +435,62 @@ textarea {
   flex: 1 1 auto;
 }
 
+.adapter-live {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  font: 600 0.8125rem / 1 var(--font-mono);
+  gap: var(--space-2);
+  letter-spacing: 0.04em;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.adapter-live__dot {
+  animation: adapter-pulse 2s ease-in-out infinite;
+  border-radius: 50%;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.adapter-live--express {
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+  border-color: color-mix(in srgb, #2563eb 35%, var(--border));
+  color: #93c5fd;
+}
+
+.adapter-live--express .adapter-live__dot {
+  background: #60a5fa;
+  box-shadow: 0 0 0.5rem #60a5fa;
+}
+
+.adapter-live--fastify {
+  background: color-mix(in srgb, #059669 12%, transparent);
+  border-color: color-mix(in srgb, #059669 35%, var(--border));
+  color: #6ee7b7;
+}
+
+.adapter-live--fastify .adapter-live__dot {
+  background: #34d399;
+  box-shadow: 0 0 0.5rem #34d399;
+}
+
+@keyframes adapter-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.65;
+    transform: scale(0.92);
+  }
+}
+
 .welcome {
   min-height: calc(100vh - 4.5rem);
   padding-block: var(--space-16) var(--space-20);
