@@ -21,6 +21,7 @@ export type ArchitectureEdge = {
 
 export type WelcomePageData = {
   tagline: string;
+  httpAdapter: 'express' | 'fastify';
   nodes: ArchitectureNode[];
   edges: ArchitectureEdge[];
 };
