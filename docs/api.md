@@ -45,8 +45,9 @@ export class AppModule {}
 | --- | --- | --- |
 | `assetsDir` | `<cwd>/public/nest-can-react` | Client output lives somewhere else |
 | `publicPath` | `/assets/nest-can-react` | You changed the URL prefix in `nest.react.json` |
+| `adapter` | `'express'` | Use `'fastify'` if your Nest app uses `@nestjs/platform-fastify` |
 
-`publicPath` here and `client.publicPath` in config must match. The module currently assumes **Express**. Fastify is not supported yet.
+`publicPath` here and `client.publicPath` in config must match.
 
 ### `render(page, options?)`
 

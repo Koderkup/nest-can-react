@@ -41,6 +41,17 @@ Open `/welcome`. `init` does not create a new Nest project. It copies the starte
 
 `publicPath` must match how Nest serves assets (`NestReactModule` defaults to `/assets/nest-can-react` → files in `public/nest-can-react/`).
 
+**Fastify:** If your Nest app uses `@nestjs/platform-fastify`, pass the adapter option:
+
+```ts
+imports: [NestReactModule.forRoot({ adapter: 'fastify' }), WelcomeModule],
+```
+
+Also install the optional peer dependencies:
+```bash
+npm install @nestjs/platform-fastify @fastify/static
+```
+
 ## 1. Import the module
 
 ```ts
@@ -49,7 +60,7 @@ import { NestReactModule } from 'nest-can-react';
 import { WelcomeModule } from './welcome/welcome.module';
 
 @Module({
-  imports: [NestReactModule.forRoot(), WelcomeModule],
+  imports: [NestReactModule.forRoot({ adapter: 'express' }), WelcomeModule],
 })
 export class AppModule {}
 ```

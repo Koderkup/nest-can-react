@@ -11,6 +11,7 @@ import { Observable, from, mergeMap, of } from 'rxjs';
 import { renderPage } from '../render/render-page';
 import { runWithNestContext } from './inject';
 import { isRenderTicket } from './render';
+import { normalizeHttpResponse } from './response-utils';
 
 class ResponseHandled extends IntrinsicException {
   constructor() {
@@ -41,7 +42,9 @@ export class NestRenderInterceptor implements NestInterceptor {
 
         const http = context.switchToHttp();
         const request = http.getRequest();
-        const response = http.getResponse();
+        // Normalize the platform-specific HTTP response to a Node.js
+        // ServerResponse-compatible object (unwraps Fastify's reply.raw).
+        const response = normalizeHttpResponse(http.getResponse());
 
         return from(
           runWithNestContext({ request }, async () => {

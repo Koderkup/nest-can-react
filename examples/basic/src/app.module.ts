@@ -6,6 +6,6 @@ import { WelcomeModule } from './welcome/welcome.module';
 
 @Module({
   controllers: [HomeController],
-  imports: [NestReactModule.forRoot(), WelcomeModule, NotesModule],
+  imports: [NestReactModule.forRoot({ adapter: 'fastify' }), WelcomeModule, NotesModule],
 })
 export class AppModule {}

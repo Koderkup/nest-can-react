@@ -9,9 +9,11 @@
     "start:dev": "nest start --watch"
   },
   "dependencies": {
+    "@fastify/static": "^10.1.4",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",
+    "@nestjs/platform-fastify": "^11.2.6",
     "nest-can-react": "file:../..",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

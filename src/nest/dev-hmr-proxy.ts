@@ -65,6 +65,13 @@ export function attachDevHmrProxies(
   );
 }
 
+export function attachDevHmrProxiesFromFastifyRequest(req: any): void {
+  const server = req.raw?.socket?.server;
+  if (server) {
+    attachDevHmrProxiesFromEnv(server);
+  }
+}
+
 export function attachDevHmrProxiesFromEnv(server: Server): void {
   if (process.env.NEST_CAN_REACT_DEV !== '1') {
     return;
