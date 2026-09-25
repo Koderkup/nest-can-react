@@ -1,0 +1,103 @@
+.architecture-map {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  width: min(100%, 24rem);
+}
+
+.architecture-map__label {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.architecture-map__stage {
+  aspect-ratio: 1;
+  isolation: isolate;
+  position: relative;
+  width: 100%;
+}
+
+.architecture-map__edges {
+  display: block;
+  height: 100%;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 0;
+}
+
+.architecture-map__line {
+  stroke: var(--line-subtle);
+  stroke-width: 0.35;
+  transition: stroke var(--duration-base) var(--ease-standard);
+}
+
+.architecture-map__line.is-live {
+  stroke: var(--accent);
+  stroke-width: 0.5;
+}
+
+.architecture-map__node {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--radius-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: 500 0.6875rem / 1 var(--font-mono);
+  letter-spacing: 0.04em;
+  max-width: calc(100% - 1rem);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.architecture-map__node:hover,
+.architecture-map__node.is-connected {
+  border-color: var(--line-strong);
+  color: var(--text-primary);
+}
+
+.architecture-map__node.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  color: var(--text-primary);
+}
+
+.architecture-map__node--client {
+  border-radius: var(--radius-control);
+}
+
+.architecture-map__detail {
+  color: var(--text-secondary);
+  font: 400 0.9375rem / 1.55 var(--font-sans);
+  margin: 0;
+  max-width: 46ch;
+  min-height: 4.4em;
+}
+
+@media (max-width: 767px) {
+  .architecture-map {
+    width: 100%;
+  }
+
+  .architecture-map__stage {
+    aspect-ratio: 5 / 6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .architecture-map__line,
+  .architecture-map__node {
+    transition: none;
+  }
+}

@@ -47,6 +47,8 @@ export class AppModule {}
 | `publicPath` | `/assets/nest-can-react` | You changed the URL prefix in `nest.react.json` |
 | `adapter` | `'express'` | Use `'fastify'` if your Nest app uses `@nestjs/platform-fastify` |
 
+For Fastify, install optional peers `@nestjs/platform-fastify` and `@fastify/static` (see [`examples/fastify`](../examples/fastify)). Express-only apps do not need them.
+
 `publicPath` here and `client.publicPath` in config must match.
 
 ### `render(page, options?)`

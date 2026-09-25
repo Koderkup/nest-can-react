@@ -10,7 +10,7 @@ Nest remains the application framework. React Server Components are the UI layer
 - Mutations go to Nest routes (`useCommit`); Nest guards still apply.
 - Rendering is **streaming only** (HTML + embedded Flight payload).
 
-Install into an existing Nest app with `npm install nest-can-react` and `npx nest-can-react init`. Wire `NestReactModule.forRoot({ adapter: 'express' })` (or `'fastify'`), add `*.page.tsx` files, and run `nest-can-react build` or `dev`.
+Install into an existing Nest app with `npm install nest-can-react` and `npx nest-can-react init`. Wire `NestReactModule.forRoot()` (or `{ adapter: 'fastify' }`; see `examples/express` / `examples/fastify`), add `*.page.tsx` files, and run `nest-can-react build` or `dev`.
 
 ## Public API
 

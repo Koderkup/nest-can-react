@@ -39,6 +39,9 @@ export async function initStarter(args) {
   console.log('Next:');
   console.log('  npm install');
   console.log('  npm run view:dev');
+  console.log(
+    '  Full demos: examples/express (default) and examples/fastify on GitHub',
+  );
 }
 
 async function readAppPackage(targetDir) {

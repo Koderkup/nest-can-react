@@ -12,6 +12,8 @@ npm run view:dev
 
 Open `/welcome`. `init` does not create a new Nest project. It copies the starter into your Nest app and wires `NestReactModule` into `AppModule`.
 
+Reference implementations: [`examples/express`](../examples/express) (Express, default) and [`examples/fastify`](../examples/fastify) (Fastify + optional peers).
+
 ## What the framework looks for
 
 | Role | What it is | How you point at it |
@@ -41,13 +43,12 @@ Open `/welcome`. `init` does not create a new Nest project. It copies the starte
 
 `publicPath` must match how Nest serves assets (`NestReactModule` defaults to `/assets/nest-can-react` → files in `public/nest-can-react/`).
 
-**Fastify:** If your Nest app uses `@nestjs/platform-fastify`, pass the adapter option:
+**Fastify:** If your Nest app uses `@nestjs/platform-fastify`, mirror [`examples/fastify`](../examples/fastify): pass the adapter option and install optional peers:
 
 ```ts
 imports: [NestReactModule.forRoot({ adapter: 'fastify' }), WelcomeModule],
 ```
 
-Also install the optional peer dependencies:
 ```bash
 npm install @nestjs/platform-fastify @fastify/static
 ```
@@ -60,7 +61,7 @@ import { NestReactModule } from 'nest-can-react';
 import { WelcomeModule } from './welcome/welcome.module';
 
 @Module({
-  imports: [NestReactModule.forRoot({ adapter: 'express' }), WelcomeModule],
+  imports: [NestReactModule.forRoot(), WelcomeModule],
 })
 export class AppModule {}
 ```
