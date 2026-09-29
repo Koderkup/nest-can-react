@@ -85,6 +85,5 @@ import { useCommit, refresh, navigateTo } from 'nest-can-react/client';
 
 ## Docs
 
-- [Creating your first app](docs/first-app.md)
-- [Core concepts](docs/core-concepts.md)
-- [Package APIs](docs/api.md)
+- **[Documentation](docs/README.md)** — full guide index
+- [Introduction](docs/intro.md) · [Why nest-can-react?](docs/why-nest-can-react.md) · [Creating your first app](docs/first-app.md) · [Package APIs](docs/api.md) · [Glossary](docs/glossary.md)

@@ -7,10 +7,15 @@ import {
   NestReactModule,
   inject,
   render,
+  createPageRef,
   NestLink,
   setLayoutMeta,
   setStatus,
   useLayoutMeta,
+  redirect,
+  setCookie,
+  clearCookie,
+  getCookie,
 } from 'nest-can-react';
 ```
 
@@ -51,6 +56,16 @@ For Fastify, install optional peers `@nestjs/platform-fastify` and `@fastify/sta
 
 `publicPath` here and `client.publicPath` in config must match.
 
+**See also:** [NestReactModule](concepts/nest-react-module.md), [Adapters](concepts/adapters.md).
+
+### `createPageRef(pageId)`
+
+**What it is.** Builds a `PageRef` handle for a page id. App code rarely calls this directly — `nest-can-react dev` / `build` writes `src/react-pages.ts` using it.
+
+**Why use it.** Controllers import refs, not `.tsx` page modules.
+
+**See also:** [Render and page refs](concepts/render-and-page-refs.md).
+
 ### `render(page, options?)`
 
 **What it is.** A controller return value. Nest has already run guards. An interceptor streams that page through the layout. The page loads its own data with `inject()`.
@@ -81,6 +96,8 @@ export class UsersController {
 | `url` | no | Override the URL used for Flight refetch |
 
 `renderPage(name, props, options)` still streams a named page and can pass props. Prefer `render()` for new screens.
+
+**See also:** [Render and page refs](concepts/render-and-page-refs.md).
 
 ### `inject(token)`
 
@@ -113,6 +130,8 @@ export default async function UsersPage() {
 
 The RSC bundle compiles its own copy of a provider class. `inject()` still returns the instance Nest created, matched by class identity or by that class's name when the bundle copy is a different function.
 
+**See also:** [inject() and REQUEST](concepts/inject-and-request.md).
+
 ### `setStatus(code)`
 
 **What it is.** Sets the HTTP status for the page currently rendering.
@@ -125,6 +144,59 @@ return <MissingNote id={id} resource="Note" />;
 ```
 
 Call it during the page render, before the document flushes.
+
+**See also:** [HTTP during render](concepts/http-during-render.md).
+
+### `redirect(url, statusCode?)`
+
+**What it is.** Records an HTTP redirect during Server Component render. Default `statusCode` is `302`. Allowed: `301`, `302`, `303`, `307`, `308`.
+
+**Why use it.** Redirect after render-time logic (for example `inject()` checks) without returning a separate controller response.
+
+```tsx
+import { redirect } from 'nest-can-react';
+
+redirect('/welcome');
+return null;
+```
+
+The stream is aborted; the client receives a 3xx with `Location`. Works on Express and Fastify.
+
+**See also:** [HTTP during render](concepts/http-during-render.md). Example: [`examples/express/src/redir/`](../examples/express/src/redir/).
+
+### `getRedirect()`
+
+**What it is.** Returns the pending redirect for the current render, if any. Primarily used internally; rarely needed in app code.
+
+### `setCookie(name, value, options?)`
+
+**What it is.** Queues a `Set-Cookie` header for the current render. Options: `path`, `domain`, `expires`, `maxAge`, `secure`, `httpOnly`, `sameSite`, `partitioned`. Default `path` is `'/'`.
+
+**Why use it.** Set preference or UI cookies when the decision happens during RSC render (lazy flush before body commit).
+
+```tsx
+setCookie('theme', 'dark', { httpOnly: true, sameSite: 'lax', maxAge: 86400 });
+```
+
+**See also:** [HTTP during render](concepts/http-during-render.md), [Security](concepts/security.md).
+
+### `clearCookie(name, options?)`
+
+**What it is.** Clears a cookie (empty value, `Max-Age=0`, `Expires` epoch).
+
+### `getCookie(name)`
+
+**What it is.** Reads a cookie from the **incoming** request `Cookie` header during render. Returns `undefined` if missing.
+
+### `getCookies()`
+
+**What it is.** Returns the list of **outgoing** cookies queued by `setCookie` / `clearCookie` for this render (`CookieInstance[]`). Not the browser’s request cookies — use `getCookie(name)` for those.
+
+### `serializeCookie(cookie)` / `getCookiesForResponse(response)` (advanced)
+
+**What they are.** Low-level helpers to serialize queued cookies and match them to a `ServerResponse`. Used by the render pipeline; app code normally uses `setCookie` only.
+
+Types exported: `CookieOptions`, `CookieInstance`, `SameSite`, `Redirect`, `RedirectStatus`, `LayoutMeta`.
 
 ### `renderPage(name, props, options)`
 
@@ -156,6 +228,8 @@ export class WelcomeController {
 | `statusCode` | no | HTTP status for the streamed document (errors, 404s) |
 
 Call this from a controller method after guards have already run. Do not call it from a Server Component.
+
+**See also:** [renderPage (legacy)](concepts/render-page-legacy.md).
 
 ### `invalidateRenderRuntime()`
 
@@ -214,6 +288,14 @@ export default function Layout({ children }) {
 - Call `setLayoutMeta` only during a Server Component render started by `render()` or `renderPage()`.
 - `useLayoutMeta` and `getLayoutMeta` return the same object; prefer `useLayoutMeta` in the layout.
 - `runWithLayoutMeta` wraps that render. The generated Flight entry already calls it — app code should not.
+
+**See also:** [Layout meta](concepts/layout-meta.md).
+
+### `normalizeHttpResponse(response)` (advanced)
+
+**What it is.** Normalizes Express or Fastify reply objects to Node `ServerResponse` semantics. Used internally by `handleRequest`; export for integrators.
+
+**See also:** [Adapters](concepts/adapters.md).
 
 ---
 
@@ -278,6 +360,8 @@ import { navigateTo } from 'nest-can-react/client';
 navigateTo('/welcome');
 ```
 
+**See also:** [Mutations and revalidation](concepts/mutations-and-revalidation.md), [Navigation](concepts/navigation.md).
+
 ---
 
 ## CLI
@@ -290,7 +374,9 @@ These are the package commands, not JS imports. `npx nest-can-react init` wires 
 | `nest-can-react dev` | Watch + dual-channel HMR (`view:dev`) |
 | `nest-can-react build` | Production RSC bundle and client assets (`build:client`) |
 
-Production: `nest-can-react build`, then `nest start`. See [Creating your first app](first-app.md) and [Core concepts](core-concepts.md).
+Production: `nest-can-react build`, then `nest start`. See [Creating your first app](first-app.md) and [Overview](overview.md).
+
+**See also:** [CLI and build](concepts/cli-and-build.md).
 
 ---
 
@@ -323,10 +409,14 @@ Not an import, but part of the public contract. It tells the CLI which files are
 
 Optional ports if they collide locally: `hmrPort` (default `9101`) and `clientDevPort` (default `9102`).
 
+**See also:** [Configuration](concepts/configuration.md).
+
 ---
 
 ## What you do not import
 
 Pages, layouts, and `'use client'` components are **conventions**, not package exports. Mark a page with `'use server-entry'` and a `default` export; mark an island with `'use client'`. Controllers return `render(PageRef)`. Pages call `inject()`.
 
-If you need a capability that is not in this list (cookies, sessions, redirects, Fastify), implement it in Nest. A page can `inject()` that provider, or a client island can `fetch` a Nest route.
+Capabilities outside this reference — **sessions**, custom auth strategies, generic REST APIs — belong in Nest modules, guards, and providers. Use **`inject()`** in pages to reach them, **`useCommit`** or **`fetch`** from islands for mutations, and **[Security](concepts/security.md)** for cookie sessions and CSRF. Fastify is supported via `NestReactModule.forRoot({ adapter: 'fastify' })` ([Adapters](concepts/adapters.md)).
+
+Terminology: [Glossary](glossary.md). Narrative guides: [Documentation hub](README.md).
