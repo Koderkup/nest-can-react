@@ -4,9 +4,16 @@ import { HomeController } from './home.controller';
 import { NotesModule } from './notes/notes.module';
 import { RedirModule } from './redir/redir.module';
 import { WelcomeModule } from './welcome/welcome.module';
+import { CookiesModule } from './cookies/cookies.module';
 
 @Module({
   controllers: [HomeController],
-  imports: [NestReactModule.forRoot(), WelcomeModule, NotesModule, RedirModule],
+  imports: [
+    NestReactModule.forRoot({ adapter: 'express' }),
+    WelcomeModule,
+    NotesModule,
+    RedirModule,
+    CookiesModule,
+  ],
 })
 export class AppModule {}

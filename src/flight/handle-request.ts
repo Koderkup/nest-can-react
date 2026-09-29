@@ -12,6 +12,7 @@ import {
 } from 'react-server-dom-rspack/server.node';
 import {
   attachRenderResponse,
+  getCookiesForResponse,
   getRedirect,
   getStatusCode,
   normalizeHttpResponse,
@@ -108,6 +109,18 @@ async function webResponseToNode(
   // the Flight stream starts flowing. Read the first chunk before flushing
   // anything, so a redirect is answered with a bare 3xx instead of HTML.
   const first = await reader.read();
+
+  // Cookies may be set during render. Emit them (Set-Cookie) on the Node
+  // response before any body headers/commit; Node sends a single header line
+  // for a string and multiple lines for a string[].
+  const cookies = getCookiesForResponse(nodeResponse);
+  if (cookies.length > 0) {
+    if (cookies.length === 1) {
+      nodeResponse.setHeader('Set-Cookie', cookies[0]);
+    } else {
+      nodeResponse.setHeader('Set-Cookie', cookies);
+    }
+  }
 
   if (await settleRedirect(reader, nodeResponse)) {
     return;

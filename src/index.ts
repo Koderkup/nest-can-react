@@ -17,5 +17,18 @@ export {
   runWithLayoutMeta,
   redirect,
   getRedirect,
+  setCookie,
+  clearCookie,
+  getCookie,
+  getCookies,
+  getCookiesForResponse,
+  serializeCookie,
 } from './data/context';
-export type { LayoutMeta, Redirect, RedirectStatus } from './data/context';
+export type {
+  LayoutMeta,
+  Redirect,
+  RedirectStatus,
+  CookieInstance,
+  CookieOptions,
+  SameSite,
+} from './data/context';

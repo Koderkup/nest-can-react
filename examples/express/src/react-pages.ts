@@ -3,6 +3,10 @@
 
 import { createPageRef } from 'nest-can-react';
 
+/** src/cookies/clear-cookie.page.tsx */
+export const ClearCookiePage = createPageRef("clear-cookie");
+/** src/cookies/cookies.page.tsx */
+export const CookiesPage = createPageRef("cookies");
 /** src/notes/note.page.tsx */
 export const NotePage = createPageRef("note");
 /** src/notes/notes.page.tsx */
