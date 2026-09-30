@@ -92,12 +92,14 @@ async function walk(dir, onFile) {
   }
 }
 
-function globToRegExp(pattern) {
+export function globToRegExp(pattern) {
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '::DOUBLE::')
+    .replace(/\*\*\//g, '::DOUBLE_SLASH::')
+    .replace(/\*\*/g, '::DOUBLE_STAR::')
     .replace(/\*/g, '[^/]*')
-    .replace(/::DOUBLE::/g, '.*');
+    .replace(/::DOUBLE_SLASH::/g, '(?:.*/)?')
+    .replace(/::DOUBLE_STAR::/g, '.*');
 
   return new RegExp(`^${escaped}$`);
 }
