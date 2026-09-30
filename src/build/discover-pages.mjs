@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { basename, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { readdir } from 'node:fs/promises';
 import { toPosixPath } from './load-config.mjs';
 
@@ -28,20 +28,69 @@ export async function discoverPages(config) {
       continue;
     }
 
-    const name = pageNameFromFile(rel);
     pages.push({
-      name,
       file,
       relativeFile: rel,
     });
   }
 
+  assignPageIds(pages, config.pages.include);
+
   return pages;
 }
 
-function pageNameFromFile(relativeFile) {
-  const base = basename(relativeFile).replace(/\.page\.tsx?$/, '');
-  return base;
+/**
+ * Page ids are derived from the path relative to the include pattern's static
+ * prefix, so two files that share a basename never collide:
+ *
+ *   src/admin.page.tsx        -> admin
+ *   src/users/admin.page.tsx  -> users/admin
+ *
+ * The id becomes the key of the generated `pages` map and the `PageRef`
+ * argument, so it has to be unique per file. Path-based derivation removes the
+ * need for a collision error: nested pages keep their folder structure.
+ */
+function assignPageIds(pages, includePatterns) {
+  const roots = includePatterns.map(staticPatternPrefix);
+
+  for (const page of pages) {
+    page.id = pageIdFromFile(page.relativeFile, roots);
+  }
+}
+
+function pageIdFromFile(relativeFile, roots) {
+  const withoutSuffix = relativeFile.replace(/\.page\.tsx?$/, '');
+
+  for (const root of roots) {
+    if (root && withoutSuffix.startsWith(root)) {
+      const trimmed = withoutSuffix.slice(root.length).replace(/^\/+/, '');
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+  }
+
+  return withoutSuffix;
+}
+
+/**
+ * Static path prefix of an include pattern, i.e. everything before the first
+ * wildcard. A recursive pattern like `src` + double-star + `*.page.tsx` yields
+ * `src/`. A literal pattern like `src/admin.page.tsx` has no wildcard, so its
+ * prefix is the parent directory `src/`.
+ */
+function staticPatternPrefix(pattern) {
+  const normalized = pattern.replace(/\\/g, '/');
+  const star = normalized.indexOf('*');
+
+  if (star !== -1) {
+    const before = normalized.slice(0, star);
+    const slash = before.lastIndexOf('/');
+    return slash === -1 ? '' : before.slice(0, slash + 1);
+  }
+
+  const lastSlash = normalized.lastIndexOf('/');
+  return lastSlash === -1 ? '' : normalized.slice(0, lastSlash + 1);
 }
 
 async function expandGlob(rootDir, pattern) {
@@ -92,12 +141,14 @@ async function walk(dir, onFile) {
   }
 }
 
-function globToRegExp(pattern) {
+export function globToRegExp(pattern) {
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '::DOUBLE::')
+    .replace(/\*\*\//g, '::DOUBLE_SLASH::')
+    .replace(/\*\*/g, '::DOUBLE_STAR::')
     .replace(/\*/g, '[^/]*')
-    .replace(/::DOUBLE::/g, '.*');
+    .replace(/::DOUBLE_SLASH::/g, '(?:.*/)?')
+    .replace(/::DOUBLE_STAR::/g, '.*');
 
   return new RegExp(`^${escaped}$`);
 }

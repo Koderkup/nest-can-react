@@ -88,7 +88,7 @@ export class UsersController {
 }
 ```
 
-`UsersPage` comes from `src/react-pages.ts`, which `nest-can-react dev` / `build` writes from `*.page.tsx` files. `src/users/users.page.tsx` becomes `UsersPage` (`createPageRef('users')`). Do not import the `.tsx` module from a controller — Nest would compile the React tree, including `'use client'` islands.
+`UsersPage` comes from `src/react-pages.ts`, which `nest-can-react dev` / `build` writes from `*.page.tsx` files. `src/users/users.page.tsx` becomes `UsersPage` (`createPageRef('users/users')`). Do not import the `.tsx` module from a controller — Nest would compile the React tree, including `'use client'` islands.
 
 | Option | Required | Role |
 | --- | --- | --- |
@@ -213,12 +213,12 @@ import { renderPage } from 'nest-can-react';
 export class WelcomeController {
   @Get()
   async index(@Req() request: Request, @Res() response: Response) {
-    await renderPage('welcome', {}, { request, response });
+    await renderPage('welcome/welcome', {}, { request, response });
   }
 }
 ```
 
-`name` is the page id from the file name: `src/welcome/welcome.page.tsx` → `'welcome'`.
+`name` is the page id from the file path: `src/welcome/welcome.page.tsx` → `'welcome/welcome'`. See [page ids](concepts/render-and-page-refs.md#page-ids).
 
 | Option | Required | Role |
 | --- | --- | --- |

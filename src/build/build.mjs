@@ -62,7 +62,7 @@ export async function buildNestReact({ rootDir = process.cwd(), mode = 'producti
     join(config.serverOutDir, 'pages.json'),
     JSON.stringify(
       {
-        pages: pages.map((page) => page.name),
+        pages: pages.map((page) => page.id),
         publicPath: config.publicPath,
       },
       null,

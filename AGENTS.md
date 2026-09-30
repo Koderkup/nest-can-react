@@ -5,10 +5,13 @@
 | Task | Command |
 | --- | --- |
 | Build / typecheck | `npm run build` (`tsc -p tsconfig.json` with `strict`) |
+| Tests | `npm test` (Node built-in `node --test` runner, no extra deps) |
 | Dev bundler | `npm run bin:dev` (alias of `node bin/nest-can-react.mjs dev`) |
 | Release build | `node bin/nest-can-react.mjs build` |
 
 There is no separate lint script; `tsc --strict` is the typecheck gate.
+
+Tests live next to the modules they cover (`*.test.mjs`) and use Node's built-in `node:test` — no framework to install. The build toolchain lives in `src/build/*.mjs` (excluded from `tsconfig.json`), so tests are plain ESM.
 
 ## Examples
 

@@ -2,7 +2,7 @@
 
 ## What it is
 
-**`renderPage(name, props, options)`** loads a page by string id (`'welcome'`), optional serializable **props**, and streams to a **`response`** you already hold — usually from `@Res()` in a controller.
+**`renderPage(name, props, options)`** loads a page by string id (`'welcome/welcome'`), optional serializable **props**, and streams to a **`response`** you already hold — usually from `@Res()` in a controller.
 
 ## Why it exists
 
@@ -26,7 +26,7 @@ Call from controller methods **after** guards run — never from inside a Server
 ```ts
 @Get()
 async index(@Req() request: Request, @Res() response: Response) {
-  await renderPage('welcome', {}, { request, response });
+  await renderPage('welcome/welcome', {}, { request, response });
 }
 ```
 
@@ -34,7 +34,7 @@ async index(@Req() request: Request, @Res() response: Response) {
 
 - Props bypass the “no view props” convention — use sparingly.
 - Taking `@Res()` disables some Nest response interceptors — know Nest `@Res()` semantics.
-- Page id comes from filename: `welcome.page.tsx` → `'welcome'`.
+- Page id comes from the file path: `src/welcome/welcome.page.tsx` → `'welcome/welcome'`.
 
 ## Related APIs
 
