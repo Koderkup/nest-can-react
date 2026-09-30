@@ -27,9 +27,7 @@ export async function generateFlightEntries({ config, pages }) {
     })
     .join('\n');
 
-  const pageEntries = pages
-    .map((page, index) => `  ${JSON.stringify(page.id)}: Page${index},`)
-    .join('\n');
+  const pageEntries = buildPagesEntries(pages);
 
   const styleImports = config.styles
     .map((style) => {
@@ -298,13 +296,35 @@ function readSourceRoot(rootDir) {
   return 'src';
 }
 
-/**
- * Assigns a readable export name to every page id. The basename keeps names
- * short (`notes/note` -> `NotePage`), but ids that share a basename
- * (`admin` and `users/admin`) need the directory to stay distinct. Pages whose
- * basename is unique are named first, so a nested page never steals the plain
- * name from the root page.
- */
+function buildPagesEntries(pages) {
+  const byBasename = new Map();
+
+  for (const page of pages) {
+    const base = String(page.id).split('/').slice(-1)[0];
+    const group = byBasename.get(base);
+    if (group) {
+      group.push(page);
+    } else {
+      byBasename.set(base, [page]);
+    }
+  }
+
+  return pages
+    .map((page, index) => {
+      const lines = [`  ${JSON.stringify(page.id)}: Page${index},`];
+      const base = String(page.id).split('/').slice(-1)[0];
+      const group = byBasename.get(base);
+
+      if (group.length === 1 && base !== page.id) {
+        lines.push(`  ${JSON.stringify(base)}: Page${index},`);
+      }
+
+      return lines.join('\n');
+    })
+    .join('\n');
+}
+
+
 function assignPageRefExportNames(pages) {
   const byBaseName = new Map();
 

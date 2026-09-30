@@ -65,6 +65,25 @@ export const pages = {
 } as const;
 ```
 
+### Backward-compatible basename aliases
+
+For every page whose basename is unique across the project, the `pages` map also emits a basename alias key — so existing string-based calls keep working:
+
+```ts
+export const pages = {
+  "notes/note": Page0,
+  "note": Page0,
+  "welcome/welcome": Page1,
+  "welcome": Page1,
+} as const;
+```
+
+- `renderPage('welcome')` — still resolves via the `welcome` alias.
+- `createPageRef('welcome')` — still resolves at runtime via the alias.
+- `render(WelcomePage)` — unaffected; `WelcomePage` holds the path-based id `welcome/welcome`.
+
+When two pages share a basename (e.g. `admin` and `users/admin`), no alias is emitted for either — both are reachable only via their full path-based ids, which is strictly better than the old silent-overwrite behaviour.
+
 Export names stay readable: the basename is used when it is unique among all pages, and the directory is only added when two pages would otherwise produce the same export.
 
 ## Rules and pitfalls
@@ -73,7 +92,7 @@ Export names stay readable: the basename is used when it is unique among all pag
 - Do not hand-edit `react-pages.ts`.
 - Do not use `@Req()` / `@Res()` for the default pattern — use `inject(REQUEST)` in the page instead.
 - Handler should not load view data; that belongs in the page via `inject()`.
-- Changing how many folders sit between the include prefix and a page file changes its id, so `createPageRef` arguments and any string-based `renderPage('id')` calls must be regenerated with `nest-can-react build`.
+- Path-based ids are canonical; the generated `react-pages.ts` always uses them in `createPageRef()`. Legacy basename strings (e.g. `renderPage('welcome')`) still work via the backward-compatible alias, but prefer migrating to the path-based id.
 
 ## Related APIs
 

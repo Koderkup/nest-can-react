@@ -120,3 +120,78 @@ test('nested page does not steal the plain export name from the root page', asyn
     await rm(rootDir, { recursive: true, force: true });
   }
 });
+
+function pagesMapFrom(source) {
+  const found = new Map();
+  const re = /"([^"]+)":\s*(Page\d+)/g;
+  let match;
+
+  while ((match = re.exec(source)) !== null) {
+    found.set(match[1], match[2]);
+  }
+
+  return found;
+}
+
+async function readPagesMap(rootDir) {
+  const { readFileSync } = await import('node:fs');
+  return pagesMapFrom(
+    readFileSync(
+      join(rootDir, '.nest-can-react', 'generated', 'pages.ts'),
+      'utf8',
+    ),
+  );
+}
+
+test('pages map emits backward-compatible basename aliases for unique basenames', async () => {
+  const { rootDir, config, pages } = await scaffold();
+
+  try {
+    for (const [id, rel] of [
+      ['admin', 'src/admin.page.tsx'],
+      ['notes/note', 'src/notes/note.page.tsx'],
+      ['cookies/clear-cookie', 'src/cookies/clear-cookie.page.tsx'],
+    ]) {
+      pages.push({ id, relativeFile: rel, file: join(rootDir, rel) });
+    }
+
+    await generateFlightEntries({ config, pages });
+    const map = await readPagesMap(rootDir);
+
+    assert.ok(map.has('admin'));
+    assert.ok(map.has('notes/note'));
+    assert.ok(map.has('cookies/clear-cookie'));
+
+    assert.strictEqual(map.get('note'), map.get('notes/note'));
+    assert.strictEqual(map.get('clear-cookie'), map.get('cookies/clear-cookie'));
+
+    assert.strictEqual(map.get('admin'), 'Page0');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('pages map omits alias entries when basenames collide', async () => {
+  const { rootDir, config, pages } = await scaffold();
+
+  try {
+    for (const [id, rel] of [
+      ['admin', 'src/admin.page.tsx'],
+      ['users/admin', 'src/users/admin.page.tsx'],
+      ['settings/admin', 'src/settings/admin.page.tsx'],
+    ]) {
+      pages.push({ id, relativeFile: rel, file: join(rootDir, rel) });
+    }
+
+    await generateFlightEntries({ config, pages });
+    const map = await readPagesMap(rootDir);
+
+    assert.ok(map.has('admin'));
+    assert.ok(map.has('users/admin'));
+    assert.ok(map.has('settings/admin'));
+
+    assert.strictEqual(map.get('admin'), 'Page0');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
