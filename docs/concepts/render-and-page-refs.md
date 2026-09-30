@@ -4,7 +4,7 @@
 
 - **`render(PageRef)`** — return value from a Nest controller method. Triggers streaming of that page through the layout.
 - **`PageRef`** — opaque handle from **`createPageRef('page-id')`**, generated into `src/react-pages.ts`.
-- **`*.page.tsx`** — files discovered by the CLI; each becomes a page id (usually the basename without `.page`).
+- **`*.page.tsx`** — files discovered by the CLI; each becomes a page id derived from its path (see [Page ids](#page-ids)).
 
 ## Why it exists
 
@@ -18,10 +18,10 @@ Pages load their own data with [`inject()`](inject-and-request.md) instead of re
 2. `nest-can-react dev` or `build` regenerates `src/react-pages.ts`:
 
 ```ts
-export const WelcomePage = createPageRef('welcome');
+export const WelcomePage = createPageRef('welcome/welcome');
 ```
 
-3. Controller:
+1. Controller:
 
 ```ts
 import { WelcomePage } from '../react-pages';
@@ -45,12 +45,35 @@ Adding or removing a `*.page.tsx` rewrites `react-pages.ts` and restarts Nest in
 
 [`examples/express/src/welcome/welcome.controller.ts`](../../examples/express/src/welcome/welcome.controller.ts), [`examples/express/src/react-pages.ts`](../../examples/express/src/react-pages.ts).
 
+## Page ids
+
+A page id is the file path relative to the include pattern's static prefix, without the `.page.tsx` suffix. The default include is `src/**/*.page.tsx`, so ids keep the folder structure under `src/`:
+
+| File | Page id | Export |
+| --- | --- | --- |
+| `src/admin.page.tsx` | `admin` | `AdminPage` |
+| `src/users/admin.page.tsx` | `users/admin` | `UsersAdminPage` |
+| `src/notes/note.page.tsx` | `notes/note` | `NotePage` |
+| `src/cookies/clear-cookie.page.tsx` | `cookies/clear-cookie` | `ClearCookiePage` |
+
+Path-based ids mean two files sharing a basename never collide, so both render without a build error. The generated `pages` map keys on the id:
+
+```ts
+export const pages = {
+  "admin": Page0,
+  "users/admin": Page1,
+} as const;
+```
+
+Export names stay readable: the basename is used when it is unique among all pages, and the directory is only added when two pages would otherwise produce the same export.
+
 ## Rules and pitfalls
 
 - **Never** import the `.page.tsx` module from a controller.
 - Do not hand-edit `react-pages.ts`.
 - Do not use `@Req()` / `@Res()` for the default pattern — use `inject(REQUEST)` in the page instead.
 - Handler should not load view data; that belongs in the page via `inject()`.
+- Changing how many folders sit between the include prefix and a page file changes its id, so `createPageRef` arguments and any string-based `renderPage('id')` calls must be regenerated with `nest-can-react build`.
 
 ## Related APIs
 

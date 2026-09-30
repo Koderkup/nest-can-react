@@ -4,4 +4,4 @@
 import { createPageRef } from 'nest-can-react';
 
 /** src/welcome/welcome.page.tsx */
-export const WelcomePage = createPageRef("welcome");
+export const WelcomePage = createPageRef("welcome/welcome");

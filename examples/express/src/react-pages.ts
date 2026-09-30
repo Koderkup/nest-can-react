@@ -4,16 +4,16 @@
 import { createPageRef } from 'nest-can-react';
 
 /** src/cookies/clear-cookie.page.tsx */
-export const ClearCookiePage = createPageRef("clear-cookie");
+export const ClearCookiePage = createPageRef("cookies/clear-cookie");
 /** src/cookies/cookies.page.tsx */
-export const CookiesPage = createPageRef("cookies");
+export const CookiesPage = createPageRef("cookies/cookies");
 /** src/notes/note.page.tsx */
-export const NotePage = createPageRef("note");
+export const NotePage = createPageRef("notes/note");
 /** src/notes/notes.page.tsx */
-export const NotesPage = createPageRef("notes");
+export const NotesPage = createPageRef("notes/notes");
 /** src/redir/perm.page.tsx */
-export const PermPage = createPageRef("perm");
+export const PermPage = createPageRef("redir/perm");
 /** src/redir/temp.page.tsx */
-export const TempPage = createPageRef("temp");
+export const TempPage = createPageRef("redir/temp");
 /** src/welcome/welcome.page.tsx */
-export const WelcomePage = createPageRef("welcome");
+export const WelcomePage = createPageRef("welcome/welcome");
