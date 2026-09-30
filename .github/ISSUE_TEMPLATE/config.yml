@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "📚 Documentation"
+    url: https://github.com/acefolioDev/nest-can-react/tree/main/docs
+    about: Read the project documentation before opening an issue.
+  - name: "🔒 Security vulnerability"
+    url: https://github.com/acefolioDev/nest-can-react/security/advisories/new
+    about: Report security vulnerabilities privately; do not use a public issue.

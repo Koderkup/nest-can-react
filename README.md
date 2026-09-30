@@ -87,3 +87,7 @@ import { useCommit, refresh, navigateTo } from 'nest-can-react/client';
 
 - **[Documentation](docs/README.md)** — full guide index
 - [Introduction](docs/intro.md) · [Why nest-can-react?](docs/why-nest-can-react.md) · [Creating your first app](docs/first-app.md) · [Package APIs](docs/api.md) · [Glossary](docs/glossary.md)
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, pull request guidance, and issue reporting. Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md) before participating.

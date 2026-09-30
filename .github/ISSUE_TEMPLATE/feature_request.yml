@@ -1,0 +1,34 @@
+name: "✨ Feature request"
+description: Suggest an improvement or new capability
+title: "[✨ Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping shape nest-can-react. Please describe the problem first and the proposed solution second.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What use case or limitation would this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or API you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or alternative approaches have you tried?
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add examples, links, sketches, or compatibility considerations.

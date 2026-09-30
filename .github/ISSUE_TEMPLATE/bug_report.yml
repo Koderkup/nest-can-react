@@ -1,0 +1,73 @@
+name: "🐛 Bug report"
+description: Report a reproducible problem with nest-can-react
+title: "[🐛 Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please remove secrets and private data before submitting.
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      description: Which version of nest-can-react are you using?
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Run `node --version` to find this value.
+      placeholder: v22.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Nest adapter
+      options:
+        - Express
+        - Fastify
+        - Both
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide a minimal repository or the smallest code sample that reproduces the problem.
+      placeholder: Link to a repository or paste the minimal relevant code here.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run ...
+        2. Visit ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and additional context
+      description: Paste relevant logs, stack traces, or screenshots. Remove secrets first.
+      render: text
