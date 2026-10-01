@@ -1,8 +1,22 @@
 {
   "name": "nest-can-react",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Nest-native React Server Components over Flight — Nest owns the app, React streams the UI",
   "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "react",
+    "react-server-components",
+    "rsc",
+    "server-components",
+    "react-flight",
+    "flight",
+    "rspack",
+    "streaming",
+    "ssr",
+    "fastify"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/acefolioDev/nest-can-react.git"
