@@ -79,7 +79,7 @@ function pageIdFromFile(relativeFile, roots) {
  * `src/`. A literal pattern like `src/admin.page.tsx` has no wildcard, so its
  * prefix is the parent directory `src/`.
  */
-function staticPatternPrefix(pattern) {
+export function staticPatternPrefix(pattern) {
   const normalized = pattern.replace(/\\/g, '/');
   const star = normalized.indexOf('*');
 

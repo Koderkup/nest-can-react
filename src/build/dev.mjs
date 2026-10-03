@@ -1,6 +1,4 @@
-import { watch } from 'node:fs';
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 import rspack from '@rspack/core';
 import { RspackDevServer } from '@rspack/dev-server';
 import { generateFlightEntries } from './codegen.mjs';
@@ -9,6 +7,7 @@ import { loadConfig } from './load-config.mjs';
 import { writeClientManifest } from './client-manifest.mjs';
 import { createRspackConfigs } from './rspack-config.mjs';
 import { syncServerAssetsToClientOut } from './sync-server-assets.mjs';
+import { createDevWatchers } from './dev-watch.mjs';
 import {
   createCompileGate,
   createDevHmrHub,
@@ -16,7 +15,7 @@ import {
 } from './dev-hmr-hub.mjs';
 
 const rootDir = process.cwd();
-const config = await loadConfig(rootDir, {});
+let config = await loadConfig(rootDir, {});
 let pages = await discoverPages(config);
 const entries = await generateFlightEntries({ config, pages });
 
@@ -120,26 +119,10 @@ const waitForClient = devServer.start().then(() => {
 
 await Promise.all([waitForServer, waitForClient]);
 
-watchPageFiles(config, async () => {
-  const nextPages = await discoverPages(config);
-  const previous = pages
-    .map((page) => page.file)
-    .sort()
-    .join('|');
-  const next = nextPages
-    .map((page) => page.file)
-    .sort()
-    .join('|');
-
-  if (previous === next) {
-    return;
-  }
-
-  pages = nextPages;
-  await generateFlightEntries({ config, pages });
-  console.log(
-    `nest-can-react: pages changed (${pages.length}) — regenerated entries`,
-  );
+const watchers = createDevWatchers({
+  config,
+  onPagesChanged: () => regeneratePages(),
+  onConfigChanged: () => reloadConfigAndRegenerate(),
 });
 
 const nestBin = process.env.NEST_BIN ?? 'npx';
@@ -188,37 +171,53 @@ nest.on('exit', (code) => {
 process.on('SIGINT', () => {
   nest.kill('SIGINT');
   void devServer.stop();
+  watchers.dispose();
   hub.close();
   process.exit(0);
 });
 
-function watchPageFiles(appConfig, onChange) {
-  const srcDir = join(appConfig.rootDir, 'src');
-  let timer;
+/**
+ * Reload the config file so `pages.include`, `styles`, and `layout` changes
+ * take effect. Rspack already watches the generated entry, so codegen is
+ * enough; only compiler-level options (ports, outDir) need a restart.
+ */
+async function reloadConfigAndRegenerate() {
+  const next = await loadConfig(rootDir, {});
 
-  try {
-    const watcher = watch(srcDir, { recursive: true }, (_event, filename) => {
-      if (!filename || !isPageFile(filename)) {
-        return;
-      }
-
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        void onChange();
-      }, 150);
-    });
-
-    watcher.on?.('error', (error) => {
-      console.warn(`nest-can-react: page watcher error: ${error.message}`);
-    });
-  } catch (error) {
-    console.warn(
-      `nest-can-react: could not watch pages (${error.message ?? error})`,
+  if (
+    next.outDir !== config.outDir ||
+    next.serverOutDir !== config.serverOutDir ||
+    next.publicPath !== config.publicPath ||
+    next.hmrPort !== config.hmrPort ||
+    next.clientDevPort !== config.clientDevPort
+  ) {
+    console.log(
+      'nest-can-react: config changed — restart dev to apply compiler options',
     );
   }
+
+  config = next;
+  await regeneratePages();
+  watchers.reconfigure(config);
 }
 
-function isPageFile(filename) {
-  const normalized = filename.replace(/\\/g, '/');
-  return normalized.endsWith('.page.tsx') || normalized.endsWith('.page.ts');
+/**
+ * Re-run discovery and codegen when the page set changed. Rspack already
+ * watches the generated entry, so rewriting it is enough to rebuild the RSC
+ * bundle; no compiler restart is needed.
+ */
+async function regeneratePages() {
+  const nextPages = await discoverPages(config);
+  const previous = pages.map((page) => page.file).sort().join('|');
+  const next = nextPages.map((page) => page.file).sort().join('|');
+
+  if (previous === next) {
+    return;
+  }
+
+  pages = nextPages;
+  await generateFlightEntries({ config, pages });
+  console.log(
+    `nest-can-react: pages changed (${pages.length}) — regenerated entries`,
+  );
 }
