@@ -28,7 +28,7 @@ The bundler must know which files are pages, where the layout lives, and where t
 | Field | Purpose |
 | --- | --- |
 | `layout` | Single document shell |
-| `pages.include` / `exclude` | Files that become pages and `react-pages.ts` refs |
+| `pages.include` / `exclude` | Files that become pages and `react-pages.ts` refs. The dev watcher derives its watch roots from `include`, so pages outside `src` are detected too. |
 | `client.outDir` | Browser bundle output |
 | `client.publicPath` | URL prefix — **must match** `NestReactModule.forRoot({ publicPath })` |
 | `client.styles` | Global CSS entry files |
