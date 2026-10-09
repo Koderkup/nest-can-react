@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { hashElementId, resolveNavigateTarget } from '../flight/navigation';
 
 export type CommitState = 'idle' | 'submitting' | 'revalidating';
 
@@ -106,8 +107,42 @@ export function refresh() {
 }
 
 export function navigateTo(href: string) {
-  window.history.pushState(null, '', href);
-  window.dispatchEvent(new PopStateEvent('popstate'));
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  const target = resolveNavigateTarget(href, window.location.href);
+
+  if (target.kind === 'external') {
+    window.location.assign(target.href);
+    return Promise.resolve();
+  }
+
+  if (target.kind === 'same-document') {
+    window.history.pushState(null, '', target.href);
+
+    const anchorId = hashElementId(target.href);
+    const anchor = anchorId ? document.getElementById(anchorId) : null;
+
+    if (anchor) {
+      anchor.scrollIntoView();
+    }
+
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    const timeout = window.setTimeout(finish, 8_000);
+
+    function finish() {
+      window.clearTimeout(timeout);
+      window.removeEventListener('ncr:rsc-refresh-done', finish);
+      resolve();
+    }
+
+    window.addEventListener('ncr:rsc-refresh-done', finish, { once: true });
+    window.history.pushState(null, '', target.href);
+  });
 }
 
 async function parseJson(response: Response) {

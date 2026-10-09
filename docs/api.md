@@ -350,15 +350,29 @@ The Nest handler should return JSON (or an empty body). Guard it like any other 
 
 ### `navigateTo(href)`
 
-**What it is.** `history.pushState` plus a `popstate` so the RSC client loads the new URL without a full document load.
+**What it is.** Client-side navigation: `history.pushState` plus exactly one RSC fetch (`Accept: text/x-component`) for the new URL — no full document load. Returns a `Promise<void>` that resolves when the new payload has been applied (`ncr:rsc-refresh-done`), with an 8s safety timeout.
 
 **Why use it.** Client-side transitions after a successful action (redirect to a detail page, leave a wizard). For ordinary links in Server Components, use `NestLink` / `<a>` instead.
 
 ```ts
 import { navigateTo } from 'nest-can-react/client';
 
+// fire-and-forget (still supported)
 navigateTo('/welcome');
+
+// or wait until the target page is on screen
+await commit();
+await navigateTo(`/notes/${note.id}`);
 ```
+
+**Rules.**
+
+- **One call → one RSC request.** The patched `pushState` reports the navigation once; there is no synthetic `popstate`.
+- **Same-document targets** (only the hash changes) update history and scroll to the anchor without a fetch; the promise resolves immediately.
+- **External targets** fall back to a full document load (`location.assign`).
+- **Redirects:** if the Flight fetch follows a 3xx, the address bar is synced to the final URL (`replaceState`) so it matches the rendered page.
+- **4xx responses are terminal** — no retries; the runtime falls back to a full document load immediately. 5xx and network failures are retried before the same fallback.
+- **Scroll:** push navigations scroll to the top (or to the `#anchor` when the URL has one) after the payload commits; Back/Forward uses the browser's history scroll restoration.
 
 **See also:** [Mutations and revalidation](concepts/mutations-and-revalidation.md), [Navigation](concepts/navigation.md).
 
