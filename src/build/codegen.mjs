@@ -100,6 +100,11 @@ export async function generateFlightEntries({ config, pages }) {
   );
 
   await writeFileIfChanged(
+    join(config.generatedDir, 'react-server-dom-rspack.d.ts'),
+    readTemplate('react-server-dom-rspack.d.ts'),
+  );
+
+  await writeFileIfChanged(
     join(config.generatedDir, 'dev-hmr-client.ts'),
     readTemplate('dev-hmr-client.ts'),
   );
