@@ -13,6 +13,15 @@ import {
 import { rscStream } from 'rsc-html-stream/client';
 import type { RscPayload } from './handle-request';
 import { createRscRenderRequest } from './request';
+import {
+  hashElementId,
+  pageKey,
+  redirectHistoryTarget,
+  shouldInterceptLinkClick,
+  shouldRefetchOnNavigation,
+  shouldRetryRscStatus,
+  type NavigationKind,
+} from './navigation';
 import { guardedFullReload, hideDevOverlay, showDevOverlay } from './dev-overlay';
 
 type BootOptions = {
@@ -22,8 +31,13 @@ type BootOptions = {
 let refetchGeneration = 0;
 let inflightAbort: AbortController | undefined;
 let hadRuntimeError = false;
+let renderedHref = '';
+let inflightHref: string | undefined;
+let suppressNavigationEvents = false;
+let pendingScroll: { anchorId?: string } | null = null;
 
 export async function bootClient({ Runtime }: BootOptions = {}) {
+  renderedHref = window.location.href;
   const initialPayload = await createFromReadableStream<RscPayload>(rscStream);
   installRuntimeErrorTracking();
   installFastRefreshFallback();
@@ -38,18 +52,34 @@ export async function bootClient({ Runtime }: BootOptions = {}) {
     }, []);
 
     const fetchRscPayload = useCallback(
-      async (options?: { navigation?: boolean }) => {
+      async (options?: { navigation?: boolean; kind?: NavigationKind }) => {
         await runRscRefetch({
           applyPayload,
           navigation: options?.navigation === true,
+          kind: options?.kind,
         });
       },
       [applyPayload],
     );
 
     useEffect(() => {
-      return listenNavigation(() => {
-        void fetchRscPayload({ navigation: true });
+      return listenNavigation((kind) => {
+        const nextHref = window.location.href;
+
+        if (!shouldRefetchOnNavigation(renderedHref, nextHref)) {
+          if (inflightHref && pageKey(inflightHref) !== pageKey(nextHref)) {
+            inflightAbort?.abort();
+            inflightHref = undefined;
+            notifyRefreshDone();
+          }
+          return;
+        }
+
+        if (inflightHref && pageKey(inflightHref) === pageKey(nextHref)) {
+          return;
+        }
+
+        void fetchRscPayload({ navigation: true, kind });
       });
     }, [fetchRscPayload]);
 
@@ -66,6 +96,26 @@ export async function bootClient({ Runtime }: BootOptions = {}) {
       window.addEventListener('ncr:rsc-update', onRscUpdate);
       return () => window.removeEventListener('ncr:rsc-update', onRscUpdate);
     }, [fetchRscPayload]);
+
+    useEffect(() => {
+      if (!pendingScroll) {
+        return;
+      }
+
+      const { anchorId } = pendingScroll;
+      pendingScroll = null;
+
+      if (anchorId) {
+        const anchor = document.getElementById(anchorId);
+
+        if (anchor) {
+          anchor.scrollIntoView();
+          return;
+        }
+      }
+
+      window.scrollTo(0, 0);
+    }, [payload]);
 
     const tree = payload.root;
     return Runtime ? <Runtime>{tree}</Runtime> : tree;
@@ -93,69 +143,110 @@ export async function bootClient({ Runtime }: BootOptions = {}) {
 async function runRscRefetch({
   applyPayload,
   navigation,
+  kind,
 }: {
   applyPayload: (value: RscPayload) => void;
   navigation: boolean;
+  kind?: NavigationKind;
 }) {
   inflightAbort?.abort();
   const abort = new AbortController();
   inflightAbort = abort;
   const generation = ++refetchGeneration;
+  const fetchHref = window.location.href;
+  inflightHref = fetchHref;
 
-  let lastError: unknown;
+  try {
+    let lastError: unknown;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      if (attempt === 0 && !navigation) {
-        await waitForWebpackIdle();
-      }
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        if (attempt === 0 && !navigation) {
+          await waitForWebpackIdle();
+        }
 
-      const renderRequest = createRscRenderRequest(window.location.href);
-      const responsePromise = fetch(renderRequest, { signal: abort.signal });
-      const response = await responsePromise;
+        const renderRequest = createRscRenderRequest(fetchHref);
+        const responsePromise = fetch(renderRequest, { signal: abort.signal });
+        const response = await responsePromise;
 
-      if (!response.ok) {
-        throw new Error(`RSC refetch failed (${response.status}).`);
-      }
+        if (!response.ok) {
+          if (!shouldRetryRscStatus(response.status)) {
+            lastError = new Error(`RSC refetch failed (${response.status}).`);
+            break;
+          }
+          throw new Error(`RSC refetch failed (${response.status}).`);
+        }
 
-      const nextPayload = await createFromFetch<RscPayload>(responsePromise);
+        const nextPayload = await createFromFetch<RscPayload>(responsePromise);
 
-      if (generation !== refetchGeneration) {
+        if (generation !== refetchGeneration) {
+          return;
+        }
+
+        const finalHref = redirectHistoryTarget(
+          window.location.href,
+          response.url,
+          response.redirected,
+        );
+        if (finalHref) {
+          syncRedirectHistory(finalHref);
+          renderedHref = finalHref;
+        } else {
+          renderedHref = window.location.href;
+        }
+
+        if (navigation && kind === 'push') {
+          const anchorId = hashElementId(window.location.href);
+          pendingScroll = anchorId ? { anchorId } : {};
+        }
+
+        applyPayload(nextPayload);
+        hideDevOverlay();
+        notifyRefreshDone();
+        if (!navigation) {
+          console.info('[nest-can-react] RSC update applied');
+        }
         return;
-      }
+      } catch (error) {
+        if (abort.signal.aborted || isAbortError(error)) {
+          return;
+        }
 
-      applyPayload(nextPayload);
-      hideDevOverlay();
-      notifyRefreshDone();
-      if (!navigation) {
-        console.info('[nest-can-react] RSC update applied');
-      }
-      return;
-    } catch (error) {
-      if (abort.signal.aborted || isAbortError(error)) {
-        return;
-      }
+        lastError = error;
 
-      lastError = error;
-
-      if (attempt < 2) {
-        await delay(120 * (attempt + 1));
+        if (attempt < 2) {
+          await delay(120 * (attempt + 1));
+        }
       }
     }
+
+    notifyRefreshDone();
+
+    const message =
+      lastError instanceof Error ? lastError.message : 'RSC refetch failed.';
+
+    if (navigation) {
+      guardedFullReload('navigation refetch failed');
+      return;
+    }
+
+    showDevOverlay('RSC update failed', message);
+    console.warn(`[nest-can-react] ${message}`);
+  } finally {
+    if (inflightAbort === abort) {
+      inflightAbort = undefined;
+      inflightHref = undefined;
+    }
   }
+}
 
-  notifyRefreshDone();
-
-  const message =
-    lastError instanceof Error ? lastError.message : 'RSC refetch failed.';
-
-  if (navigation) {
-    guardedFullReload('navigation refetch failed');
-    return;
+function syncRedirectHistory(finalHref: string) {
+  suppressNavigationEvents = true;
+  try {
+    window.history.replaceState(null, '', finalHref);
+  } finally {
+    suppressNavigationEvents = false;
   }
-
-  showDevOverlay('RSC update failed', message);
-  console.warn(`[nest-can-react] ${message}`);
 }
 
 function notifyRefreshDone() {
@@ -205,21 +296,30 @@ function installFastRefreshFallback() {
   });
 }
 
-function listenNavigation(onNavigation: () => void) {
-  window.addEventListener('popstate', onNavigation);
+function listenNavigation(onNavigation: (kind: NavigationKind) => void) {
+  const onPopState = () => onNavigation('pop');
+  window.addEventListener('popstate', onPopState);
 
   const oldPushState = window.history.pushState.bind(window.history);
   const oldReplaceState = window.history.replaceState.bind(window.history);
 
   window.history.pushState = function (...args) {
     const result = oldPushState(...args);
-    onNavigation();
+
+    if (!suppressNavigationEvents) {
+      onNavigation('push');
+    }
+
     return result;
   };
 
   window.history.replaceState = function (...args) {
     const result = oldReplaceState(...args);
-    onNavigation();
+
+    if (!suppressNavigationEvents) {
+      onNavigation('replace');
+    }
+
     return result;
   };
 
@@ -227,21 +327,22 @@ function listenNavigation(onNavigation: () => void) {
     const link = (event.target as Element | null)?.closest?.('a');
 
     if (
-      link &&
       link instanceof HTMLAnchorElement &&
-      link.href &&
-      (!link.target || link.target === '_self') &&
-      link.origin === location.origin &&
-      !link.hasAttribute('download') &&
-      event.button === 0 &&
-      !event.metaKey &&
-      !event.ctrlKey &&
-      !event.altKey &&
-      !event.shiftKey &&
-      !event.defaultPrevented
+      shouldInterceptLinkClick({
+        href: link.href,
+        currentHref: window.location.href,
+        target: link.target,
+        download: link.hasAttribute('download'),
+        button: event.button,
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        defaultPrevented: event.defaultPrevented,
+      })
     ) {
       event.preventDefault();
-      history.pushState(null, '', link.href);
+      window.history.pushState(null, '', link.href);
     }
   }
 
@@ -249,7 +350,7 @@ function listenNavigation(onNavigation: () => void) {
 
   return () => {
     document.removeEventListener('click', onClick);
-    window.removeEventListener('popstate', onNavigation);
+    window.removeEventListener('popstate', onPopState);
     window.history.pushState = oldPushState;
     window.history.replaceState = oldReplaceState;
   };

@@ -33,7 +33,7 @@ Internal hubs (defaults): RSC **`9101`**, client **`9102`**. `NestReactModule` a
 - `'use client'` islands keep React state across Fast Refresh and safe RSC refetch.
 - Full reload when an update cannot apply safely (declined HMR, error recovery, reload loop guard).
 
-Adding/removing `*.page.tsx` regenerates entries; `nest-can-react dev` handles without restarting the CLI process.
+Adding/removing `*.page.tsx` regenerates entries; `nest-can-react dev` handles without restarting the CLI process. The watcher follows `pages.include`, so pages kept outside `src` are detected too.
 
 ## Example workflow
 
